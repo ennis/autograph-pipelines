@@ -2,55 +2,19 @@
 #include <format.h>
 #include <glm/glm.hpp>
 
-namespace ag
+#include <PixelType.hpp>
+#include <Surface.hpp>
+#include <Stream.hpp>
+#include <Graphics.hpp>
+#include <Utils.hpp>
+
+/*namespace ag
 {
-	template <typename TPixel>
-	struct Surface
-	{
-
-	};
-
-	struct GPUDomain
-	{
-		template <typename T> struct StreamDetail;
-	};
-
-	// GPUDomain::StreamDetail Surface<T> specialization
-	template <typename TPixel> struct GPUDomain::StreamDetail<Surface<TPixel> >
-	{
-		StreamDetail()
-		{
-		}
-
-		int thing;
-		int width;
-		int height;
-	};
-
-	template <typename T> struct GPUDomain::StreamDetail
-	{
-		StreamDetail()
-		{
-			std::clog << "Hello from StreamDetail" << std::endl;
-		}
-
-		T thing;
-	};
-
-
-	// T is signal type, D is execution domain
-	template <
-		typename T,
-		typename D>
-	struct Stream
-	{
-		int revision;
-		typename D::template StreamDetail<T> detail;
-	};
-
+	using namespace gl;
+	
 	// Lifts a lambda to operate on a signal
 	// creates a node
-	template <
+	/*template <
 		typename D,
 		typename Fn, 
 		typename ... TValues,
@@ -59,11 +23,20 @@ namespace ag
 	{
 
 	}
-}
+}*/
 
 int main()
 {
-	using D = ag::GPUDomain;
-	auto s1 = ag::Stream<int, D>();
-	auto s2 = ag::Stream<ag::Surface<float>, D>();
+	glbinding::Binding::initialize();
+
+	using D = ag::graphics::GraphicsContext;
+	D ctx;
+
+	auto color = ag::constant<glm::vec4>(ctx, {0.0f, 0.0f, 1.0f, 1.0f});
+	auto size = ag::constant<glm::uvec2>(ctx, { 1280, 720 });
+	auto rt = ag::graphics::clearRT<ag::RGBA8>(ctx, size, color);
+	ag::graphics::displayRT(ctx, rt);
+
+
+	return 0;
 }
