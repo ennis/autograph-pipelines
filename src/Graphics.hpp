@@ -71,9 +71,10 @@ namespace ag
 			ClearNode(
 				D& gc,
 				Stream<glm::uvec2, D> size_, 
-				Stream<glm::vec4, D> color_)
+				Stream<glm::vec4, D> color_) : 
+				size(std::move(size_)),
+				color(std::move(color_))
 			{
-
 			}
 
 			Stream<glm::uvec2, D> size;
@@ -106,6 +107,7 @@ namespace ag
 		{
 			auto ptr = std::make_shared<DisplayNode>(std::move(rt));
 			ptr->rt.ptr->successors.push_back(ptr.get());
+			ptr->rt.ptr->detail.hints |= SurfaceUsageHints::DefaultFramebuffer;
 			gc.setDisplayNode(std::make_shared<DisplayNode>(std::move(rt)));
 		}
 	}

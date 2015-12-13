@@ -8,6 +8,10 @@
 #include <Graphics.hpp>
 #include <Utils.hpp>
 
+#include <optional.hpp>
+#include <utility>
+
+
 /*namespace ag
 {
 	using namespace gl;
@@ -36,6 +40,11 @@ int main()
 	auto size = ag::constant<glm::uvec2>(ctx, { 1280, 720 });
 	auto rt = ag::graphics::clearRT<ag::RGBA8>(ctx, size, color);
 	ag::graphics::displayRT(ctx, rt);
+
+	auto color2 = ag::apply(
+		[](glm::vec4 c) -> glm::vec4 {
+			return c + glm::vec4{1.0f, 0.0f, 0.0f, 0.0f};
+		}, color);
 
 
 	return 0;
