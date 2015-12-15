@@ -8,7 +8,7 @@
 #include <Graphics.hpp>
 #include <Utils.hpp>
 
-#include <optional.hpp>
+//#include <optional.hpp>
 #include <utility>
 
 
@@ -18,7 +18,7 @@
 	
 	// Lifts a lambda to operate on a signal
 	// creates a node
-	/*template <
+	template <
 		typename D,
 		typename Fn, 
 		typename ... TValues,

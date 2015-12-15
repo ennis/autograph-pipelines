@@ -1,7 +1,17 @@
 cmake_minimum_required(VERSION 3.2)
-project(autograph)
-set(CMAKE_CXX_STANDARD 11)
-set_property( GLOBAL PROPERTY USE_FOLDERS ON)
+
+set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+project(autograph CXX)
+
+############## Hack no1 ##############
+if(UNIX AND "${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -stdlib=libc++")
+	include_directories("/usr/include/c++/v1/")
+endif()
+
+
+set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
 add_subdirectory(ext/)
 

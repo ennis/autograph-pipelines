@@ -10,27 +10,33 @@ namespace ag
 {
 	namespace graphics
 	{
-		// Forward decl
-		struct DisplayNode;
-
-		template <typename PixelType>
-		struct ClearNode;
-
-		// Surface usage hints
-		enum class SurfaceUsageHints : unsigned
-		{
-			DefaultFramebuffer = 1 << 0,
-		};
-		template <> struct is_enum_flags<SurfaceUsageHints> : public std::true_type {};
-
 		// Data access hints
 		enum class DataAccessHints : unsigned
 		{
 			GPURead = 1 << 0,
 			CPURead = 1 << 1
 		};
-		template <> struct is_enum_flags<DataAccessHints> : public std::true_type {};
 
+		// Surface usage hints
+		enum class SurfaceUsageHints : unsigned
+		{
+			DefaultFramebuffer = 1 << 0,
+		};
+	}
+}
+
+template <> struct is_enum_flags<ag::graphics::SurfaceUsageHints> : public std::true_type {};
+template <> struct is_enum_flags<ag::graphics::DataAccessHints> : public std::true_type {};
+
+namespace ag
+{
+	namespace graphics
+	{
+		// Forward decl
+		struct DisplayNode;
+
+		template <typename PixelType>
+		struct ClearNode;
 
 		// Graphics context
 		struct GraphicsContext
