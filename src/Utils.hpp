@@ -15,7 +15,7 @@ namespace util
 		typename... Args,
 		std::size_t... I
 	>
-	auto call_helper(const F& func, const std::tuple<Args...> & params) -> std::result_of_t<F(Args...)>
+	auto call_helper(const F& func, const std::tuple<Args...> & params, std::index_sequence<I>) -> std::result_of_t<F(Args...)>
 	{
 		return func(std::get<I>(params)...);
 	}
@@ -26,7 +26,7 @@ namespace util
 	>
 	auto call(const F& func, const std::tuple<Args...> & params) -> std::result_of_t<F(Args...)>
 	{
-		return call_helper<F, Args..., std::index_sequence_for<Args...> >(func, params);
+		return call_helper<F, Args...>(func, params, std::index_sequence_for<Args...>);
 	}
 }
 
