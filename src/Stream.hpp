@@ -7,17 +7,22 @@
 
 namespace ag
 {
+	template <typename D>
 	struct StreamNodeBase
 	{
+		virtual void execute(D& backend) = 0;
+
+		typename D::NodeDetail nodeDetail;
+		int topological_index = 0;
+		std::vector<StreamNodeBase<D>*> successors;
 	};
 
 	template <
 		typename T,
 		typename D
 	>
-	struct StreamNode : public StreamNodeBase
+	struct StreamNode : public StreamNodeBase<D>
 	{
-		std::vector<StreamNodeBase*> successors;
 		typename D::template StreamDetail<T> detail;
 	};
 
@@ -27,13 +32,51 @@ namespace ag
 	>
 	struct ConstNode : public StreamNode<T,D>
 	{
-		ConstNode(T&& value_) : value(std::forward<T>(value_))
-		{}
-		T value;
+		ConstNode(D& backend, T&& value_) : 
+			impl(backend, std::forward<T>(value_))
+		{
+			backend.initialize(*this);
+		}
+
+		void execute(D& backend) override
+		{
+			backend.execute(*this);
+		}
+
+		typename D::template ConstNodeImpl<T> impl;
+	};
+	
+	template <
+		typename T,
+		typename D
+	>
+	struct VarNode : public StreamNode<T, D>
+	{
+		VarNode(D& backend, T&& init_value_) : impl(backend, std::forward<T>(init_value_))
+		{
+			backend.initialize(*this);
+		}
+
+		void set(T new_value)
+		{
+			impl.set(new_value);
+		}
+
+		void execute(D& backend) override
+		{
+			backend.execute(*this);
+		}
+
+		const T& get()
+		{
+			return impl.get();
+		}
+
+		typename D::template VarNodeImpl<T> impl;
 	};
 
 
-	template <
+	/*template <
 		typename T,
 		typename D
 	>
@@ -41,7 +84,7 @@ namespace ag
 	{
 		// TODO replace this with a raw pointer, with the nodes allocated in a pool
 		std::shared_ptr<StreamNode<T, D> > ptr;
-	};
+	};*/
 
 	/////////////////////////// Operation node
 	template <
@@ -52,80 +95,25 @@ namespace ag
 	>
 	struct OpNode : public StreamNode<T, D>
 	{
-		OpNode(F&& f, Stream<TDeps, D>... deps) :
+		OpNode(D& backend, F&& f, StreamNode<TDeps, D>&... deps) :
 			func(std::forward<F>(f)),
 			inputs(deps...)
 		{
+			backend.initialize(*this);
 		}
 
-		void execute()
+		void execute(D& backend) override
 		{
 			// call detail::fetch on each input
 			//util::call(func, )
+			backend.execute(*this);
 		}
 
 		F func;
-		std::tuple<Stream<TDeps, D>...> inputs;
+		std::tuple<StreamNode<TDeps, D>&...> inputs;
 	};
 
-	template <typename T>
-	struct is_stream_type : public std::false_type
-	{};
-
-	template <
-		typename T,
-		typename D
-	>
-	struct is_stream_type<Stream<T, D> > : public std::true_type
-	{};
-
-	template <
-		typename T,
-		typename D,
-		typename TDep
-	>
-		void add_dependency(StreamNode<T, D>& node, TDep& dep)
-	{
-		//static_assert(is_stream_type<TDep>::value, "Non-stream parameter");
-		dep.ptr->successors.push_back(&node);
-	}
-
-	template <
-		typename T,
-		typename D,
-		typename TDep,
-		typename ... TDeps
-	>
-	void add_dependency(StreamNode<T, D>& node, TDep& dep, TDeps&... deps)
-	{
-		//static_assert(is_stream_type<TDep>::value, "Non-stream parameter");
-		dep.ptr->successors.push_back(&node);
-		add_dependency<T, D, TDeps...>(node, deps...);
-	}
-
-	template <
-		typename D,
-		typename F,
-		typename ... TDeps,
-		typename T = std::result_of_t<F(TDeps...)>
-	>
-	auto apply(F&& f, Stream<TDeps, D>... deps) -> Stream<T, D>
-	{
-		// copy deps
-		auto ptr = std::make_shared<OpNode<T, D, F, TDeps...> >(std::forward<F>(f), deps...);
-		add_dependency(*ptr, deps...);
-		return Stream<T, D> {std::move(ptr)};
-	}
-
-	template <
-		typename T,
-		typename D
-	> 
-	auto constant(D& ctx, T&& value) 
-		-> Stream<T, D>
-	{
-		return Stream<T,D> {std::make_shared<ConstNode<T, D> >(std::forward<T>(value))};
-	}
+	
 }
 
 

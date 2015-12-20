@@ -2,7 +2,6 @@
 #define SURFACE_HPP
 
 #include <PixelType.hpp>
-#include <OpenGL.hpp>
 
 namespace ag
 {

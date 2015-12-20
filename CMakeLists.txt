@@ -18,12 +18,14 @@ add_subdirectory(ext/)
 file(
 	GLOB
 	AUTOGRAPH_SOURCES
-	src/*.cpp)
+	src/*.cpp
+	src/backend/opengl/*.cpp)
 
 file(
 	GLOB
 	AUTOGRAPH_HEADERS
-	src/*.hpp)
+	src/*.hpp
+	src/backend/opengl/*.hpp)
 
 include_directories(
 	src/)

@@ -5,12 +5,13 @@
 #include <PixelType.hpp>
 #include <Surface.hpp>
 #include <Stream.hpp>
-#include <Graphics.hpp>
+#include <backend/opengl/Backend.hpp>
+#include <backend/opengl/OpenGL.hpp>
 #include <Utils.hpp>
+#include <Pipeline.hpp>
 
-//#include <optional.hpp>
+#include <optional.hpp>
 #include <utility>
-
 
 /*namespace ag
 {
@@ -33,18 +34,24 @@ int main()
 {
 	glbinding::Binding::initialize();
 
-	using D = ag::graphics::GraphicsContext;
-	D ctx;
+	using D = ag::opengl::OpenGLBackend;
+	D backend;
 
-	auto color = ag::constant<glm::vec4>(ctx, {0.0f, 0.0f, 1.0f, 1.0f});
-	auto size = ag::constant<glm::uvec2>(ctx, { 1280, 720 });
-	auto rt = ag::graphics::clearRT<ag::RGBA8>(ctx, size, color);
-	ag::graphics::displayRT(ctx, rt);
+	ag::Pipeline<D> pp(backend);
+
+	auto& frameTrigger = ag::variable(pp, 0.0);
+	auto& color = ag::constant<glm::vec4>(pp, {0.0f, 0.0f, 1.0f, 1.0f});
+	auto& size = ag::constant<glm::uvec2>(pp, { 1280, 720 });
+	auto& rt = ag::clearRT<ag::RGBA8>(pp, size, color);
+	ag::displayRT<D>(pp, rt);
 
 	auto color2 = ag::apply(
+		pp, 
 		[](glm::vec4 c) -> glm::vec4 {
 			return c + glm::vec4{1.0f, 0.0f, 0.0f, 0.0f};
 		}, color);
+
+	pp.schedule(color);
 
 
 	return 0;

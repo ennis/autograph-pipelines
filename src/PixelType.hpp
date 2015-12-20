@@ -2,7 +2,7 @@
 #define PIXEL_TYPE_HPP
 
 #include <glm/glm.hpp>
-#include <OpenGL.hpp>
+#include <backend/opengl/OpenGL.hpp>
 
 namespace ag
 {
