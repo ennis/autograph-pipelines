@@ -36,6 +36,7 @@ namespace ag
 		>
 		TNode& allocateNode(Args&&... args)
 		{
+			static_assert(std::is_base_of<StreamNodeBase<D>, TNode>::value, "allocateNode: invalid node type");
 			auto ptr = std::make_unique<TNode>(std::forward<Args>(args)...);
 			auto raw_ptr = ptr.get();
 			nodes.emplace_back(std::move(ptr));
