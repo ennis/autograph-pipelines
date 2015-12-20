@@ -106,7 +106,7 @@ namespace ag
 	auto apply(Pipeline<D>& pipeline, F&& f, StreamNode<TDeps, D>&... deps) -> OpNode<T, D, F, TDeps...>&
 	{
 		// copy deps
-		auto& node = pipeline.allocateNode<OpNode<T, D, F, TDeps...> >(pipeline.backend, std::forward<F>(f), deps...);
+		auto& node = pipeline. template allocateNode<OpNode<T, D, F, TDeps...> >(pipeline.backend, std::forward<F>(f), deps...);
 		add_dependency(node, deps...);
 		return node;
 	}
@@ -119,7 +119,7 @@ namespace ag
 	auto constant(Pipeline<D>& pipeline, T&& value)
 		-> ConstNode<T, D>&
 	{
-		auto& node = pipeline.allocateNode<ConstNode<T, D> >(
+		auto& node = pipeline. template allocateNode<ConstNode<T, D> >(
 			pipeline.backend, 
 			std::forward<T>(value));
 		return node;
@@ -136,7 +136,7 @@ namespace ag
 		T&& init_value)
 		-> VarNode<T, D>&
 	{
-		auto& node = pipeline.allocateNode<VarNode<T, D> >(pipeline.backend, std::forward<T>(init_value));
+		auto& node = pipeline. template allocateNode<VarNode<T, D> >(pipeline.backend, std::forward<T>(init_value));
 		return node;
 	}
 
@@ -152,7 +152,7 @@ namespace ag
 		StreamNode<glm::vec4, D>& color_)
 		-> StreamNode<Surface<PixelType>, D>&
 	{
-		auto& node = pipeline.allocateNode<ag::graphics::ClearNode<PixelType, D> >(
+		auto& node = pipeline. template allocateNode<ag::graphics::ClearNode<PixelType, D> >(
 			pipeline.backend,
 			size_,
 			color_);
@@ -169,7 +169,7 @@ namespace ag
 		Pipeline<D>& pipeline,
 		StreamNode<Surface<glm::u8vec4>, D>& rt)
 	{
-		auto& node = pipeline.allocateNode<ag::graphics::DisplayNode<D> >(pipeline.backend, rt);
+		auto& node = pipeline. template allocateNode<ag::graphics::DisplayNode<D> >(pipeline.backend, rt);
 		node.rt.successors.push_back(&node);
 		pipeline.backend.setDisplayNode(node);
 	}

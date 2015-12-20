@@ -7,6 +7,7 @@
 #include <glm/glm.hpp>
 #include <stdexcept>
 #include <optional.hpp>
+#include <format.h>
 
 namespace ag
 {

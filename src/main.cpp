@@ -1,19 +1,11 @@
 #include <iostream>
-#include <format.h>
 #include <glm/glm.hpp>
 
 #include <PixelType.hpp>
 #include <Surface.hpp>
 #include <Stream.hpp>
 #include <backend/opengl/Backend.hpp>
-#include <backend/opengl/OpenGL.hpp>
-#include <Utils.hpp>
 #include <Pipeline.hpp>
-
-#include <optional.hpp>
-#include <utility>
-
-#include <GLFW/glfw3.h>
 
 /*namespace ag
 {
@@ -54,7 +46,6 @@ int main()
 		}, color);
 
 	pp.schedule(color);
-
 
 	return 0;
 }

@@ -19,8 +19,8 @@ namespace graphics {
 			D& backend,
 			StreamNode<glm::uvec2, D>& size_,
 			StreamNode<glm::vec4, D>& color_) :
-		size(std::move(size_)),
-		color(std::move(color_))
+		size(size_),
+		color(color_)
 		{
 			backend.initialize(*this);
 		}
