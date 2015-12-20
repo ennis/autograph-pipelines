@@ -13,6 +13,8 @@
 #include <optional.hpp>
 #include <utility>
 
+#include <GLFW/glfw3.h>
+
 /*namespace ag
 {
 	using namespace gl;

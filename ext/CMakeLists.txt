@@ -19,3 +19,16 @@ if(MSVC)
 	# disable warning 'identifier' : class 'type' needs to have dll-interface to be used by clients of class 'type2'
 	target_compile_options(glbinding INTERFACE /wd4251)
 endif(MSVC)
+
+# GLFW 
+option(BUILD_SHARED_LIBS "..." ON)
+option(GLFW_BUILD_EXAMPLES "..." OFF)
+option(GLFW_BUILD_TESTS "..." OFF)
+option(GLFW_BUILD_DOCS "..." OFF)
+option(GLFW_INSTALL "..." OFF)
+option(GLFW_DOCUMENT_INTERNALS "..." OFF)
+add_subdirectory(glfw)
+set_property(TARGET glfw PROPERTY FOLDER "External")
+target_include_directories(glfw INTERFACE glfw/include)
+
+

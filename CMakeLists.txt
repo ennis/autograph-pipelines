@@ -10,7 +10,6 @@ if(UNIX AND "${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
 	include_directories("/usr/include/c++/v1/")
 endif()
 
-
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
 add_subdirectory(ext/)
@@ -36,5 +35,5 @@ add_executable(
 	${AUTOGRAPH_HEADERS}
 	)
 
-target_link_libraries(autograph cppformat glbinding)
+target_link_libraries(autograph cppformat glbinding glfw)
 target_include_directories(autograph PRIVATE ext/glm)
