@@ -7,6 +7,3 @@
 [submodule "ext/glbinding"]
 	path = ext/glbinding
 	url = https://github.com/ennis/glbinding.git
-[submodule "ext/glfw"]
-	path = ext/glfw
-	url = https://github.com/glfw/glfw.git
