@@ -1,34 +1,88 @@
-# Here we (re-)define cmake targets for the libraries
-# Note: we could use the provided CMakeLists.txt, but we cannot set 
-# any goddamned project options with 'add_subdirectory'. 
-# For example, with cppformat, 'add_subdirectory' will add all tests and examples
-# to the build (and we cannot even put them in a separate group for visual studio!)
+# autograph
+add_subdirectory(autograph EXCLUDE_FROM_ALL)
+target_include_directories(autograph INTERFACE autograph/src/)
 
 # cppformat
-file(GLOB CPPFORMAT_SOURCES cppformat/*.cc)
-file(GLOB CPPFORMAT_HEADERS cppformat/*.h)
-add_library(cppformat ${CPPFORMAT_SOURCES} ${CPPFORMAT_HEADERS})
-set_property(TARGET cppformat PROPERTY FOLDER "External")
-target_include_directories(cppformat INTERFACE cppformat)
+add_subdirectory(cppformat EXCLUDE_FROM_ALL)
 
-# glbinding
-add_subdirectory(glbinding)
-set_property(TARGET glbinding PROPERTY FOLDER "External")
-target_include_directories(glbinding INTERFACE glbinding/source/glbinding/include)
-if(MSVC)
-	# disable warning 'identifier' : class 'type' needs to have dll-interface to be used by clients of class 'type2'
-	target_compile_options(glbinding INTERFACE /wd4251)
-endif(MSVC)
+# mcpp
+add_subdirectory(mcpp EXCLUDE_FROM_ALL)
+target_include_directories(mcpp INTERFACE mcpp/)
+
+
+# assimp
+option(BUILD_SHARED_LIBS "..." OFF)
+option(ASSIMP_BUILD_ASSIMP_TOOLS "..." OFF)
+option(ASSIMP_BUILD_SAMPLES "..." OFF)
+option(ASSIMP_BUILD_TESTS "..." OFF)
+option(ASSIMP_BUILD_OBJ_IMPORTER "..." ON)
+option(ASSIMP_BUILD_3DS_IMPORTER "..." ON)
+option(ASSIMP_BUILD_FBX_IMPORTER "..." ON)
+
+option(ASSIMP_BUILD_IFC_IMPORTER "..." OFF)
+option(ASSIMP_BUILD_OGRE_IMPORTER "..." OFF)
+option(ASSIMP_BUILD_PLY_IMPORTER "..." OFF)
+option(ASSIMP_BUILD_Q3BSP_IMPORTER "..." OFF)
+option(ASSIMP_BUILD_Q3D_IMPORTER "..." OFF)
+option(ASSIMP_BUILD_RAW_IMPORTER "..." OFF)
+option(ASSIMP_BUILD_OFF_IMPORTER "..." OFF)
+option(ASSIMP_BUILD_NFF_IMPORTER "..." OFF)
+option(ASSIMP_BUILD_NDO_IMPORTER "..." OFF)
+option(ASSIMP_BUILD_MS3D_IMPORTER "..." OFF)
+option(ASSIMP_BUILD_MDL_IMPORTER "..." OFF)
+option(ASSIMP_BUILD_MDC_IMPORTER "..." OFF)
+option(ASSIMP_BUILD_MD5_IMPORTER "..." OFF)
+option(ASSIMP_BUILD_Q3D_IMPORTER "..." OFF)
+option(ASSIMP_BUILD_Q3D_IMPORTER "..." OFF)
+option(ASSIMP_BUILD_3D_IMPORTER "..." OFF)
+option(ASSIMP_BUILD_AC_IMPORTER "..." OFF)
+option(ASSIMP_BUILD_ASE_IMPORTER "..." OFF)
+option(ASSIMP_BUILD_ASSBIN_IMPORTER "..." OFF)
+option(ASSIMP_BUILD_ASSIMP_TOOLS "..." OFF)
+option(ASSIMP_BUILD_ASSXML_IMPORTER "..." OFF)
+option(ASSIMP_BUILD_B3D_IMPORTER "..." OFF)
+option(ASSIMP_BUILD_BLEND_IMPORTER "..." OFF)
+option(ASSIMP_BUILD_BVH_IMPORTER "..." OFF)
+option(ASSIMP_BUILD_COB_IMPORTER "..." OFF)
+option(ASSIMP_BUILD_CSM_IMPORTER "..." OFF)
+option(ASSIMP_BUILD_DXF_IMPORTER "..." OFF)
+option(ASSIMP_BUILD_GLTF_IMPORTER "..." OFF)
+option(ASSIMP_BUILD_HMP_IMPORTER "..." OFF)
+option(ASSIMP_BUILD_IFC_IMPORTER "..." OFF)
+option(ASSIMP_BUILD_IRR_IMPORTER "..." OFF)
+option(ASSIMP_BUILD_LWO_IMPORTER "..." OFF)
+option(ASSIMP_BUILD_LWS_IMPORTER "..." OFF)
+option(ASSIMP_BUILD_MD2_IMPORTER "..." OFF)
+option(ASSIMP_BUILD_MD3_IMPORTER "..." OFF)
+
+add_subdirectory(assimp EXCLUDE_FROM_ALL)
+target_include_directories(assimp INTERFACE assimp/include)
+
+# stb
+add_library(stb INTERFACE)
+target_include_directories(stb INTERFACE stb)
 
 # GLFW 
-option(BUILD_SHARED_LIBS "..." ON)
+option(BUILD_SHARED_LIBS "..." OFF)
 option(GLFW_BUILD_EXAMPLES "..." OFF)
 option(GLFW_BUILD_TESTS "..." OFF)
 option(GLFW_BUILD_DOCS "..." OFF)
 option(GLFW_INSTALL "..." OFF)
 option(GLFW_DOCUMENT_INTERNALS "..." OFF)
-add_subdirectory(glfw)
-set_property(TARGET glfw PROPERTY FOLDER "External")
+add_subdirectory(glfw EXCLUDE_FROM_ALL)
 target_include_directories(glfw INTERFACE glfw/include)
 
+# imgui
+file(GLOB IMGUI_SOURCES imgui/*.cpp imgui_glfw3/*.cpp)
+add_library(imgui STATIC ${IMGUI_SOURCES})
+target_include_directories(imgui PUBLIC imgui imgui_glfw3)
+target_link_libraries(imgui PRIVATE glloadgen glfw glm)
 
+
+# glm
+add_library(glm INTERFACE)
+target_include_directories(glm INTERFACE glm)
+target_link_libraries(glm INTERFACE glloadgen)
+
+# glloadgen
+add_subdirectory(glloadgen EXCLUDE_FROM_ALL)

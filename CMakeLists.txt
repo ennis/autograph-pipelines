@@ -1,39 +1,18 @@
 cmake_minimum_required(VERSION 3.2)
 
+project(pipelines CXX)
 set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
-project(autograph CXX)
+add_definitions(-DNOMINMAX -DGLM_FORCE_RADIANS)
 
-############## Hack no1 ##############
-if(UNIX AND "${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -stdlib=libc++ -lc++abi")
-	include_directories("/usr/include/c++/v1/")
-endif()
+find_package(OpenGL REQUIRED)
+set(Boost_USE_STATIC_LIBS ON)
+find_package(Boost COMPONENTS thread filesystem system REQUIRED)
 
-set_property(GLOBAL PROPERTY USE_FOLDERS ON)
+add_subdirectory(ext EXCLUDE_FROM_ALL)
 
-add_subdirectory(ext/)
+file(GLOB APP_SOURCES src/*.cpp)
+file(GLOB APP_HEADERS src/*.hpp)
 
-file(
-	GLOB
-	AUTOGRAPH_SOURCES
-	src/*.cpp
-	src/backend/opengl/*.cpp)
-
-file(
-	GLOB
-	AUTOGRAPH_HEADERS
-	src/*.hpp
-	src/backend/opengl/*.hpp)
-
-include_directories(
-	src/)
-
-add_executable(
-	autograph
-	${AUTOGRAPH_SOURCES}
-	${AUTOGRAPH_HEADERS}
-	)
-
-target_link_libraries(autograph cppformat glbinding glfw)
-target_include_directories(autograph PRIVATE ext/glm)
+add_executable(pipelines ${APP_SOURCES} ${APP_HEADERS})
+target_link_libraries(pipelines autograph glm assimp glfw cppformat stb imgui mcpp)

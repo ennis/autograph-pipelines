@@ -1,0 +1,6 @@
+find_package(OpenGL REQUIRED)
+add_library(glloadgen STATIC gl_core_4_5.cpp)
+target_link_libraries(glloadgen ${OPENGL_LIBRARIES})
+set_property(TARGET glloadgen PROPERTY FOLDER "External")
+target_include_directories(glloadgen INTERFACE ".")
+target_include_directories(glloadgen PRIVATE ${OPENGL_INCLUDE_DIR})
