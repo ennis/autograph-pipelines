@@ -91,6 +91,7 @@ struct gl_scheduler {
     copy_tex_device_device,
     memory_barrier,
     upload_uniform,
+    upload_buffer,  // dynamic size
     dispatch_compute,
     host_operation,
     end_frame
@@ -102,41 +103,43 @@ struct gl_scheduler {
   };
 
   struct op_clear_tex_float : public op {
-    std::shared_ptr<gl_texture> target;
+    gl_texture* target;
     float clear_color[4];
   };
 
   struct op_clear_tex_integer : public op {
-    std::shared_ptr<gl_texture> target;
+    gl_texture* target;
     int clear_color[4];
   };
 
   struct op_copy_texture_host_device : public op {
-    std::shared_ptr<uint8_t[]> src; // source data, linear layout
-    std::shared_ptr<gl_texture> dest; // destination texture
+    uint8_t* src; // source data, linear layout
+    size_t size;
+    gl_texture dest; // destination texture
   };
 
   struct op_copy_texture_device_device : public op {
     // same size, same format
-    std::shared_ptr<gl_texture> src; // source texture
-    std::shared_ptr<gl_texture> dest; // destination texture
+    gl_texture* src; // source texture
+    gl_texture* dest; // destination texture
   };
 
   struct op_memory_barrier : public op {};
 
   struct op_upload_uniform 
   {
-    std::shared_ptr<uint8_t[]> src;
-    std::shared_ptr<gl_buffer_slice> dest;
+    uint8_t* src;
+    size_t size;
+    gl_buffer_slice* dest;
   };
 
   struct op_dispatch_compute : public op 
   {
     // buffer bindings (GPU buffer slices)
     // image bindings (textures)
-    std::vector<std::shared_ptr<gl_buffer_slice>> uniforms_;
-    std::vector<std::shared_ptr<gl_buffer_slice>> shader_storage_;
-    std::vector<std::shared_ptr<gl_buffer_slice>> ssbo_;
+    std::vector<gl_buffer_slice*> uniforms_;
+    std::vector<gl_buffer_slice*> shader_storage_;
+    std::vector<gl_buffer_slice*> ssbo_;
   };
 
   texture_cache texcache_;
