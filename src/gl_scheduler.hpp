@@ -9,6 +9,7 @@
 #include "image.hpp"
 #include "upload_buffer.hpp"
 #include "texture_cache.hpp"
+#include "gl_framebuffer.hpp"
 
 enum class gl_surface_kind {
   texture,
@@ -99,38 +100,60 @@ struct gl_scheduler {
 
   struct op {
     gl_opcode opcode;
-    virtual void execute() {}
+	virtual void execute(gl_scheduler& sched) {}
+  };
+  
+  struct op_clear_fbo_float : public op {
+	  GLuint fbo;
+	  GLbitfield bufmask;
+	  float clear_color[4];
+	  void execute(gl_scheduler& sched) override;
+  };
+
+  struct op_clear_fbo_integer : public op {
+	  GLuint fbo;
+	  GLbitfield bufmask;
+	  int clear_color[4];
+	  void execute(gl_scheduler& sched) override;
   };
 
   struct op_clear_tex_float : public op {
     gl_texture* target;
+	unsigned level;
     float clear_color[4];
+	void execute(gl_scheduler& sched) override;
   };
 
   struct op_clear_tex_integer : public op {
     gl_texture* target;
     int clear_color[4];
+	void execute(gl_scheduler& sched) override;
   };
 
   struct op_copy_texture_host_device : public op {
     uint8_t* src; // source data, linear layout
     size_t size;
     gl_texture dest; // destination texture
+	void execute(gl_scheduler& sched) override;
   };
 
   struct op_copy_texture_device_device : public op {
     // same size, same format
     gl_texture* src; // source texture
     gl_texture* dest; // destination texture
+	void execute(gl_scheduler& sched) override;
   };
 
-  struct op_memory_barrier : public op {};
+  struct op_memory_barrier : public op {
+	  void execute(gl_scheduler& sched) override;
+  };
 
-  struct op_upload_uniform 
+  struct op_upload_uniform : public op
   {
     uint8_t* src;
     size_t size;
     gl_buffer_slice* dest;
+	void execute(gl_scheduler& sched) override;
   };
 
   struct op_dispatch_compute : public op 
@@ -142,9 +165,12 @@ struct gl_scheduler {
     std::vector<gl_buffer_slice*> ssbo_;
   };
 
+  void execute_op(op& op);
+
   texture_cache texcache_;
   std::vector<std::unique_ptr<sched_node>> nodes_;
-  std::vector<std::shared_ptr<gl_texture>> texres_;
-  std::vector<std::shared_ptr<gl_buffer>> bufres_;
+  std::vector<std::unique_ptr<gl_texture>> texres_;
+  std::vector<std::unique_ptr<gl_buffer>> bufres_;
+  std::vector<std::unique_ptr<gl_framebuffer>> fbores_;
   upload_buffer uploadbuf_;
 };
