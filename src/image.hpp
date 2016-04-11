@@ -46,6 +46,8 @@ struct image_view {
   // image_view sub_view()
 };
 
+/////////////////////////////////////////////////////
+// image_desc
 struct image_desc {
   image_dimensions dimensions;
   image_format format;
@@ -53,9 +55,11 @@ struct image_desc {
   unsigned height; // -1 if pipeline-dynamic
   unsigned depth;  // or array size
   unsigned num_mips;
-  storage_hint storage_hint;
+  storage_hint storage_hint_;
 };
 
+/////////////////////////////////////////////////////
+// image_impl
 struct image_impl : public value_impl {
   image_impl() : value_impl{value_kind::image} {}
 
@@ -69,12 +73,14 @@ struct image_impl : public value_impl {
   image_desc desc_;
 };
 
+/////////////////////////////////////////////////////
+// image
 struct image_node : public node {
   enum class storage_type { device, host };
 
   image_node() : node{node_kind::image}, storage{nullptr} {}
   ~image_node() {
-    if (storage_type == storage_type::host) {
+    if (storage_type_ == storage_type::host) {
       storage.linear_data.~unique_ptr<uint8_t[]>();
     }
   }
@@ -91,10 +97,10 @@ struct image_node : public node {
 
     auto n = std::make_unique<image_node>();
     n->dest = image_impl{n.get(), desc, 0};
-    n->storage_type = (desc.storage_hint == storage_hint::device)
+    n->storage_type_ = (desc.storage_hint == storage_hint::device)
                           ? storage_type::device
                           : storage_type::host;
-    if (n->storage_type == storage_type::device) {
+    if (n->storage_type_ == storage_type::device) {
       // TODO
       assert(false);
     } else {
@@ -104,7 +110,7 @@ struct image_node : public node {
   }
 
   image_impl dest;
-  storage_type storage_type;
+  storage_type storage_type_;
 
   union U {
     std::unique_ptr<uint8_t[]> linear_data;
@@ -113,6 +119,9 @@ struct image_node : public node {
   } storage;
 };
 
+
+/////////////////////////////////////////////////////
+// subimage
 struct subimage_2d_node : public node {
   subimage_2d_node() : node{node_kind::subimage_2d} {}
 
