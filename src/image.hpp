@@ -97,7 +97,7 @@ struct image_node : public node {
 
     auto n = std::make_unique<image_node>();
     n->dest = image_impl{n.get(), desc, 0};
-    n->storage_type_ = (desc.storage_hint == storage_hint::device)
+    n->storage_type_ = (desc.storage_hint_ == storage_hint::device)
                           ? storage_type::device
                           : storage_type::host;
     if (n->storage_type_ == storage_type::device) {
@@ -163,8 +163,8 @@ public:
 
   image eager();
 
-  template <typename Resources>
-  image filter(const char* glsl, Resources...&& resources)
+  template <typename... Resources>
+  image filter(const char* glsl, Resources&&... resources)
   {
   }
 

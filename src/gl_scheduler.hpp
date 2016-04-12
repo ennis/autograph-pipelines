@@ -107,6 +107,7 @@ struct gl_scheduler {
 	  GLuint fbo;
 	  GLbitfield bufmask;
 	  float clear_color[4];
+	  float depth;
 	  void execute(gl_scheduler& sched) override;
   };
 
@@ -133,18 +134,22 @@ struct gl_scheduler {
   struct op_copy_texture_host_device : public op {
     uint8_t* src; // source data, linear layout
     size_t size;
-    gl_texture dest; // destination texture
+    gl_texture* dest; // destination texture
+	unsigned level;
 	void execute(gl_scheduler& sched) override;
   };
 
   struct op_copy_texture_device_device : public op {
     // same size, same format
     gl_texture* src; // source texture
+	unsigned srclevel;
     gl_texture* dest; // destination texture
+	unsigned dstlevel;
 	void execute(gl_scheduler& sched) override;
   };
 
   struct op_memory_barrier : public op {
+	  GLbitfield barriers;
 	  void execute(gl_scheduler& sched) override;
   };
 

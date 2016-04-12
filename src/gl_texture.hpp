@@ -24,4 +24,4 @@ struct gl_format_info {
   int num_comp;
 };
 
-const gl_format_info &image_format_to_gl(image_format fmt);
+const gl_format_info &get_gl_image_format_info(image_format fmt);

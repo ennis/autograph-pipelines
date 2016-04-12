@@ -35,6 +35,7 @@
 			#define NOMINMAX
 		#endif
 		#include <windows.h>
+		#undef MemoryBarrier
 	#elif (_MSC_VER >= 800) || defined(_STDCALL_SUPPORTED) || defined(__BORLANDC__)
 		#ifndef WIN32_LEAN_AND_MEAN
 			#define WIN32_LEAN_AND_MEAN 1
@@ -43,6 +44,7 @@
 			#define NOMINMAX
 		#endif
 		#include <windows.h>
+		#undef MemoryBarrier
 	#else
 		#define APIENTRY
 	#endif

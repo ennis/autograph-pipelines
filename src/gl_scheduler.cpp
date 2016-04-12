@@ -27,52 +27,50 @@ void gl_scheduler::evaluate(const image_impl &img, const gl_surface &target) {
 
 void gl_scheduler::schedule(const value_impl &img) {}
 
-void gl_scheduler::execute_op(op &op) {
-  switch (op.opcode) {
-  case gl_opcode::clear_fbo_float: {
-    auto &p = static_cast<op_clear_fbo_float &>(op);
-    
-  } break;
-  case gl_opcode::clear_tex_float: {
-	  auto& p = static_cast<op_clear_tex_float &>(op);
-	  gl::ClearTexImage(p.target->obj_.get(), p.level, gl::RGBA, gl::FLOAT, p.clear_color);
-  } break;
-  }
+void gl_scheduler::execute_op(op &op) {}
+
+void gl_scheduler::op_clear_fbo_float::execute(gl_scheduler &sched) {
+  gl::BindFramebuffer(gl::FRAMEBUFFER, fbo);
+  gl::ClearColor(clear_color[0], clear_color[1], clear_color[2],
+                 clear_color[3]);
+  gl::ClearDepthf(depth);
+  gl::Clear(bufmask);
 }
 
-void gl_scheduler::op_clear_fbo_float::execute(gl_scheduler & sched)
-{
-	gl::BindFramebuffer(gl::FRAMEBUFFER, fbo);
-	gl::ClearColor(clear_color[0], clear_color[1], clear_color[2],
-		clear_color[2]);
-	gl::Clear(bufmask);
+void gl_scheduler::op_clear_fbo_integer::execute(gl_scheduler &sched) {
+  // gl::ClearNamedFramebufferiv()
 }
 
-void gl_scheduler::op_clear_fbo_integer::execute(gl_scheduler & sched)
+void gl_scheduler::op_clear_tex_float::execute(gl_scheduler &sched) {
+  gl::ClearTexImage(target->obj_.get(), level, gl::RGBA, gl::FLOAT,
+                    clear_color);
+}
+
+void gl_scheduler::op_clear_tex_integer::execute(gl_scheduler &sched) 
 {
 	// TODO
 }
 
-void gl_scheduler::op_clear_tex_float::execute(gl_scheduler & sched)
-{
+void gl_scheduler::op_copy_texture_host_device::execute(gl_scheduler &sched) {
+  auto glfmt = get_gl_image_format_info(dest->desc_.format);
+  // assume 2D texture
+  gl::TextureSubImage2D(dest->obj_.get(), level, 0, 0, dest->desc_.width,
+                        dest->desc_.height, glfmt.external_fmt, glfmt.type,
+                        src);
 }
 
-void gl_scheduler::op_clear_tex_integer::execute(gl_scheduler & sched)
-{
+void gl_scheduler::op_copy_texture_device_device::execute(gl_scheduler &sched) {
+  gl::CopyImageSubData(src->obj_.get(), gl::TEXTURE_2D, srclevel, 0, 0, 0,
+                       dest->obj_.get(), gl::TEXTURE_2D, dstlevel, 0, 0, 0,
+                       src->desc_.width, src->desc_.height, src->desc_.depth);
 }
 
-void gl_scheduler::op_copy_texture_host_device::execute(gl_scheduler & sched)
+void gl_scheduler::op_memory_barrier::execute(gl_scheduler &sched) 
 {
+	gl::MemoryBarrier(barriers);
 }
 
-void gl_scheduler::op_copy_texture_device_device::execute(gl_scheduler & sched)
+void gl_scheduler::op_upload_uniform::execute(gl_scheduler &sched) 
 {
-}
-
-void gl_scheduler::op_memory_barrier::execute(gl_scheduler & sched)
-{
-}
-
-void gl_scheduler::op_upload_uniform::execute(gl_scheduler & sched)
-{
+	// ???
 }
