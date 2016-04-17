@@ -1,45 +1,10 @@
 #pragma once
-#include <gl_core_4_5.hpp>
-#include "format.hpp"
-#include "node.hpp"
-#include "value.hpp"
-#include "image_desc.hpp"
-#include "gl_texture.hpp"
-
-// linear image data
-struct image_view {
-  // w, h, d, pitch, format, pointer
-  image_format format;
-  unsigned width;
-  unsigned height;
-  unsigned depth;
-  size_t stride; // row stride
-  void *data;
-
-  // image_view sub_view()
-};
+#include "image_impl.hpp"
 
 /////////////////////////////////////////////////////
-// image_impl
-struct image_impl : public value_impl {
-  image_impl() : value_impl{value_kind::image} {}
-
-  image_impl(node *predecessor, const image_desc &desc, size_t port_id = 0)
-      : value_impl{value_kind::image, predecessor, port_id}, desc_{desc} {}
-
-  static bool classof(const value_impl &v) {
-    return v.kind() == value_kind::image;
-  }
-
-  image_desc desc_;
-
-  ///////////////////////////////////////////
-  storage_type stype;
-  union U {
-	  uint8_t* linear_data;
-	  gl_texture* device_tex;
-  } storage;
-};
+// binders
+void bind_shader_resource(shader_resources &res, image &img);
+void bind_shader_resource(shader_resources &res, buffer &img);
 
 /////////////////////////////////////////////////////
 // Proxy for image_impl
@@ -53,16 +18,52 @@ public:
                         unsigned depth, const glm::vec4 &rgba);
 
   image subimage(const rect_2d &rect);
-
   image cast(image_format format);
 
   image &set_storage_hint(storage_hint hint);
 
   image eager();
 
+  //////////////////////////////////////////////
+  // Operation of filter():
+  // bind the input image to texture unit #0
+  // bind the output image to image unit #0
+  // bind other resources
+  // return: image bound to img unit #0
   template <typename... Resources>
-  image filter(const char* glsl, Resources&&... resources)
-  {
+  image filter(const char *glsl, Resources &&... resources) {}
+
+  template <typename... Resources>
+  image filter(compute_pipeline_program &pp, int local_size_x, int local_size_y,
+               Resources &&... resources) {
+    shader_resources res;
+    shader_resource tex0;
+    tex0.access = shader_resource_access::read;
+    tex0.type = shader_resource_type::sampled_image;
+    tex0.slot = 0;
+    tex0.resource = impl_;
+    res.push_back(std::move(tex0));
+    shader_resource img0;
+	auto img_out = std::make_shared<image_impl>(nullptr, impl_->desc_);
+    img0.access = shader_resource_access::write;
+    img0.type = shader_resource_type::storage_image;
+    img0.slot = 0;
+	img0.resource = img_out;
+    // TODO
+    // iterate over resources
+    // image -> sampled_image
+    // buffer -> uniform buffer
+    // T -> uniform buffer
+    //for_each_in_tuple(std::forward_as_tuple(resources...), [&](auto &&v) {});
+
+    auto n = compute_node::create(
+        pp, compute_workspace::make_2d(
+                extents_2d{this->impl_->desc_.width, impl_->desc_.height},
+                extents_2d{local_size_x, local_size_y}),
+        std::move(res));
+
+	img_out->pred_ = n.get();
+	return image{ std::move(img_out) };
   }
 
   // mark this image for rescheduling
@@ -74,6 +75,10 @@ public:
     impl_->name_ = std::move(name);
     return *this;
   }
+
+  // TODO: downsample/upsample
+  // TODO: gen_mip_maps
+  // TODO: ...
 
   image(std::shared_ptr<image_impl> impl) : impl_(impl) {}
 

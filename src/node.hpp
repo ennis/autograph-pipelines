@@ -27,7 +27,7 @@ struct node {
   bool dirty() const { return dirty_; }
   void set_dirty() { dirty_ = true; }
 
-  bool dirty_;
+  bool dirty_ = true;
   node_kind kind_;
   size_t uid_;
   static size_t global_node_uid;

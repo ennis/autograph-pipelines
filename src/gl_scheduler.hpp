@@ -85,6 +85,17 @@ enum class gl_shader_resource_state_mask
 
 ENUM_BIT_FLAGS_OPERATORS(gl_shader_resource_state_mask)
 
+struct resource_allocator
+{
+	resource_allocator();
+
+	void init_value(value_impl& val);
+
+	void recycle_texture(image_desc& wanted);
+
+	std::vector<value_impl*> recycle_stack;
+};
+
 /////////////////////////////////////////////////////
 //
 struct gl_scheduler : public scheduler {
@@ -97,7 +108,8 @@ struct gl_scheduler : public scheduler {
   //   in: image, target surface
   //   out: void
   // side-effects: validate all predecessors of the node
-  void evaluate(const image_impl &img, const gl_surface &target);
+  void evaluate(image_impl &img, gl_surface &target);
+
 
   // schedule: mark a node (and its successors) dirty
   //   in: value
@@ -237,6 +249,9 @@ struct gl_scheduler : public scheduler {
 	  GLenum index_type;
 	  void execute(gl_scheduler &sched) override;
   };
+
+  // private:
+  void evaluate_private(value_impl& v, std::vector<value_impl*>& pred_stack);
 
   texture_cache texcache_;
   std::vector<std::unique_ptr<gl_texture>> texres_;

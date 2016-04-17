@@ -1,6 +1,5 @@
 #include "pipeline_program.hpp"
 
-#include <experimental/filesystem>
 #include <cppformat/format.h>
 #include <gsl.h>
 #include <iostream>
@@ -271,16 +270,17 @@ struct program_cache {
 static program_cache g_program_cache{"shadercache"};
 
 compute_pipeline_program compute_pipeline_program::compile_from_file(
-    const char *file_name_, std::initializer_list<pp_define> defines_) {
+    std::experimental::filesystem::path path_,
+    std::initializer_list<pp_define> defines_) {
   compute_pipeline_program pp;
-  pp.src = shader_source{shader_source::location::file, std::move(file_name_)};
+  pp.src = shader_source{shader_source::location::file, path_.string()};
   pp.defines = defines_;
   return std::move(pp);
 }
 
 compute_pipeline_program
 compute_pipeline_program::compile_from_source(const char *src) {
-	return compute_pipeline_program{};
+  return compute_pipeline_program{};
 }
 
 graphics_pipeline_program graphics_pipeline_program::compile_from_file(
@@ -308,7 +308,12 @@ auto make_defines_c_strings(std::vector<pp_define> defines,
                             std::vector<std::string> &out_str) {
   std::vector<const char *> c_strings;
   for (auto &&d : defines) {
-    out_str.push_back(std::string(d.define) + "=" + d.value);
+    auto str = std::string(d.define);
+    if (strlen(d.value)) {
+      str += "=";
+      str += d.value;
+    }
+    out_str.push_back(std::move(str));
   }
   for (auto &&d : out_str) {
     c_strings.push_back(d.c_str());

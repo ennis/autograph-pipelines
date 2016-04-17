@@ -1,9 +1,10 @@
 #pragma once
+#include <experimental/filesystem>
+#include <string>
+#include <vector>
 
 #include <autograph/utils.hpp>
 #include <gl_core_4_5.hpp>
-#include <string>
-#include <vector>
 
 struct shader_source {
   enum class location { file, embedded };
@@ -175,7 +176,7 @@ struct compute_pipeline_program {
   std::vector<pp_define> defines;
 
   static compute_pipeline_program
-  compile_from_file(const char *file_name_,
+  compile_from_file(std::experimental::filesystem::path path_,
                     std::initializer_list<pp_define> defines_);
 
   static compute_pipeline_program compile_from_source(const char *src);

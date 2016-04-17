@@ -37,7 +37,7 @@ struct compute_node : public node {
   }
 
   compute_workspace ws;
-  std::shared_ptr<compute_pipeline_program> pp;
+  compute_pipeline_program* pp;
   shader_resources res;
 
   virtual void traverse(traversal_visitor &v) override {
@@ -48,9 +48,13 @@ struct compute_node : public node {
     }
   }
 
-  static void create(const compute_pipeline_program &prog,
-                     const compute_workspace &ws, const shader_resources &res,
-                     gsl::span<std::shared_ptr<value_impl>> out_res) {
-    // fill out entries of out_res with pointers to the written-to nodes
+  static std::shared_ptr<compute_node> create(compute_pipeline_program& prog,
+                     const compute_workspace &ws, shader_resources res) 
+  {
+	  auto n = std::make_shared<compute_node>();
+	  n->ws = ws;
+	  n->res = std::move(res);
+	  n->pp = &prog;
+	  return std::move(n);
   }
 };

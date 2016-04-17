@@ -13,6 +13,9 @@ enum class image_dimensions {
 };
 
 struct position_2d {
+	position_2d() = default;
+	position_2d(unsigned x_, unsigned y_) : x{ x_ }, y{ y_ }
+	{}
 	unsigned x = 0;
 	unsigned y = 0;
 };
@@ -27,6 +30,14 @@ struct extents_2d {
 };
 
 struct rect_2d {
+	rect_2d() = default;
+
+	rect_2d(position_2d pos_, extents_2d size_ = extents_2d{}) : pos{ pos_ }, size{ size_ }
+	{}
+
+	rect_2d(unsigned x, unsigned y, int w, int h) : pos{ x, y }, size{w, h}
+	{}
+
 	position_2d pos;
 	extents_2d size;
 };

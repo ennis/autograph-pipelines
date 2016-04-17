@@ -380,29 +380,42 @@ struct style {
 
 namespace fs = std::experimental::filesystem;
 
-fs::path find_project_root(const char *name) {
-  auto path = fs::current_path();
-  if (!fs::is_directory(path / name)) {
-    path = path.parent_path();
-    if (!fs::is_directory(path / name)) {
+constexpr const char proj_name[] = "autograph-pipelines";
+
+fs::path project_root() {
+  static bool found = false;
+  static auto path = fs::current_path();
+  if (!found) {
+    if (!fs::is_directory(path / proj_name)) {
       path = path.parent_path();
-      if (!fs::is_directory(path / name)) {
+      if (!fs::is_directory(path / proj_name)) {
         path = path.parent_path();
-        if (!fs::is_directory(path / name)) {
+        if (!fs::is_directory(path / proj_name)) {
           path = path.parent_path();
-          if (!fs::is_directory(path / name)) {
+          if (!fs::is_directory(path / proj_name)) {
             path = path.parent_path();
-            if (!fs::is_directory(path / name)) {
-              throw std::runtime_error(
-                  fmt::format("project root directory not found: {}", name));
+            if (!fs::is_directory(path / proj_name)) {
+              path = path.parent_path();
+              if (!fs::is_directory(path / proj_name)) {
+                throw std::runtime_error(fmt::format(
+                    "project root directory not found: {}", proj_name));
+              }
             }
           }
         }
       }
     }
+    found = true;
   }
-  return std::move(path / name);
+  return std::move(path / proj_name);
 }
+
+compute_pipeline_program pp_blur_h =
+    compute_pipeline_program::compile_from_file(
+        project_root() / "glsl/blur.glsl", {{"BLUR_H", ""}, { "FORMAT", "rgba8" } });
+compute_pipeline_program pp_blur_v =
+    compute_pipeline_program::compile_from_file(
+        project_root() / "glsl/blur.glsl", {{"BLUR_V", ""}, { "FORMAT", "rgba8" } });
 
 int main() {
   /* Initialize the library */
@@ -426,8 +439,13 @@ int main() {
   gl::sys::LoadFunctions();
   ImGui_ImplGlfwGL3_Init(window, true);
 
-  fs::path proot = find_project_root("autograph-pipelines");
+  fs::path proot = project_root();
   auto img1 = load_image(proot / "img/tonberry.jpg");
+  auto imgBlur = img1
+	  .subimage(rect_2d{0, 0, 128, 128})
+	  .filter(pp_blur_h, 16, 16, 1.0f)
+	  .filter(pp_blur_v, 16, 16, 1.0f);
+
 
   /* Loop until the user closes the window */
   while (!glfwWindowShouldClose(window)) {

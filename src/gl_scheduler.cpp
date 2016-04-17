@@ -83,10 +83,22 @@ struct image_impl_data {
 
 void gl_scheduler::optimize(std::shared_ptr<value_impl> v) {}
 
-void gl_scheduler::evaluate(const image_impl &img, const gl_surface &target) {
-  // check if img is marked dirty
-  // yes: eval img
-  // no: return resource associated w/ img
+void gl_scheduler::evaluate_private(value_impl& v, std::vector<value_impl*>& pred_stack)
+{
+	auto n = v.pred_;
+
+	if (auto nn = dyn_cast<compute_node>(n)) {
+		for (auto& r : nn->res) {
+			if (not_empty(r.access & shader_resource_access::read)) {
+				if (auto img = dyn_cast<image_impl>(r.resource.get())) {
+					evaluate_private(*img, pred_stack);
+				}
+			}
+		}
+
+		// dispatch compute
+
+	}
 
   // eval img:
   //	eval dependencies

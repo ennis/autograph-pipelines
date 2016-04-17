@@ -20,6 +20,10 @@ struct gl_impl_limits
 	int max_compute_work_group_size;
 
 	int uniform_buffer_alignment;
+
+	int default_compute_local_size_x;
+	int default_compute_local_size_y;
+	int default_compute_local_size_z;
 };
 
 extern gl_impl_limits g_gl_impl_limits;
