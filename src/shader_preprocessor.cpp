@@ -92,7 +92,7 @@ std::string preprocess(const char *srcpath, const char **defines,
     argv[i] = argv_str[i].c_str();
   }
 
-  mcpp_lib_main(argv.size(), const_cast<char **>(argv.data()));
+  mcpp_lib_main((int)argv.size(), const_cast<char **>(argv.data()));
   const char *buf = mcpp_get_mem_buffer(OUT);
   const char *err = mcpp_get_mem_buffer(ERR);
   std::clog << err << '\n';
@@ -101,5 +101,6 @@ std::string preprocess(const char *srcpath, const char **defines,
 
 std::string preprocess_shader(const char *srcpath,
                               std::vector<const char *> defs) {
-  auto src = preprocess(srcpath, defs.data(), defs.size());
+  auto src = preprocess(srcpath, defs.data(), (int)defs.size());
+  return src;
 }

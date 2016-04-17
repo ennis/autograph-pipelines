@@ -1,5 +1,6 @@
 #include "gl_texture.hpp"
 #include <stdexcept>
+#include <cassert>
 
 static gl_format_info glfmt_rgba8_unorm{gl::RGBA8, gl::RGBA, gl::UNSIGNED_BYTE,
                                         4};

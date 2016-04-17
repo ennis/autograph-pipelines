@@ -1,13 +1,15 @@
-#include "MurmurHash3.h"
 #include "pipeline_program.hpp"
-#include "shader_preprocessor.hpp"
 
 #include <experimental/filesystem>
-#include <format.h>
+#include <cppformat/format.h>
 #include <gsl.h>
 #include <iostream>
 #include <sstream>
 #include <unordered_map>
+
+#include "MurmurHash3.h"
+#include "gl_limits.hpp"
+#include "shader_preprocessor.hpp"
 
 namespace {
 
@@ -175,11 +177,12 @@ GLuint create_graphics_program(const char *vs_src, const char *fs_src,
   return program_obj;
 }
 
-GLuint createVertexArrayObject(gsl::span<const gl_vertex_attribute> attribs) {
+GLuint
+create_vertex_array_object(gsl::span<const gl_vertex_attribute> attribs) {
   GLuint strides[gl_max_vertex_buffers] = {0};
   GLuint vertex_array_obj;
   gl::CreateVertexArrays(1, &vertex_array_obj);
-  assert(attribs.size() < gl_max_vertex_attributes);
+  assert(attribs.size() < g_gl_impl_limits.max_vertex_attributes);
   for (int attribindex = 0; attribindex < attribs.size(); ++attribindex) {
     const auto &a = attribs[attribindex];
     assert(a.slot < gl_max_vertex_buffers);
@@ -208,10 +211,12 @@ struct program_cache {
     program_binary_file
   };
 
+  // GLuint query_cache()
+
   GLuint query_cache_compute(const char *src, cache_action action,
                              cache_mode mode) {
     // hash the shader source code
-    auto len = std::strlen(src);
+    int len = (int)std::strlen(src);
     uint64_t hash[2];
     hash[0] = 42;
     hash[1] = 816;
@@ -254,10 +259,12 @@ struct program_cache {
     return prog;
   }
 
+  GLuint query_cache_graphics(const char *src, cache_action action,
+                              cache_mode mode) {}
+
   // Key=64-bit hash of the shader GLSL source
   // TODO should be refcounted
   std::unordered_map<uint64_t, GLuint> cscache;
-  std::unordered_map<uint64_t, GLuint> gscache;
   std::experimental::filesystem::path cachedir;
 };
 
@@ -265,24 +272,115 @@ static program_cache g_program_cache{"shadercache"};
 
 compute_pipeline_program compute_pipeline_program::compile_from_file(
     const char *file_name_, std::initializer_list<pp_define> defines_) {
-  std::vector<std::string> defs;
-  std::vector<const char *> pdefs;
-  defs.push_back("_COMPUTE_");
-  for (auto &&d : defines_) {
-    defs.push_back(std::string(d.define) + "=" + d.value);
-  }
-  for (auto &&d : defs) {
-    pdefs.push_back(d.c_str());
-  }
-  auto src = preprocess(file_name_, pdefs.data(), pdefs.size());
-  auto prog = g_program_cache.query_cache_compute(
-      src.c_str(), program_cache::cache_action::load_and_cache,
-      program_cache::cache_mode::program_binary_file);
   compute_pipeline_program pp;
   pp.src = shader_source{shader_source::location::file, std::move(file_name_)};
-  pp.gl_program = prog;
+  pp.defines = defines_;
   return std::move(pp);
 }
 
 compute_pipeline_program
-compute_pipeline_program::compile_from_source(const char *src) {}
+compute_pipeline_program::compile_from_source(const char *src) {
+	return compute_pipeline_program{};
+}
+
+graphics_pipeline_program graphics_pipeline_program::compile_from_file(
+    const char *file_name_, std::initializer_list<pp_define> defines_,
+    pipeline_stages stages_,
+    std::initializer_list<gl_vertex_attribute> vertex_attributes_,
+    const gl_depth_stencil_state &depth_stencil_state_,
+    const gl_rasterizer_state &rasterizer_state_,
+    std::initializer_list<gl_blend_state> blend_) {
+  graphics_pipeline_program pp;
+  pp.src = shader_source{shader_source::location::file, std::move(file_name_)};
+  pp.defines = defines_;
+  pp.stages = stages_;
+  pp.draw_state.mask = gl_draw_state_mask::rasterizer_state |
+                       gl_draw_state_mask::blend_states |
+                       gl_draw_state_mask::depth_stencil_state;
+  pp.draw_state.blend_states = blend_;
+  pp.draw_state.rasterizer_state = rasterizer_state_;
+  pp.draw_state.depth_stencil_state = depth_stencil_state_;
+  pp.attribs = vertex_attributes_;
+  return std::move(pp);
+}
+
+auto make_defines_c_strings(std::vector<pp_define> defines,
+                            std::vector<std::string> &out_str) {
+  std::vector<const char *> c_strings;
+  for (auto &&d : defines) {
+    out_str.push_back(std::string(d.define) + "=" + d.value);
+  }
+  for (auto &&d : out_str) {
+    c_strings.push_back(d.c_str());
+  }
+  return std::move(c_strings);
+}
+
+void compute_pipeline_program::do_load() {
+  if (gl_program)
+    return;
+
+  if (src.loc == shader_source::location::file) {
+    std::vector<std::string> def_str;
+    auto def_c_str = make_defines_c_strings(defines, def_str);
+    def_c_str.push_back("_COMPUTE_");
+    const char *file_path = src.source_or_file_path.c_str();
+    auto src = preprocess(file_path, def_c_str.data(), (int)def_c_str.size());
+    gl_program = g_program_cache.query_cache_compute(
+        src.c_str(), program_cache::cache_action::load_and_cache,
+        program_cache::cache_mode::program_binary_file);
+  } else {
+    gl_program = create_compute_program(src.source_or_file_path.c_str());
+  }
+}
+
+// No caching yet
+void graphics_pipeline_program::do_load() {
+  if (gl_program)
+    return;
+
+  // combined source file
+  // note: preprocess re-loads the file for each stage (up to 5 times)
+  // TODO optimize this!
+  if (src.loc == shader_source::location::file) {
+    const char *file_path = src.source_or_file_path.c_str();
+    std::vector<std::string> def_str;
+    auto def_c_str = make_defines_c_strings(defines, def_str);
+
+    std::string vs_src, fs_src, gs_src, tes_src, tcs_src;
+
+    def_c_str.push_back("_VERTEX_");
+    vs_src = preprocess(file_path, def_c_str.data(), (int)def_c_str.size());
+    def_c_str.pop_back();
+
+    def_c_str.push_back("_PIXEL_");
+    fs_src = preprocess(file_path, def_c_str.data(), (int)def_c_str.size());
+    def_c_str.pop_back();
+
+    if (not_empty(stages & pipeline_stages::geometry)) {
+      def_c_str.push_back("_GEOMETRY_");
+      gs_src = preprocess(file_path, def_c_str.data(), (int)def_c_str.size());
+      def_c_str.pop_back();
+    }
+
+    if (not_empty(stages & pipeline_stages::hull)) {
+      def_c_str.push_back("_HULL_");
+      tcs_src = preprocess(file_path, def_c_str.data(), (int)def_c_str.size());
+      def_c_str.pop_back();
+    }
+
+    if (not_empty(stages & pipeline_stages::domain)) {
+      def_c_str.push_back("_DOMAIN_");
+      tes_src = preprocess(file_path, def_c_str.data(), (int)def_c_str.size());
+      def_c_str.pop_back();
+    }
+
+    gl_program =
+        create_graphics_program(vs_src.c_str(), fs_src.c_str(),
+                                gs_src.size() ? gs_src.c_str() : nullptr,
+                                tcs_src.size() ? tcs_src.c_str() : nullptr,
+                                tes_src.size() ? tes_src.c_str() : nullptr);
+  } else {
+    // TODO
+  }
+}

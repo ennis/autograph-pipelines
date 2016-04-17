@@ -8,7 +8,7 @@
 // Texture cache
 struct texture_cache {
   struct image_desc_equal {
-    constexpr bool operator()(const image_desc &a, const image_desc &b) {
+    constexpr bool operator()(const image_desc &a, const image_desc &b) const {
       return (a.width == b.width) && (a.height == b.height) &&
              (a.depth == b.depth) && (a.format == b.format) &&
              (a.num_mips == b.num_mips) && (a.dimensions == b.dimensions);

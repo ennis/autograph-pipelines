@@ -1,6 +1,6 @@
 enum class node_kind {
     subimage_2d,
-    constant,
+    buffer,
     clear,
     cast,
     image,

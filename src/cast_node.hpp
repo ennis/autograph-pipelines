@@ -20,4 +20,8 @@ struct cast_node : public node {
   	n->dest = image_impl{n.get(), dest_desc, 0};
   	return std::shared_ptr<image_impl>{n, &n->dest};
   }  
+
+  virtual void traverse(traversal_visitor &v) override {
+	  v.visit_value(dest);
+  }
 };

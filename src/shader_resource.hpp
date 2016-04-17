@@ -27,6 +27,8 @@ enum class shader_resource_access {
   write = (1 << 1)
 };
 
+ENUM_BIT_FLAGS_OPERATORS(shader_resource_access)
+
 struct shader_resource {
   std::shared_ptr<value_impl> resource;
   shader_resource_type type;

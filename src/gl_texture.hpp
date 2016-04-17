@@ -1,7 +1,7 @@
 #pragma once
 #include "format.hpp"
 #include "gl_handle.hpp"
-#include "image.hpp"
+#include "image_desc.hpp"
 #include <gl_core_4_5.hpp>
 
 struct texture_deleter {

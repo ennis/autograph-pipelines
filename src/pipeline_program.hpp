@@ -1,15 +1,13 @@
 #pragma once
 
+#include <autograph/utils.hpp>
 #include <gl_core_4_5.hpp>
 #include <string>
 #include <vector>
-#include <autograph/utils.hpp>
 
 struct shader_source {
-	enum class location {
-		file, embedded
-	};
-	location loc;
+  enum class location { file, embedded };
+  location loc;
   std::string source_or_file_path;
 };
 
@@ -41,7 +39,7 @@ struct gl_sampler {
 
   constexpr size_t hash() const {
     // TODO
-	  return 0;
+    return 0;
   }
 };
 
@@ -64,7 +62,7 @@ struct gl_blend_state {
 
   constexpr size_t hash() const {
     // TODO
-	  return 0;
+    return 0;
   }
 };
 
@@ -101,12 +99,36 @@ struct gl_rasterizer_state {
   GLenum fillMode = gl::FILL;
 };
 
+struct gl_viewport {
+  float x, y, w, h;
+};
+
+enum class gl_draw_state_mask {
+  viewports = (1 << 0),
+  draw_buffers = (1 << 1),
+  scissor_rect = (1 << 2),
+  blend_states = (1 << 3),
+  rasterizer_state = (1 << 4),
+  depth_stencil_state = (1 << 5)
+};
+
+struct gl_draw_state {
+  GLenum prim_mode;
+  gl_draw_state_mask mask;
+  std::vector<gl_blend_state> blend_states;
+  std::vector<gl_viewport> viewports;
+  gl_rasterizer_state rasterizer_state;
+  gl_depth_stencil_state depth_stencil_state;
+};
+
+ENUM_BIT_FLAGS_OPERATORS(gl_draw_state_mask)
+
 struct pp_define {
   const char *define;
   const char *value;
 };
 
-// program limits
+// hard program limits
 constexpr unsigned gl_max_vertex_buffers = 16;
 constexpr unsigned gl_max_vertex_attributes = 16;
 
@@ -123,16 +145,14 @@ struct graphics_pipeline_program {
   // input layout descriptor
   std::vector<gl_vertex_attribute> attribs;
 
-  gl_rasterizer_state rs;
-  gl_depth_stencil_state dss;
-  // blending units
-  std::vector<gl_blend_state> blend;
+  // non-shader draw state
+  gl_draw_state draw_state;
 
   // also: input layout, descriptor sets, etc.
   // cache: compiled pipeline(s)
 
-  mutable GLuint gl_vao;
-  mutable GLuint gl_program;
+  mutable GLuint gl_vao = 0;
+  mutable GLuint gl_program = 0;
 
   static graphics_pipeline_program compile_from_file(
       const char *file_name_, std::initializer_list<pp_define> defines_,
@@ -142,20 +162,27 @@ struct graphics_pipeline_program {
       const gl_rasterizer_state &rasterizer_state_ = {},
       std::initializer_list<gl_blend_state> blend_ = {});
 
-  //graphics_pipeline_program compile_variant(std::initializer_list<pp_define> defines_);
+  void do_load();
+  // graphics_pipeline_program compile_variant(std::initializer_list<pp_define>
+  // defines_);
 };
 
 // indirectly visible to the user, shared
 struct compute_pipeline_program {
   shader_source src;
 
+  // preprocessor defines
+  std::vector<pp_define> defines;
+
   static compute_pipeline_program
   compile_from_file(const char *file_name_,
                     std::initializer_list<pp_define> defines_);
-  static compute_pipeline_program
-	  compile_from_source(const char *src);
+
+  static compute_pipeline_program compile_from_source(const char *src);
 
   // also: descriptor sets, etc.
   // cache: compiled pipeline(s)
-  mutable GLuint gl_program;
+  mutable GLuint gl_program = 0;
+
+  void do_load();
 };

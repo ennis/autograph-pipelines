@@ -16,6 +16,10 @@ struct clear_node : public node {
 	return std::shared_ptr<image_impl>{n, &n->dest};
   }
 
+  virtual void traverse(traversal_visitor &v) override {
+	  v.visit_value(dest);
+  }
+
   glm::vec4 clear_color_;
 
   // port 0

@@ -28,6 +28,9 @@
 #include "imgui_impl_glfw_gl3.h"
 #include <GLFW\glfw3.h>
 
+#include "load_image.hpp"
+#include <experimental/filesystem>
+
 // static (or: compile-static): value known at compilation of C++ code
 // pipeline-static: value known at pipeline creation
 // pipeline-dynamic: value not known at pipeline creation
@@ -37,6 +40,12 @@
 //		param: filtering kernel, levels
 //		output: mip-mapped image
 //
+// TODO: custom nodes
+// TODO: pipelines with operator overloading
+// TODO: make custom nodes from functions
+//		image | blur(...) | threshold(...)
+//
+// gl_texture: subimage, different format
 
 /*template <typename R>
 void bind_resources_impl(shader_resources &shr, bind_resource_context &ctx,
@@ -131,16 +140,6 @@ public:
 
 private:
 };*/
-
-// must work w/ shared_ptr, unique_ptr and raw pointers
-template <typename Derived, typename Base,
-          typename = std::is_base_of<Base, Derived>>
-Derived *dyn_cast(Base *b) {
-  if (b && Derived::classof(*b)) {
-    return static_cast<Derived *>(b);
-  }
-  return nullptr;
-}
 
 ////////////////////////////////////////////////////////
 // Graph dumper
@@ -351,8 +350,6 @@ void render() {
 
   // dl->AddRectFilled(ImVec2{ 0.0f, 0.0f }, ImVec2{ 300.0f, 300.0f },
   // ImColor::HSV(1.0f, 0.5f, 1.0f), 0.5f);
-
-  ImGui::Render();
 }
 
 /*float get_value() {
@@ -363,8 +360,7 @@ void render() {
   return v;
 }*/
 
-struct style 
-{
+struct style {
   // frame default BG color
   // frame default font color
   // frame default FG color
@@ -381,6 +377,32 @@ struct style
 // ui::field
 // ui::button
 // ui::edit_box
+
+namespace fs = std::experimental::filesystem;
+
+fs::path find_project_root(const char *name) {
+  auto path = fs::current_path();
+  if (!fs::is_directory(path / name)) {
+    path = path.parent_path();
+    if (!fs::is_directory(path / name)) {
+      path = path.parent_path();
+      if (!fs::is_directory(path / name)) {
+        path = path.parent_path();
+        if (!fs::is_directory(path / name)) {
+          path = path.parent_path();
+          if (!fs::is_directory(path / name)) {
+            path = path.parent_path();
+            if (!fs::is_directory(path / name)) {
+              throw std::runtime_error(
+                  fmt::format("project root directory not found: {}", name));
+            }
+          }
+        }
+      }
+    }
+  }
+  return std::move(path / name);
+}
 
 int main() {
   /* Initialize the library */
@@ -404,11 +426,18 @@ int main() {
   gl::sys::LoadFunctions();
   ImGui_ImplGlfwGL3_Init(window, true);
 
+  fs::path proot = find_project_root("autograph-pipelines");
+  auto img1 = load_image(proot / "img/tonberry.jpg");
+
   /* Loop until the user closes the window */
   while (!glfwWindowShouldClose(window)) {
     ImGui_ImplGlfwGL3_NewFrame();
     /* Render here */
     render();
+    ImGui::Image((ImTextureID)img1.impl_->storage.device_tex->obj_.get(),
+                 ImVec2{(float)img1.impl_->desc_.width,
+                        (float)img1.impl_->desc_.height});
+    ImGui::Render();
 
     /* Swap front and back buffers */
     glfwSwapBuffers(window);
