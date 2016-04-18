@@ -3,11 +3,41 @@
 
 #include "shader_resource.hpp"
 #include "compute_node.hpp"
+#include "buffer_node.hpp"
 
 /////////////////////////////////////////////////////
 // binders
-void bind_shader_resource(shader_resources &res, image &img);
-void bind_shader_resource(shader_resources &res, buffer &img);
+class image;
+class buffer;
+
+struct bind_resource_context
+{
+	unsigned vertex_buffer_index = 0;
+	unsigned uniform_buffer_index = 0;
+	unsigned texture_index = 0;
+	unsigned image_index = 0;
+	unsigned sampler_index = 0;
+};
+
+struct sampled_image
+{
+	const image& img;
+};
+
+struct storage_image
+{
+	const image& img;
+}; 
+
+void bind_shader_resource(bind_resource_context& context, shader_resources &res, image &img);
+void bind_shader_resource(bind_resource_context& context, shader_resources &res, buffer &buf);
+
+template <typename T>
+void bind_shader_resource(bind_resource_context& context, shader_resources &res, const T &v)
+{
+	auto buf = buffer{ buffer_node::create(&v, sizeof(T), storage_type::host) };
+	bind_shader_resource(context, res, buf);
+}
 
 /////////////////////////////////////////////////////
 // Proxy for image_impl
@@ -50,12 +80,17 @@ public:
     img0.type = shader_resource_type::storage_image;
     img0.slot = 0;
     img0.resource = img_out;
+
     // TODO
     // iterate over resources
     // image -> sampled_image
     // buffer -> uniform buffer
     // T -> uniform buffer
-    // for_each_in_tuple(std::forward_as_tuple(resources...), [&](auto &&v) {});
+
+	bind_resource_context context;
+	context.image_index = 1;
+	context.texture_index = 1;
+	for_each_in_tuple(std::forward_as_tuple(resources...), [&](auto &&v) {bind_shader_resource(context, res, v);});
 
     auto n = compute_node::create(
         pp, compute_workspace::make_2d(

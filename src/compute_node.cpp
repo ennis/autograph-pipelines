@@ -2,6 +2,7 @@
 #include <iostream>
 #include <cppformat/format.h>
 
+#include "buffer.hpp"
 #include "gl_texture.hpp"
 #include "gl_buffer.hpp"
 
@@ -24,7 +25,7 @@ void compute_node::allocate_resources(allocation_context &ctx) {
     } else {
       if (r.type == shader_resource_type::storage_image) {
         auto &img = static_cast<image_impl &>(*r.resource);
-        fmt::print(std::clog, "allocating texture {}x{}x{} format {}",
+        fmt::print(std::clog, "allocating texture {}x{}x{} format {} [storage_image]",
                    img.desc_.width, img.desc_.height, img.desc.depth_,
                    get_image_format_name(img.format));
         auto gltex = std::make_unique<gl_texture>(img.desc_);
@@ -35,8 +36,14 @@ void compute_node::allocate_resources(allocation_context &ctx) {
       }
       else if (r.type == shader_resource_type::storage_buffer) {
         auto& buf = static_cast<buffer_impl&>(*r.resource);
-        fmt::print(std::clog, "allocating buffer size {}", buf.size);
-        
+        fmt::print(std::clog, "allocating buffer size {} [storage_buffer]", buf.size);
+		// TODO choose the correct buffer usage?
+		auto glbuf = std::make_unique<gl_buffer>(std::move(gl_buffer::create(buf.size, gl_buffer_usage::default_usage)));
+		buf.stype = storage_type::device;
+		buf.storage.device_buf.obj = glbuf->obj_.get();
+		buf.storage.device_buf.offset = 0;
+		buf.storage.device_buf.size = buf.size;
+		bufres_.emplace_back(glbuf);
       } 
     }
   }

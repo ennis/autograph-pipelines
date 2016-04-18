@@ -44,3 +44,13 @@ image image::subimage(const rect_2d &rect) {
 image image::cast(image_format format) {
   return image{cast_node::create(impl_, format)};
 }
+
+void bind_shader_resource(bind_resource_context &context, shader_resources &res,
+                          image &img) {}
+
+void bind_shader_resource(bind_resource_context &context, shader_resources &res,
+                          buffer &buf) {
+  res.emplace_back(shader_resource{
+      std::move(buf.impl_), shader_resource_type::uniform_buffer,
+      shader_resource_access::read, context.uniform_buffer_index++});
+}

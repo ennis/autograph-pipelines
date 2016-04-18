@@ -16,7 +16,7 @@ struct buffer_impl : public value_impl {
   /////////////////////////////////
   storage_type stype;
   union {
-	  gl_buffer* device_buf;
+	  gl_buffer_slice device_buf;
 	  uint8_t* host_buf;
   } storage;
 };

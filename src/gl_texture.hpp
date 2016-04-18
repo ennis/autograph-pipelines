@@ -11,8 +11,7 @@ struct texture_deleter {
 enum class texture_dimension { tex_1d, tex_2d, tex_3d };
 
 struct gl_texture {
-	gl_texture(const image_desc& desc);
-
+  gl_texture(const image_desc& desc);
   gl_handle<texture_deleter> obj_;
   image_desc desc_;
 };

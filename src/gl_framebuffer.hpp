@@ -3,19 +3,21 @@
 #include "gl_texture.hpp"
 #include <gl_core_4_5.hpp>
 
-struct framebuffer_deleter
-{
-	void operator()(GLuint fbo) { gl::DeleteFramebuffers(1, &fbo); }
+struct framebuffer_deleter {
+  void operator()(GLuint fbo) { gl::DeleteFramebuffers(1, &fbo); }
 };
 
-struct gl_framebuffer
-{
-	gl_framebuffer(GLuint obj) : obj_{ obj }
-	{}
+struct gl_framebuffer {
+  gl_framebuffer() {}
+  gl_framebuffer(GLuint obj) : obj_{obj} {}
+  gl_framebuffer(std::initializer_list<gl_texture &> color_tex);
+  gl_framebuffer(std::initializer_list<gl_texture &> color_tex,
+                 gl_texture &depth_tex);
 
-	gl_handle<framebuffer_deleter> obj_;
-	//void attach(GLenum attachement, gl_texture & tex, unsigned mip_level = 0, unsigned layer = 0);
-	//GLenum check_status(GLenum target = gl::DRAW_FRAMEBUFFER);
+  void init();
 
-	static gl_framebuffer create();
+  unsigned width;
+  unsigned height;
+
+  gl_handle<framebuffer_deleter> obj_;
 };
