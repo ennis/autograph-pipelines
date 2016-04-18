@@ -8,6 +8,7 @@
 
 struct value_impl;
 struct node;
+struct allocation_context;
 
 struct node {
   node(node_kind kind) : kind_(kind)
@@ -21,6 +22,7 @@ struct node {
   //virtual std::vector<dependency> dependencies() const = 0;
 
   virtual void traverse(traversal_visitor& v) = 0;
+  virtual void allocate_resources(allocation_context&) = 0; 
 
   node_kind kind() const { return kind_; }
 

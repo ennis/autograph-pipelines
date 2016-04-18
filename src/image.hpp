@@ -1,6 +1,9 @@
 #pragma once
 #include "image_impl.hpp"
 
+#include "shader_resource.hpp"
+#include "compute_node.hpp"
+
 /////////////////////////////////////////////////////
 // binders
 void bind_shader_resource(shader_resources &res, image &img);
@@ -19,9 +22,7 @@ public:
 
   image subimage(const rect_2d &rect);
   image cast(image_format format);
-
   image &set_storage_hint(storage_hint hint);
-
   image eager();
 
   //////////////////////////////////////////////
@@ -44,17 +45,17 @@ public:
     tex0.resource = impl_;
     res.push_back(std::move(tex0));
     shader_resource img0;
-	auto img_out = std::make_shared<image_impl>(nullptr, impl_->desc_);
+    auto img_out = std::make_shared<image_impl>(nullptr, impl_->desc_);
     img0.access = shader_resource_access::write;
     img0.type = shader_resource_type::storage_image;
     img0.slot = 0;
-	img0.resource = img_out;
+    img0.resource = img_out;
     // TODO
     // iterate over resources
     // image -> sampled_image
     // buffer -> uniform buffer
     // T -> uniform buffer
-    //for_each_in_tuple(std::forward_as_tuple(resources...), [&](auto &&v) {});
+    // for_each_in_tuple(std::forward_as_tuple(resources...), [&](auto &&v) {});
 
     auto n = compute_node::create(
         pp, compute_workspace::make_2d(
@@ -62,8 +63,8 @@ public:
                 extents_2d{local_size_x, local_size_y}),
         std::move(res));
 
-	img_out->pred_ = n.get();
-	return image{ std::move(img_out) };
+    img_out->pred_ = n.get();
+    return image{std::move(img_out)};
   }
 
   // mark this image for rescheduling

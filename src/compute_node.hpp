@@ -11,6 +11,9 @@ inline int div_round_up(int numToRound, int multiple) {
 }
 }
 
+struct gl_texture;
+struct gl_buffer;
+
 struct compute_workspace {
   unsigned x;
   unsigned y;
@@ -48,6 +51,8 @@ struct compute_node : public node {
     }
   }
 
+  virtual void allocate_resources(allocation_context&) override; 
+
   static std::shared_ptr<compute_node> create(compute_pipeline_program& prog,
                      const compute_workspace &ws, shader_resources res) 
   {
@@ -57,4 +62,10 @@ struct compute_node : public node {
 	  n->pp = &prog;
 	  return std::move(n);
   }
+
+  ////////////////////////////////////////////////
+  // allocated resources
+  bool alloc_ = false;  
+  std::vector<std::unique_ptr<gl_texture> > texres_;
+  std::vector<std::unique_ptr<gl_buffer> > bufres_; 
 };
