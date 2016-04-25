@@ -15,7 +15,6 @@
 enum class gl_surface_kind {
   texture,
   screen,
-  // TODO: presentable image
 };
 
 struct gl_surface {
@@ -37,53 +36,6 @@ struct gl_texture_surface : public gl_surface {
 struct gl_screen_surface : public gl_surface {
   gl_screen_surface() : gl_surface{gl_surface_kind::screen} {}
 };
-
-struct gl_bind_state {
-  std::vector<GLuint> vbo;
-  std::vector<GLintptr> vbo_offsets;
-  std::vector<GLsizei> vbo_strides;
-  std::vector<GLuint> textures;
-  std::vector<GLuint> samplers;
-  std::vector<GLuint> images;
-  std::vector<GLuint> ubo;
-  std::vector<GLsizeiptr> ubo_sizes;
-  std::vector<GLintptr> ubo_offsets;
-  std::vector<GLuint> ssbo;
-  std::vector<GLsizeiptr> ssbo_sizes;
-  std::vector<GLintptr> ssbo_offsets;
-  GLuint ibo;
-
-  void reset() {
-    ibo = 0;
-    //ibo_type = gl::UNSIGNED_INT;
-    std::fill(vbo.begin(), vbo.end(), 0);
-    std::fill(vbo_offsets.begin(), vbo_offsets.end(), 0);
-    std::fill(vbo_strides.begin(), vbo_strides.end(), 0);
-    std::fill(textures.begin(), textures.end(), 0);
-    std::fill(samplers.begin(), samplers.end(), 0);
-    std::fill(images.begin(), images.end(), 0);
-    std::fill(ubo.begin(), ubo.end(), 0);
-    std::fill(ubo_sizes.begin(), ubo_sizes.end(), 0);
-    std::fill(ubo_offsets.begin(), ubo_offsets.end(), 0);
-    std::fill(ssbo.begin(), ssbo.end(), 0);
-    std::fill(ssbo_sizes.begin(), ssbo_sizes.end(), 0);
-    std::fill(ssbo_offsets.begin(), ssbo_offsets.end(), 0);
-  }
-};
-
-enum class gl_shader_resource_state_mask
-{
-	texture_units = (1<<0),
-	image_units = (1<<1),
-	shader_storage_buffers = (1<<2),
-	uniform_buffers = (1<<3),
-	vertex_buffers = (1<<4),
-	index_buffer = (1<<5),
-	sampler_objects = (1<<6),
-	all = 0xFF
-};
-
-ENUM_BIT_FLAGS_OPERATORS(gl_shader_resource_state_mask)
 
 struct resource_allocator
 {

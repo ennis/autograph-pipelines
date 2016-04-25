@@ -2,7 +2,7 @@
 
 #include "image.hpp"
 #include "node.hpp"
-#include "pipeline_program.hpp"
+#include "gl_pipeline.hpp"
 #include "shader_resource.hpp"
 
 // also: type-generic pipelines/programs
@@ -31,7 +31,8 @@ struct draw_command_params {
 struct draw_attachements {
   std::vector<std::shared_ptr<image_impl>> color;
   std::shared_ptr<image_impl> depth;
-  // cache: fbo
+  // cached framebuffer object
+  mutable GLuint fbo;
 };
 
 // draw node
@@ -75,5 +76,13 @@ struct draw_node : public node {
   draw_command_params cmd;
   shader_resources res;
   draw_attachements att;
-  graphics_pipeline_program pp;
+  gl_graphics_pipeline* pp;
 };
+
+// immediate draw
+// create framebuffer for target attachements (get it from a cache?)
+// accumulate all resources into shader_resources
+// convert shader_resources into gl_shader_resources
+//
+// Ideally:
+// store directly bindings into gl_shader_resources

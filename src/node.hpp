@@ -21,8 +21,14 @@ struct node {
   // get a std::vector containing the dependencies of the node
   //virtual std::vector<dependency> dependencies() const = 0;
 
-  virtual void traverse(traversal_visitor& v) = 0;
-  virtual void allocate_resources(allocation_context&) = 0; 
+  virtual void traverse(traversal_visitor& v) {
+	  throw std::logic_error("unimplemented");
+  }
+
+  virtual void allocate_resources(allocation_context&)
+  {
+	  throw std::logic_error("unimplemented");
+  }
 
   node_kind kind() const { return kind_; }
 

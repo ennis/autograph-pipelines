@@ -5,5 +5,6 @@ enum class node_kind {
     cast,
     image,
     draw,
-    compute_shader
+    compute_shader,
+	image_file
   };

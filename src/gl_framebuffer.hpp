@@ -2,6 +2,7 @@
 #include "gl_handle.hpp"
 #include "gl_texture.hpp"
 #include <gl_core_4_5.hpp>
+#include <gsl.h>
 
 struct framebuffer_deleter {
   void operator()(GLuint fbo) { gl::DeleteFramebuffers(1, &fbo); }
@@ -10,9 +11,9 @@ struct framebuffer_deleter {
 struct gl_framebuffer {
   gl_framebuffer() {}
   gl_framebuffer(GLuint obj) : obj_{obj} {}
-  gl_framebuffer(std::initializer_list<gl_texture &> color_tex);
-  gl_framebuffer(std::initializer_list<gl_texture &> color_tex,
-                 gl_texture &depth_tex);
+  gl_framebuffer(gsl::span<gl_texture*> color_attachements);
+  gl_framebuffer(gsl::span<gl_texture*> color_attachements,
+                 gl_texture &depth_attachement);
 
   void init();
 

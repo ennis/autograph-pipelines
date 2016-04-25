@@ -18,4 +18,3 @@ const char *get_shader_resource_type_name(shader_resource_type t) {
     return "other";
   }
 }
-

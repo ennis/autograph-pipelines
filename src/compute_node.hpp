@@ -1,7 +1,7 @@
 #pragma once
 #include "gsl.h"
 #include "node.hpp"
-#include "pipeline_program.hpp"
+#include "gl_pipeline.hpp"
 #include "shader_resource.hpp"
 #include "value.hpp"
 
@@ -40,7 +40,7 @@ struct compute_node : public node {
   }
 
   compute_workspace ws;
-  compute_pipeline_program* pp;
+  gl_compute_pipeline* pp;
   shader_resources res;
 
   virtual void traverse(traversal_visitor &v) override {
@@ -53,7 +53,7 @@ struct compute_node : public node {
 
   virtual void allocate_resources(allocation_context&) override; 
 
-  static std::shared_ptr<compute_node> create(compute_pipeline_program& prog,
+  static std::shared_ptr<compute_node> create(gl_compute_pipeline& prog,
                      const compute_workspace &ws, shader_resources res) 
   {
 	  auto n = std::make_shared<compute_node>();

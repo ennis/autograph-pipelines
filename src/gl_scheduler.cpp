@@ -184,32 +184,7 @@ void gl_scheduler::op_load_default_bind_state::execute(gl_scheduler &sched) {
 }
 
 void gl_scheduler::op_bind_shader_resources::execute(gl_scheduler &sched) {
-  if (not_empty(mask & gl_shader_resource_state_mask::vertex_buffers)) {
-    gl::BindVertexBuffers(0, (GLsizei)bs->vbo.size(), bs->vbo.data(),
-                          bs->vbo_offsets.data(), bs->vbo_strides.data());
-  }
-  if (not_empty(mask & gl_shader_resource_state_mask::uniform_buffers)) {
-    gl::BindBuffersRange(gl::UNIFORM_BUFFER, 0, (GLsizei)bs->ubo.size(),
-                         bs->ubo.data(), bs->ubo_offsets.data(),
-                         bs->ubo_sizes.data());
-  }
-  if (not_empty(mask & gl_shader_resource_state_mask::texture_units)) {
-    gl::BindTextures(0, (GLsizei)bs->textures.size(), bs->textures.data());
-  }
-  if (not_empty(mask & gl_shader_resource_state_mask::image_units)) {
-    gl::BindImageTextures(0, (GLsizei)bs->images.size(), bs->images.data());
-  }
-  if (not_empty(mask & gl_shader_resource_state_mask::shader_storage_buffers)) {
-    gl::BindBuffersRange(gl::SHADER_STORAGE_BUFFER, 0, (GLsizei)bs->ssbo.size(),
-                         bs->ssbo.data(), bs->ssbo_offsets.data(),
-                         bs->ssbo_sizes.data());
-  }
-  if (not_empty(mask & gl_shader_resource_state_mask::sampler_objects)) {
-    gl::BindSamplers(0, (GLsizei)bs->samplers.size(), bs->samplers.data());
-  }
-  if (not_empty(mask & gl_shader_resource_state_mask::index_buffer)) {
-    gl::BindBuffer(gl::ELEMENT_ARRAY_BUFFER, bs->ibo);
-  }
+
 }
 
 void gl_scheduler::op_draw::execute(gl_scheduler &sched) {

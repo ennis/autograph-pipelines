@@ -8,7 +8,7 @@
 /////////////////////////////////////////////////////
 // binders
 class image;
-class buffer;
+struct buffer;
 
 struct bind_resource_context
 {
@@ -65,7 +65,7 @@ public:
   image filter(const char *glsl, Resources &&... resources) {}
 
   template <typename... Resources>
-  image filter(compute_pipeline_program &pp, int local_size_x, int local_size_y,
+  image filter(gl_compute_pipeline &pp, int local_size_x, int local_size_y,
                Resources &&... resources) {
     shader_resources res;
     shader_resource tex0;

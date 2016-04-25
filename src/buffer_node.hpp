@@ -16,6 +16,12 @@ struct buffer_node : public node {
 
   static bool classof(const node &n) { return n.kind() == node_kind::buffer; }
 
+
+  virtual void traverse(traversal_visitor& v) override {
+	  // TODO
+	  v.visit_value(dest);
+  }
+
   static auto create(const void *ptr, size_t size, storage_type stype) {
     auto n = std::make_shared<buffer_node>();
     n->dest.size = size;
