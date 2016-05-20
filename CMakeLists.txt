@@ -13,6 +13,13 @@ add_subdirectory(ext EXCLUDE_FROM_ALL)
 
 file(GLOB APP_SOURCES src/*.cpp)
 file(GLOB APP_HEADERS src/*.hpp)
+source_group("Source files" FILES ${APP_SOURCES})
+source_group("Header files" FILES ${APP_HEADERS})
 
-add_executable(pipelines ${APP_SOURCES} ${APP_HEADERS})
-target_link_libraries(pipelines autograph glm assimp glfw cppformat stb imgui mcpp)
+file(GLOB APP_UI_SOURCES src/ui/*.cpp)
+file(GLOB APP_UI_HEADERS src/ui/*.hpp)
+source_group("Source files\\UI" FILES ${APP_UI_SOURCES})
+source_group("Header files\\UI" FILES ${APP_UI_HEADERS})
+
+add_executable(pipelines ${APP_SOURCES} ${APP_HEADERS} ${APP_UI_SOURCES} ${APP_UI_HEADERS})
+target_link_libraries(pipelines autograph glm assimp glfw cppformat stb imgui mcpp nanovg)

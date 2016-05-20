@@ -1,6 +1,4 @@
-#ifndef DEVICE_HPP
-#define DEVICE_HPP
-
+#pragma once
 #include <memory>
 #include "gl_fence.hpp"
 #include "gl_framebuffer.hpp"
@@ -20,6 +18,7 @@ struct gl_device {
   static void init(const gl_device_config &config);
   static void set_size(unsigned width, unsigned height);
   void end_frame();
+
   gl_buffer_slice upload_frame_data(const void *data, size_t size,
                                     size_t alignment);
 
@@ -37,6 +36,3 @@ struct debug_group
 };
 
 extern std::unique_ptr<gl_device> g_device;
-
-#endif
-

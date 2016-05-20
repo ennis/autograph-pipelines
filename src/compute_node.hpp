@@ -19,11 +19,11 @@ struct compute_workspace {
   unsigned y;
   unsigned z;
 
-  static compute_workspace make_2d(const extents_2d &global_size,
-                                   const extents_2d &local_size) {
+  static compute_workspace make_2d(const glm::ivec2 &global_size,
+                                   const glm::ivec2 &local_size) {
     return compute_workspace{
-        (unsigned)detail::div_round_up(global_size.width, local_size.width),
-        (unsigned)detail::div_round_up(global_size.height, local_size.height),
+        (unsigned)detail::div_round_up(global_size.x, local_size.x),
+        (unsigned)detail::div_round_up(global_size.y, local_size.y),
         1};
   }
 
@@ -43,15 +43,9 @@ struct compute_node : public node {
   gl_compute_pipeline* pp;
   shader_resources res;
 
-  virtual void traverse(traversal_visitor &v) override {
-    for (auto &r : res) {
-      if (not_empty(r.access & shader_resource_access::write)) {
-        v.visit_value(*r.resource);
-      }
-    }
-  }
+  virtual void traverse(traversal_visitor &v) override;
 
-  virtual void allocate_resources(allocation_context&) override; 
+  virtual void allocate_resources(allocation_context&) override;
 
   static std::shared_ptr<compute_node> create(gl_compute_pipeline& prog,
                      const compute_workspace &ws, shader_resources res) 

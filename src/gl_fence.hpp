@@ -1,6 +1,4 @@
-#ifndef GL_FENCE_HPP
-#define GL_FENCE_HPP
-
+#pragma once
 #include <cstdint>
 #include <deque>
 #include <gl_core_4_5.hpp>
@@ -44,5 +42,3 @@ struct gl_fence {
   uint64_t current_value;
   std::deque<sync_point> sync_points;
 };
-
-#endif // !GL_FENCE_HPP

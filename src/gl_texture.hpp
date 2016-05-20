@@ -12,6 +12,11 @@ enum class texture_dimension { tex_1d, tex_2d, tex_3d };
 
 struct gl_texture {
   gl_texture(const image_desc& desc);
+
+  glm::ivec2 size() const {
+	  return glm::ivec2{ desc_.width, desc_.height };
+  }
+
   gl_handle<texture_deleter> obj_;
   image_desc desc_;
 };

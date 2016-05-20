@@ -1,33 +1,36 @@
 #pragma once
-#include <vector>
-#include <glm/glm.hpp>
-#include <functional>
-#include "node_kind.hpp"
 #include "autograph/utils.hpp"
+#include "node_kind.hpp"
 #include "traversal_visitor.hpp"
+#include <functional>
+#include <glm/glm.hpp>
+#include <vector>
 
 struct value_impl;
 struct node;
 struct allocation_context;
+struct execution_context;
 
+// Represents an operation
+// Nodes have one or more output values, and zero or more inputs
+// Nodes allocate and manage the resources for their outputs (if necessary)
+// (this is done in member function allocate_resources)
+// Values are computed in member function execute()
 struct node {
-  node(node_kind kind) : kind_(kind)
-  {
-	  uid_ = global_node_uid++;
-  }
+  node(node_kind kind) : kind_(kind) { uid_ = global_node_uid++; }
 
   virtual ~node() {}
 
-  // get a std::vector containing the dependencies of the node
-  //virtual std::vector<dependency> dependencies() const = 0;
-
-  virtual void traverse(traversal_visitor& v) {
-	  throw std::logic_error("unimplemented");
+  virtual void traverse(traversal_visitor &v) {
+    throw std::logic_error("unimplemented");
   }
 
-  virtual void allocate_resources(allocation_context&)
-  {
-	  throw std::logic_error("unimplemented");
+  virtual void allocate_resources(allocation_context &) {
+    throw std::logic_error("unimplemented");
+  }
+
+  virtual void execute(execution_context &) {
+    throw std::logic_error("unimplemented");
   }
 
   node_kind kind() const { return kind_; }
@@ -49,4 +52,3 @@ struct node {
 // for_all_predecessors_recursive(node, action)
 // where action(node) -> bool (stop traversal)
 //
-

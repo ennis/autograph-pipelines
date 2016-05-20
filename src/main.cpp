@@ -11,19 +11,20 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
-#include <autograph/gl_types.hpp>
-#include <autograph/utils.hpp>
-
-#include "draw.hpp"
 #include "buffer.hpp"
 #include "cast_node.hpp"
 #include "clear_node.hpp"
 #include "compute_node.hpp"
+#include "draw.hpp"
 #include "draw_node.hpp"
 #include "format.hpp"
 #include "image.hpp"
 #include "node.hpp"
 #include "value.hpp"
+
+#include "await.hpp"
+#include "gl_device.hpp"
+#include "observable.hpp"
 
 #include "imgui.h"
 #include "imgui_impl_glfw_gl3.h"
@@ -32,39 +33,15 @@
 #include "load_image.hpp"
 #include <experimental/filesystem>
 
+#include "ui/button.hpp"
+#include "ui/native_window.hpp"
+#include "ui/slider.hpp"
+
+#define NANOVG_GL3_IMPLEMENTATION
+#include "project_root.hpp"
+#include <nanovg_gl.h>
 
 namespace fs = std::experimental::filesystem;
-constexpr const char proj_name[] = "autograph-pipelines";
-
-fs::path project_root() {
-	static bool found = false;
-	static auto path = fs::current_path();
-	if (!found) {
-		if (!fs::is_directory(path / proj_name)) {
-			path = path.parent_path();
-			if (!fs::is_directory(path / proj_name)) {
-				path = path.parent_path();
-				if (!fs::is_directory(path / proj_name)) {
-					path = path.parent_path();
-					if (!fs::is_directory(path / proj_name)) {
-						path = path.parent_path();
-						if (!fs::is_directory(path / proj_name)) {
-							path = path.parent_path();
-							if (!fs::is_directory(path / proj_name)) {
-								throw std::runtime_error(fmt::format(
-									"project root directory not found: {}", proj_name));
-							}
-						}
-					}
-				}
-			}
-		}
-		found = true;
-	}
-	return std::move(path / proj_name);
-}
-
-
 
 constexpr gl_blend_state no_blend{
     false,   gl::FUNC_ADD, gl::FUNC_ADD, gl::SRC_ALPHA, gl::ONE_MINUS_SRC_ALPHA,
@@ -97,15 +74,16 @@ gl_graphics_pipeline pp_copy_tex_mask = gl_graphics_pipeline::compile_from_file(
     pipeline_stages::vertex | pipeline_stages::pixel, vertex_2d_attributes,
     no_depth, gl_rasterizer_state{}, {alpha_blend});
 
-gl_graphics_pipeline pp_render_sprites = gl_graphics_pipeline::compile_from_file(
-	project_root() / "glsl/sprites.glsl", {},
-	pipeline_stages::vertex | pipeline_stages::pixel, vertex_2d_attributes,
-	no_depth, gl_rasterizer_state{}, { alpha_blend });
+gl_graphics_pipeline pp_render_sprites =
+    gl_graphics_pipeline::compile_from_file(
+        project_root() / "glsl/sprites.glsl", {},
+        pipeline_stages::vertex | pipeline_stages::pixel, vertex_2d_attributes,
+        no_depth, gl_rasterizer_state{}, {alpha_blend});
 
 gl_compute_pipeline pp_blur_h = gl_compute_pipeline::compile_from_file(
-	project_root() / "glsl/blur.glsl", { { "BLUR_H", "" },{ "FORMAT", "rgba8" } });
+    project_root() / "glsl/blur.glsl", {{"BLUR_H", ""}, {"FORMAT", "rgba8"}});
 gl_compute_pipeline pp_blur_v = gl_compute_pipeline::compile_from_file(
-	project_root() / "glsl/blur.glsl", { { "BLUR_V", "" },{ "FORMAT", "rgba8" } });
+    project_root() / "glsl/blur.glsl", {{"BLUR_V", ""}, {"FORMAT", "rgba8"}});
 
 GLFWwindow *window = nullptr;
 
@@ -132,24 +110,205 @@ void render() {
 
 /*float get_value() {
   float v = 0.0f;
-  auto ui = ui::popup(ui::popup_buttons::ok)
+  auto ui = ui::popup(ui::popup_buttons::ok | ui::popup_buttons::cancel)
                 .content(ui::field("Value").validate([]() -> bool {...}));
   co::await(ui.closed);
-  return v;
-}*/
-
-struct style {
-  // frame default BG color
-  // frame default font color
-  // frame default FG color
-  // frame scrollbar color
-  // frame border color
-  // button color
-  // button text color
-};
+}
+*/
 
 constexpr unsigned init_width = 640;
 constexpr unsigned init_height = 480;
+
+observable<> on_render;
+observable<> on_update;
+
+class script : public observer<script> {
+public:
+  script() : cc{[this]() { do_stuff_with_coroutines(); }} {
+    listen(on_render, &script::do_stuff);
+  }
+
+  void do_stuff() { fmt::print(std::clog, "count={}\n", count++); }
+
+  void do_stuff_with_coroutines() {
+    int count2 = 0;
+    for (;;) {
+      await(on_render);
+      // std::clog << "lol y tho?\n";
+      fmt::print(std::clog, "count2={}\n", count2++);
+      // XXX when to kill the coroutine?
+    }
+  }
+
+private:
+  int count = 0;
+  coroutine cc;
+};
+
+// UI:
+// Goal: make is easy to implement complex behaviors/compose them
+// e.g.
+//    - a color picker
+//    - a curve editor
+//    - a 3D manipulator gizmo
+//    - linked sliders
+//    - a dock widget w/ tabs
+//    - scroll bars!
+// separate rendering from behaviors
+// ui::checkbox_behavior VS ui::button_behavior
+// each UI element is a combination of a behavior and a visual
+// visuals can be provided by the user, although there is a 'standard' visual
+// library
+// UI elements should hold minimal state (as w/ ImGuis)
+//  -> only a pointer to raw data, owned by the application
+//  -> except where it makes sense
+// => look at ImGui for behavior stuff
+// Popups
+// - drawing backend: resolution-independent
+//    - use nanovg
+//
+// Visuals:
+//  - holds the position of the control on the screen
+//  - performs hit-testing
+//  - the container can affect (override) the selected visual for a button
+//    (e.g. button groups: first button, middle buttons and last buttons
+//have a different visual)
+//  - provide metrics to calculate the active area of the widget (which is
+//  assumed to have a fixed shape)
+//    e.g.
+//    for color picker behavior: indicate the position of the hue
+//selection square + sliders
+//      simple_visual (buttons, checkboxes, etc)
+//      composite_visual (for button groups and other complex
+//widgets)
+//        => hit_test(subelement)
+//      visual_element: main, color_slider_x, color_slider_y,
+//color_slider_z, color_rect, opacity_slider, etc
+//  - place and render widgets
+//  - must be easy to implement visuals
+//
+// Layout:
+//  - two-phase: request + assignment
+//
+// UI redrawn only when necessary
+//  - minimal redraws
+//
+// UI layout:
+//  - golden rule: SENSIBLE DEFAULTS
+//  - default widget set can have labels
+//  - grid layouts
+//
+// Widgets:
+//  - slider (behavior)
+//  - button
+//  - text input (use stb_textedit)
+//  - checkboxes/radio
+//  - dock + tabs
+//  - color picker
+//  - 2D vector widget
+//  - button groups (custom rendering)
+//
+// Visual example: button grid
+//  - visual: button_grid_visual
+//    -> M*N sub-visuals
+//  - the number of buttons can change dynamically over time
+//  - button grid subvisual is (x,y) grid position, has a reference to parent
+//  button_grid_visual
+//  - rendering: render() is called on the main visual, children are bypassed
+//  - visual classes:
+//    visual: base class
+//    rect_visual: generic rectangle
+//    labeled_visual (rectangle w/ label: button, checkboxes, radios,
+//etc.)
+//    button_grid_visual
+//    color_picker_visual
+//    progress_bar_visual
+//    curve_editor_visual
+//    histogram_visual
+//    text_editor_visual
+//    progress_bar_visual
+//    dock_visual
+//    image_view_visual
+//    combo_box_visual
+//    list_box_visual
+//    + custom visuals
+//  - visuals are composable
+//
+//  - ui_elements have set_visual(uptr<visual>)
+//
+// Visual example: dock
+//  - tab_bar_visual, floating_dock_visual, tab_container_visual, tab_visual
+//  - create_floating_dock_visual(), create_tab_bar_visual()
+//
+//  ui::dock::tab_bar_visual (rect visual, dummy)
+//    -> create_tab_item_visual
+//  ui::dock::tab_bar_item_visual (dummy, hit-test done by parent
+//tab_bar_visual)
+//  ui::dock::tab_visual
+//
+// Visual example: scrollable regions
+// => draw with scissor mask
+//  - scrollbar_visual
+//  - scrollable_region_visual
+//
+// Draw context:
+//  - scissor stack
+//
+// Layouts:
+//  - are standard UI elements
+//
+// Layout process:
+//  - start from root
+//  - call recursively calculateRequirements on each layout
+//  - element::calculate_minimum_required_size first computes the content
+//  minimum required size
+//  - then, sizes and positions are assigned depending on layout fill modes
+//
+// Behaviors:
+//  - takes input, does hit testing (attached to a visual), has state, triggers
+//  events
+//  - button_behavior
+//      clicked
+//  - hover_behavior
+//      hovered
+//  - drag_behavior(dof)
+//      begin_drag(...)
+//      end_drag(...)
+//  - drop_behavior
+//      dropped(ui::element)
+//  - slider_behavior
+//      -> drag_behavior
+//  - checkbox_behavior(bool&)
+//  - dock_behavior
+//  - scroll_panel_behavior
+//    - drag_behavior
+//
+// Visuals, styles and renderers go hand-in-hand
+//
+// Styles provide: default visuals + renderers
+// ui::initialize(renderer)
+// ui::initialize(style)
+//
+// Simplification pass: remove visuals
+// => keep only mesure(), render()
+//    render() by default calls the registered UI widget style
+//(renderer.style())
+//    ui::renderer: maintains clip stack and ref to style
+//    can be overriden
+// default renderer: needs a nanovg context
+// otherwise: dummy style
+// => fuse renderer and style
+//
+// issue: depending on the renderer, we may have to store additional data
+// into the widget (animation state, etc.)
+//
+// issue:
+//
+// to create a custom visual for a widget: derive base class, override measure()
+// & render()
+// render() can launch coroutines
+// actually, render() could be itself a coroutine
+//
 
 int main() {
   /* Initialize the library */
@@ -183,26 +342,36 @@ int main() {
                      .filter(pp_blur_h, 16, 16, 1.0f)
                      .filter(pp_blur_v, 16, 16, 1.0f);
 
+  auto s = std::make_shared<script>();
+
+  // NVG context for UI rendering
+  auto nvg = nvgCreateGL3(NVG_ANTIALIAS);
+
+  auto &root = ui::initialize(window, nvg);
+  ui::button button{root, "hello"};
+  ui::slider slider{ root , 0.0f, 1.0f,};
+
   /* Loop until the user closes the window */
-  while (!glfwWindowShouldClose(window)) 
-  {
+  while (!glfwWindowShouldClose(window)) {
     ImGui_ImplGlfwGL3_NewFrame();
     /* Render here */
     render();
-    ImGui::Image((ImTextureID)img1.impl_->storage.device_tex->obj_.get(),
+    ImGui::Image(reinterpret_cast<ImTextureID>(
+                     img1.impl_->storage.device_tex->obj_.get()),
                  ImVec2{(float)img1.impl_->desc_.width,
                         (float)img1.impl_->desc_.height});
     ImGui::Render();
-
+    on_render.signal();
+    ui::render();
     /* Swap front and back buffers */
     glfwSwapBuffers(window);
-
     /* Poll for and process events */
     glfwPollEvents();
   }
 
   ImGui_ImplGlfwGL3_Shutdown();
 
+  nvgDeleteGL3(nvg);
   glfwTerminate();
   return 0;
 }

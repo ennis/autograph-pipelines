@@ -5,8 +5,6 @@
 #include <queue>
 #include <vector>
 
-#include "gl_buffer.hpp"
-
 class upload_buffer {
 public:
   upload_buffer(size_t size);
