@@ -22,6 +22,3 @@
 [submodule "ext/imgui"]
 	path = ext/imgui
 	url = https://github.com/ocornut/imgui
-[submodule "ext/nanovg"]
-	path = ext/nanovg
-	url = https://github.com/memononen/nanovg

@@ -1,7 +1,14 @@
 #pragma once
 
+// input system:
+// RAW: raw inputs from GLFW, XInput
+// TRANSLATED: commands
+//
+// polling: stylus position, gamepad, cursor position
+// event-based: keys, mouse move, mouse button
+
 namespace input {
-enum class mouse_button_state { pressed, released };
+enum class button_state { pressed, released };
 enum class key_state { pressed, released, repeat };
 
 enum class input_event_type {
@@ -11,7 +18,8 @@ enum class input_event_type {
   mouse_scroll,
   key,
   stylus_proximity,
-  stylus_properties
+  stylus_properties,
+  gamepad_button,
 };
 
 struct input_event {
@@ -30,7 +38,7 @@ struct mouse_button_event
     : public t_input_event<input_event_type::mouse_button> {
   using ptr = std::shared_ptr<mouse_button_event>;
   unsigned button;
-  mouse_button_state state;
+  button_state state;
 };
 
 struct cursor_event : public t_input_event<input_event_type::cursor> {
@@ -75,4 +83,61 @@ struct stylus_properties_event
   double pressure;
   double tilt;
 };
+
+struct gamepad_axis 
+{
+	float x;
+	float y;
+};
+
+struct gamepad_state
+{
+	std::vector<button_state> buttons;
+	std::vector<gamepad_axis> axis;
+};
+
+
+/////////////////////////////////////////////
+// Translated inputs
+// Commands (events) & values
+//
+// Command trigger: button press, gamepad axis trigger
+//	=> polling + events
+// Value mapping (1D/2D) w/ deadzone: gamepad axis, d-pad, 4-key set (arrows, WASD, others), 8-key set (numpad)
+//	=> polling only 
+// Value (boolean): button press
+//
+// Must be serializable
+
+class state 
+{
+public:
+
+private:
+	gamepad_state gpstate[max_gamepads];
+};
+
+class action : public observable<>
+{
+public:
+private:
+	static action mouse_button(uint32_t key_code, /*callback*/);
+};
+
+
+
+class game_inputs 
+{
+public:
+	game_inputs(...)
+	{
+		jump = 
+	}
+
+private:
+	action jump;
+	action attack;
+};
+
+
 }
