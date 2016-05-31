@@ -3,10 +3,11 @@
 #include "renderer.hpp"
 #include "sprite.hpp"
 #include "visual.hpp"
+#include "button_behavior.hpp"
 
 namespace ui {
 
-class button : public element {
+class button : public button_behavior {
 public:
   button(element &parent, std::string label);
   button(element &parent, std::string label, ui::sprite &icon);
@@ -14,7 +15,7 @@ public:
   void set_icon(ui::sprite &icon);
 
   virtual glm::ivec2 measure(renderer &r) override;
-  virtual void render(renderer &r, const rect_2d &geometry) override;
+  virtual void render(renderer &r) override;
 
 private:
   std::string label_;

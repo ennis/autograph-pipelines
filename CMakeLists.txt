@@ -21,5 +21,10 @@ file(GLOB APP_UI_HEADERS src/ui/*.hpp)
 source_group("Source files\\UI" FILES ${APP_UI_SOURCES})
 source_group("Header files\\UI" FILES ${APP_UI_HEADERS})
 
+
 add_executable(pipelines ${APP_SOURCES} ${APP_HEADERS} ${APP_UI_SOURCES} ${APP_UI_HEADERS})
-target_link_libraries(pipelines autograph glm assimp glfw cppformat stb imgui mcpp nanovg)
+target_link_libraries(pipelines autograph glm assimp glfw cppformat stb imgui mcpp nanovg variant)
+
+if (WIN32)
+target_link_libraries(pipelines XInput)
+endif()

@@ -1,9 +1,9 @@
 #pragma once
 #include "../rect.hpp"
 #include <vector>
-#include "visual.hpp"
 #include "renderer.hpp"
 #include <nanovg.h>
+#include "input.hpp"
 
 struct GLFWwindow;
 
@@ -52,16 +52,27 @@ public:
 
   glm::ivec2 cache_measure(renderer &r) { return content_size_ = measure(r); }
   virtual glm::ivec2 measure(renderer &r) = 0;
+  virtual void process_input(const input::input_event& ev, scheduler& event_sched)
+  {}
+
   glm::ivec2 content_size() const {
 	  return content_size_;
   }
 
-  virtual void render(renderer &r, const rect_2d &geometry) = 0;
+  void set_geometry(const rect_2d& geom) {
+	  geometry_ = geom;
+  }
+  const rect_2d& geometry() const {
+	  return geometry_;
+  }
+
+  virtual void render(renderer &r) = 0;
 
 private:
   element *parent_;
   int index_;
   glm::ivec2 content_size_;
+  rect_2d geometry_;
 };
 
 class container : public element {

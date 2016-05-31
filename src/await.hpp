@@ -1,11 +1,13 @@
 #pragma once
-#include "observable.hpp"
 #include "coroutine.hpp"
+#include "observable.hpp"
+#include <experimental/resumable>
 
-// await: creates a callable that resumes the current coroutine/thread, subscribe to
+// await: creates a callable that resumes the current coroutine/thread,
+// subscribe to
 // the future and suspends the current coroutine/thread
 
-template <typename T> T await(observable<T> &obs) {
+template <typename T> T xxawait(observable<T> &obs) {
   T value_tmp;
   // std::clog << "await enter\n";
   auto ts = coroutine::current();
@@ -29,7 +31,7 @@ template <typename T> T await(observable<T> &obs) {
   return value_tmp;
 }
 
-inline void await(observable<void> &obs) {
+inline void xxawait(observable<void> &obs) {
   auto ts = coroutine::current();
   if (!ts) {
     std::clog << "ABORT: await() called outside a resumable task\n";
@@ -40,3 +42,33 @@ inline void await(observable<void> &obs) {
   obs.subscribe(sub, [ts]() { ts->resume(); });
   coroutine::suspend();
 }
+
+// resumable function version
+inline auto operator co_await(observable<void> &obs) {
+  class awaiter {
+  public:
+    explicit awaiter(observable<> &obs) : obs_{obs} {}
+
+    bool await_ready() const { return false; }
+
+    bool await_suspend(std::experimental::coroutine_handle<> resume_cb) {
+      obs_.subscribe(sub, [&resume_cb]() {
+		  resume_cb(); 
+	  });
+	  // TODO special case with cancellations?
+	  return true;	// always suspend
+    }
+
+    void await_resume() {}
+
+    ~awaiter() {}
+
+  private:
+	subscription sub;
+    observable<> &obs_;
+  };
+
+  return awaiter{obs};
+}
+
+// TODO special version with cancellations

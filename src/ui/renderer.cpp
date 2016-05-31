@@ -24,7 +24,7 @@ void renderer::pop_clip() {}
 
 glm::ivec2 measure_text(NVGcontext *ctx, const std::string &str) {
   float bounds[4];
-  // float advance = nvgTextBounds(ctx, 0, 0, str.c_str(), nullptr, bounds);
+  float advance = nvgTextBounds(ctx, 0, 0, str.c_str(), nullptr, bounds);
   return glm::ivec2{(int)bounds[2] - (int)bounds[0],
                     (int)bounds[3] - (int)bounds[1]};
 }
@@ -95,6 +95,7 @@ void renderer::render_slider_float(const rect_2d &geometry, float min,
             geometry.size.y, BND_CORNER_NONE, BND_DEFAULT, p, nullptr,
             valstr.c_str());
 }
+
 
 void renderer::end_frame() {
   if (cur_native_window_) {

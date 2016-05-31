@@ -1,4 +1,11 @@
 #pragma once
+#include "../observable.hpp"
+#include <cstdint>
+#include <memory>
+#include <vector>
+#include <glm/glm.hpp>
+
+struct GLFWwindow;
 
 // input system:
 // RAW: raw inputs from GLFW, XInput
@@ -17,14 +24,26 @@ enum class input_event_type {
   cursor,
   mouse_scroll,
   key,
+  text,
   stylus_proximity,
-  stylus_properties,
-  gamepad_button,
+  stylus_properties
 };
 
 struct input_event {
   using ptr = std::shared_ptr<input_event>;
   input_event(input_event_type ty) : type{ty} {}
+
+  template <typename T> T *as() {
+    if (T::event_type == type)
+      return static_cast<T *>(this);
+    return nullptr;
+  }
+
+  template <typename T> const T *as() const {
+    if (T::event_type == type)
+      return static_cast<const T *>(this);
+    return nullptr;
+  }
 
   input_event_type type;
 };
@@ -44,27 +63,28 @@ struct mouse_button_event
 struct cursor_event : public t_input_event<input_event_type::cursor> {
   using ptr = std::shared_ptr<cursor_event>;
   // in client units (pixels)
-  unsigned positionX;
-  unsigned positionY;
+  glm::ivec2 pos;
 };
 
 struct mouse_move_event : public t_input_event<input_event_type::mouse_move> {
   using ptr = std::shared_ptr<mouse_move_event>;
-  double dx; // mysterious device units
-  double dy;
+  glm::ivec2 delta;
 };
 
 struct mouse_scroll_event
     : public t_input_event<input_event_type::mouse_scroll> {
   using ptr = std::shared_ptr<mouse_scroll_event>;
-  double dx;
-  double dy;
+  glm::ivec2 delta;
 };
 
 struct key_event : public t_input_event<input_event_type::key> {
   using ptr = std::shared_ptr<key_event>;
   uint32_t code;
   key_state state;
+};
+
+struct text_event : public t_input_event<input_event_type::text> {
+	uint32_t codepoint;
 };
 
 struct stylus_proximity_event
@@ -78,24 +98,21 @@ struct stylus_properties_event
     : public t_input_event<input_event_type::stylus_properties> {
   using ptr = std::shared_ptr<stylus_properties_event>;
   // state (touch, hover)
-  double x;
-  double y;
+  glm::vec2 pos;
   double pressure;
   double tilt;
 };
 
-struct gamepad_axis 
-{
-	float x;
-	float y;
+struct gamepad_axis {
+	glm::vec2 pos;
 };
 
-struct gamepad_state
-{
-	std::vector<button_state> buttons;
-	std::vector<gamepad_axis> axis;
+struct gamepad_state {
+  std::vector<button_state> buttons;
+  std::vector<gamepad_axis> axis;
 };
 
+extern observable<input_event*> events;
 
 /////////////////////////////////////////////
 // Translated inputs
@@ -103,41 +120,48 @@ struct gamepad_state
 //
 // Command trigger: button press, gamepad axis trigger
 //	=> polling + events
-// Value mapping (1D/2D) w/ deadzone: gamepad axis, d-pad, 4-key set (arrows, WASD, others), 8-key set (numpad)
-//	=> polling only 
+// Value mapping (1D/2D) w/ deadzone: gamepad axis, d-pad, 4-key set (arrows,
+// WASD, others), 8-key set (numpad)
+//	=> polling only
 // Value (boolean): button press
 //
 // Must be serializable
 
-class state 
-{
+class action : public observable<> {
 public:
+  action() {}
+  virtual ~action() {}
 
-private:
-	gamepad_state gpstate[max_gamepads];
+protected:
 };
 
-class action : public observable<>
-{
+class key_action : public action {
 public:
-private:
-	static action mouse_button(uint32_t key_code, /*callback*/);
-};
-
-
-
-class game_inputs 
-{
-public:
-	game_inputs(...)
-	{
-		jump = 
-	}
+  key_action(int key);
+  ~key_action();
 
 private:
-	action jump;
-	action attack;
+  subscription sub_;
+  int key_;
 };
 
+class gamepad_button_action : public action {
+public:
+  gamepad_button_action(uint16_t button, bool autofire = false,
+                        float fire_rate = 0.0f);
+  ~gamepad_button_action();
+
+private:
+  subscription sub_;
+  bool autofire_;
+  float fire_rate_;
+  uint16_t button_;
+  uint32_t prev_packet_{0};
+  button_state prev_state_{button_state::released};
+};
+
+void initialize(GLFWwindow *window);
+void process_input();
+glm::ivec2 cursor_pos();
 
 }

@@ -1,4 +1,5 @@
 #include <fstream>
+#include <future>
 #include <iostream>
 #include <memory>
 #include <ostream>
@@ -34,12 +35,16 @@
 #include <experimental/filesystem>
 
 #include "ui/button.hpp"
+#include "ui/input.hpp"
 #include "ui/native_window.hpp"
 #include "ui/slider.hpp"
+#include "ui/text_edit.hpp"
 
 #define NANOVG_GL3_IMPLEMENTATION
 #include "project_root.hpp"
 #include <nanovg_gl.h>
+
+#include <Xinput.h>
 
 namespace fs = std::experimental::filesystem;
 
@@ -122,29 +127,6 @@ constexpr unsigned init_height = 480;
 observable<> on_render;
 observable<> on_update;
 
-class script : public observer<script> {
-public:
-  script() : cc{[this]() { do_stuff_with_coroutines(); }} {
-    listen(on_render, &script::do_stuff);
-  }
-
-  void do_stuff() { fmt::print(std::clog, "count={}\n", count++); }
-
-  void do_stuff_with_coroutines() {
-    int count2 = 0;
-    for (;;) {
-      await(on_render);
-      // std::clog << "lol y tho?\n";
-      fmt::print(std::clog, "count2={}\n", count2++);
-      // XXX when to kill the coroutine?
-    }
-  }
-
-private:
-  int count = 0;
-  coroutine cc;
-};
-
 // UI:
 // Goal: make is easy to implement complex behaviors/compose them
 // e.g.
@@ -172,18 +154,18 @@ private:
 //  - performs hit-testing
 //  - the container can affect (override) the selected visual for a button
 //    (e.g. button groups: first button, middle buttons and last buttons
-//have a different visual)
+// have a different visual)
 //  - provide metrics to calculate the active area of the widget (which is
 //  assumed to have a fixed shape)
 //    e.g.
 //    for color picker behavior: indicate the position of the hue
-//selection square + sliders
+// selection square + sliders
 //      simple_visual (buttons, checkboxes, etc)
 //      composite_visual (for button groups and other complex
-//widgets)
+// widgets)
 //        => hit_test(subelement)
 //      visual_element: main, color_slider_x, color_slider_y,
-//color_slider_z, color_rect, opacity_slider, etc
+// color_slider_z, color_rect, opacity_slider, etc
 //  - place and render widgets
 //  - must be easy to implement visuals
 //
@@ -219,7 +201,7 @@ private:
 //    visual: base class
 //    rect_visual: generic rectangle
 //    labeled_visual (rectangle w/ label: button, checkboxes, radios,
-//etc.)
+// etc.)
 //    button_grid_visual
 //    color_picker_visual
 //    progress_bar_visual
@@ -243,7 +225,7 @@ private:
 //  ui::dock::tab_bar_visual (rect visual, dummy)
 //    -> create_tab_item_visual
 //  ui::dock::tab_bar_item_visual (dummy, hit-test done by parent
-//tab_bar_visual)
+// tab_bar_visual)
 //  ui::dock::tab_visual
 //
 // Visual example: scrollable regions
@@ -310,6 +292,69 @@ private:
 // actually, render() could be itself a coroutine
 //
 
+/*void chase()
+{
+        auto& ui_root = ui::root_window();
+
+        for (;;)
+        {
+                {
+                        ui::button button{ ui_root, "hello" };
+                        await(button.pressed);
+                        // Here, we are still in the middle of propagating UI
+events
+                        // (iterating through std::vectors of child elements)
+                        // We cannot remove or add new elements without
+invalidating
+                        // iterators, which makes the program crash.
+                        //
+                        // Solution: defer the execution of UI observers until
+the events
+                        // have finished propagating through the UI element tree
+                        //
+                        // Implementation: event queues for observables /
+schedulers
+                        // observable.signal(scheduler, args...) (copy args)
+                        // scheduler.process()
+                }
+                {
+                        ui::button button{ ui_root, "world" };
+                        await(button.pressed);
+                }
+        }
+}*/
+
+std::future<void> resumable_chase() {
+  auto &ui_root = ui::root_window();
+
+  for (;;) {
+    {
+      ui::button button{ui_root, "hello"};
+      co_await button.pressed;
+    }
+    {
+      ui::button button{ui_root, "world"};
+      co_await button.pressed;
+    }
+  }
+}
+
+std::future<void> resumable_render()
+{
+	std::future<void> f;
+	for (int i = 0;; ++i)
+	{
+		co_await on_render;
+	}
+}
+
+std::future<void> cancellable_ui(cancellation_token cancel)
+{
+
+}
+
+
+
 int main() {
   /* Initialize the library */
   if (!glfwInit())
@@ -342,14 +387,45 @@ int main() {
                      .filter(pp_blur_h, 16, 16, 1.0f)
                      .filter(pp_blur_v, 16, 16, 1.0f);
 
-  auto s = std::make_shared<script>();
-
   // NVG context for UI rendering
   auto nvg = nvgCreateGL3(NVG_ANTIALIAS);
 
+  subscription sub;
+  input::initialize(window);
   auto &root = ui::initialize(window, nvg);
   ui::button button{root, "hello"};
-  ui::slider slider{ root , 0.0f, 1.0f,};
+  std::string filename;
+  ui::text_edit textedit{ root, filename };
+  button.pressed.subscribe(sub, []() { fmt::print(std::clog, "Boing!\n"); });
+  // ui::slider slider{ root , 0.0f, 1.0f,};
+
+  input::gamepad_button_action act_fire{XINPUT_GAMEPAD_X, true};
+  input::gamepad_button_action act_jump{XINPUT_GAMEPAD_A, true};
+
+  // act_fire.subscribe(sub, []() { fmt::print(std::clog, "Fire!\n"); });
+  // act_jump.subscribe(sub, []() { fmt::print(std::clog, "Jump!\n"); });
+
+  auto fire_task = [&act_fire]() -> std::future<void> {
+    for (;;) {
+      co_await act_fire;
+      fmt::print(std::clog, "Fire!\n");
+   }
+  };
+
+  auto jump_task = [&act_jump]() -> std::future<void> {
+    for (;;) {
+      co_await act_jump;
+      fmt::print(std::clog, "Jump!\n");
+    }
+  };
+
+  
+	auto f1 = fire_task();
+	auto f2 = jump_task();
+  
+
+  // coroutine ui_task{chase};
+  resumable_chase();
 
   /* Loop until the user closes the window */
   while (!glfwWindowShouldClose(window)) {
@@ -362,12 +438,14 @@ int main() {
                         (float)img1.impl_->desc_.height});
     ImGui::Render();
     on_render.signal();
+    input::process_input();
     ui::render();
     /* Swap front and back buffers */
     glfwSwapBuffers(window);
     /* Poll for and process events */
     glfwPollEvents();
   }
+  sub.unsubscribe();
 
   ImGui_ImplGlfwGL3_Shutdown();
 

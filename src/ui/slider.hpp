@@ -9,8 +9,8 @@ public:
 
   glm::ivec2 measure(renderer &r) override { return r.measure_slider(); }
 
-  void render(renderer &r, const rect_2d &geometry) override {
-    return r.render_slider_float(geometry, 0.0f, 1.0f, 0.5f);
+  void render(renderer &r) override {
+    return r.render_slider_float(geometry(), 0.0f, 1.0f, 0.5f);
   }
 
 private:

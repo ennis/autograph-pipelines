@@ -97,3 +97,7 @@ file(GLOB NANOVG_SOURCES nanovg/src/*.c)
 add_library(nanovg EXCLUDE_FROM_ALL STATIC ${NANOVG_SOURCES})
 target_include_directories(nanovg INTERFACE nanovg/src)
 target_link_libraries(nanovg PRIVATE stb)
+
+# variant 
+add_library(variant INTERFACE)
+target_include_directories(variant INTERFACE variant/include)

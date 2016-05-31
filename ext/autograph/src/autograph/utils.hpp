@@ -11,18 +11,20 @@
 
 namespace util {
 // helper class
-template <typename F, typename... Args, std::size_t... I>
-auto call_helper(const F &func, const std::tuple<Args...> &params,
-                 std::index_sequence<I...>) -> std::result_of_t<F(Args...)> {
-  return func(std::get<I>(params)...);
-}
+	template<typename Function, typename Tuple, size_t ... I>
+	auto call(const Function& f, Tuple t, std::index_sequence<I ...>)
+	{
+		return f(std::get<I>(t) ...);
+	}
 
-template <typename F, typename... Args>
-auto call(const F &func, const std::tuple<Args...> &params)
-    -> std::result_of_t<F(Args...)> {
-  return call_helper<F, Args...>(func, params,
-                                 std::index_sequence_for<Args...>());
-}
+	template<typename Function, typename Tuple>
+	auto call(const Function& f, Tuple t)
+	{
+		static constexpr auto size = std::tuple_size<Tuple>::value;
+		return call(f, t, std::make_index_sequence<size>{});
+	}
+
+
 }
 
 #define ENUM_BIT_FLAGS_OPERATORS(type)                                         \

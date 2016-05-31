@@ -22,3 +22,6 @@
 [submodule "ext/imgui"]
 	path = ext/imgui
 	url = https://github.com/ocornut/imgui
+[submodule "ext/variant"]
+	path = ext/variant
+	url = https://github.com/eggs-cpp/variant.git

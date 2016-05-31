@@ -1,7 +1,10 @@
 #pragma once
+#include <algorithm>
 #include <functional>
 #include <memory>
 #include <vector>
+
+#include "eggs/variant.hpp"
 
 class subscription_impl {};
 
@@ -42,12 +45,37 @@ public:
   }
 };
 
+class scheduler {
+public:
+  template <typename T> void schedule(observable<T> &obs, T &&value) {
+    // capture obs by ref, move value into closure
+    deferred_.emplace_back(
+        [&obs, value{std::move(value)} ]() { obs.signal(value); });
+  }
+
+  template <typename T> void schedule(observable<T> &obs) {
+    // capture obs by ref, move value into closure
+    deferred_.emplace_back([&obs]() { obs.signal(); });
+  }
+
+  void execute() {
+    for (auto &&d : deferred_)
+      d();
+    deferred_.clear();
+  }
+
+  std::vector<std::function<void()>> deferred_;
+};
+
 template <typename T = void> class observable {
 public:
+	using type = T;
+
   // disable copy
   observable() = default;
   observable(const observable &) = delete;
   observable &operator=(const observable &) = delete;
+  // TODO make them non-movable
   observable(observable &&rhs) = default;
   observable &operator=(observable &&) = default;
 
@@ -74,6 +102,17 @@ public:
     reap();
   }
 
+  template <typename U = T>
+  void signal_deferred(scheduler &sched,
+                       std::enable_if_t<!std::is_void<U>::value, U> value) {
+    sched.schedule(*this, std::forward(value));
+  }
+
+  template <typename U = T>
+  std::enable_if_t<std::is_void<U>::value> signal_deferred(scheduler &sched) {
+    sched.schedule(*this);
+  }
+
 private:
   void reap() {
     callbacks_.erase(
@@ -89,3 +128,38 @@ private:
 
   std::vector<callback> callbacks_;
 };
+
+
+// awaitable type (but not observable)
+template <typename ... Types>
+struct multi_observable : public observable<eggs::variant<Types...>>
+{
+	// attach an observer to each observable?
+	// each observer has its own type
+	// use for_each_in_tuple?
+
+	~multi_observable()
+	{
+		sub_.unsubscribe();
+	}
+	
+	void attach(const std::tuple<observable<Types>&...>& observables)
+	{
+		for_each_in_tuple(observables_, [this](auto&& obs) {
+			obs.subscribe(this->sub_, [this](decltype(obs)::type v) {
+				this->signal(eggs::variant<Types...>(std::move(v)));
+			});
+		});
+	}
+
+	subscription sub_;
+};
+
+class cancellation_token : public observable<>
+{
+
+};
+
+// TODO: operator | (obs<T>, obs<U>) -> observable<variant<T,U>>
+//		operator | (obs<T>, cancellation) -> observable<result<T>>
+// 

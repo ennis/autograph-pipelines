@@ -10,6 +10,14 @@ namespace ui {
 
 class renderer {
 public:
+	struct text_edit_state
+	{
+		std::string& str;
+		int sel_begin;
+		int sel_end;
+		int caret_pos;
+	};
+
   renderer(NVGcontext *ctx, GLFWwindow *root_window);
 
   virtual ~renderer();
@@ -32,6 +40,10 @@ public:
   virtual glm::ivec2 measure_slider();
   virtual void render_slider_float(const rect_2d &geometry, float min,
                                    float max, float cur);
+
+  void render_text_edit(const rect_2d &geometry, const text_edit_state& state);
+
+  //void measure_text_edit(std::string& str);
 
   virtual void end_frame();
 

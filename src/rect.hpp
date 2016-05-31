@@ -30,6 +30,10 @@ struct rect_2d {
            (p.y < (pos.y + size.y)) && (p.y >= pos.y);
   }
 
+  glm::ivec2 relative(glm::ivec2 p) const {
+	  return glm::clamp(p - pos, glm::ivec2{ 0.0f, 0.0f }, size);
+  }
+
   glm::ivec2 pos;
   glm::ivec2 size;
 };
