@@ -86,3 +86,10 @@ struct draw_node : public node {
 //
 // Ideally:
 // store directly bindings into gl_shader_resources
+//
+// Two sets of bindings:
+// 1. bind(shader_resources)
+// 2. bind_gl(gl_shader_resources)
+// Immediate: call only bind_gl
+//
+

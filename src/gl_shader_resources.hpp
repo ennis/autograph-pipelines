@@ -33,48 +33,6 @@ struct gl_shader_resources {
   GLuint ibo;
   GLenum index_type;
 
-  void bind_texture(unsigned slot, GLuint obj)
-  {
-	  textures[slot] = obj;
-  }
-
-  void bind_image(unsigned slot, GLuint obj)
-  {
-	  images[slot] = obj;
-  }
-
-  void bind_sampler(unsigned slot, GLuint obj)
-  {
-	  samplers[slot] = obj;
-  }
-
-  void bind_vertex_buffer(unsigned slot, GLuint handle, size_t offset,
-	  size_t size, unsigned stride) {
-	  vbo[slot] = handle;
-	  vbo_offsets[slot] = offset;
-	  vbo_strides[slot] = stride;
-  }
-
-  void bind_index_buffer(GLuint handle, size_t offset, size_t size,
-	  GLenum type) {
-	  //i = type;
-	  ibo = handle;
-  }
-
-  void bind_uniform_buffer(unsigned slot, GLuint handle, size_t offset,
-	  size_t size) {
-	  ubo[slot] = handle;
-	  ubo_sizes[slot] = size;
-	  ubo_offsets[slot] = offset;
-  }
-  
-  void bind_storage_buffer(unsigned slot, GLuint handle, size_t offset,
-	  size_t size) {
-	  ssbo[slot] = handle;
-	  ssbo_sizes[slot] = size;
-	  ssbo_offsets[slot] = offset;
-  }
-
   void reset();
   void bind();
 };

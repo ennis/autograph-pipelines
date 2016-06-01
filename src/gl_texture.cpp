@@ -29,17 +29,17 @@ gl_texture::gl_texture(const image_desc &desc) : desc_{desc} {
   const auto& glfmt = get_gl_image_format_info(desc.format);
   switch (desc.dimensions) {
   case image_dimensions::img_1d:
-    gl::CreateTextures(gl::TEXTURE_1D, desc.num_mips, &tex_obj);
-    gl::TextureStorage1D(tex_obj, 1, glfmt.internal_fmt, desc.width);
+    gl::CreateTextures(gl::TEXTURE_1D, 1, &tex_obj);
+    gl::TextureStorage1D(tex_obj, desc.num_mips, glfmt.internal_fmt, desc.width);
     break;
   case image_dimensions::img_2d:
-    gl::CreateTextures(gl::TEXTURE_2D, desc.num_mips, &tex_obj);
-    gl::TextureStorage2D(tex_obj, 1, glfmt.internal_fmt, desc.width,
+    gl::CreateTextures(gl::TEXTURE_2D, 1, &tex_obj);
+    gl::TextureStorage2D(tex_obj, desc.num_mips, glfmt.internal_fmt, desc.width,
                          desc.height);
     break;
   case image_dimensions::img_3d:
-    gl::CreateTextures(gl::TEXTURE_3D, desc.num_mips, &tex_obj);
-    gl::TextureStorage3D(tex_obj, 1, glfmt.internal_fmt, desc.width,
+    gl::CreateTextures(gl::TEXTURE_3D, 1, &tex_obj);
+    gl::TextureStorage3D(tex_obj, desc.num_mips, glfmt.internal_fmt, desc.width,
                          desc.height, desc.depth);
     break;
   default:

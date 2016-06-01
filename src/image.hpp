@@ -1,44 +1,11 @@
 #pragma once
 #include "image_impl.hpp"
-
 #include "buffer_node.hpp"
 #include "compute_node.hpp"
 #include "shader_resource.hpp"
 
 /////////////////////////////////////////////////////
-// binders
-class image;
-struct buffer;
-
-struct bind_resource_context {
-  unsigned vertex_buffer_index = 0;
-  unsigned uniform_buffer_index = 0;
-  unsigned texture_index = 0;
-  unsigned image_index = 0;
-  unsigned sampler_index = 0;
-};
-
-struct sampled_image {
-  const image &img;
-};
-
-struct storage_image {
-  const image &img;
-};
-
-void bind_shader_resource(bind_resource_context &context, shader_resources &res,
-                          image &img);
-void bind_shader_resource(bind_resource_context &context, shader_resources &res,
-                          buffer &buf);
-
-template <typename T>
-void bind_shader_resource(bind_resource_context &context, shader_resources &res,
-                          const T &v) {
-  auto buf = buffer{buffer_node::create(&v, sizeof(T), storage_type::host)};
-  bind_shader_resource(context, res, buf);
-}
-
-/////////////////////////////////////////////////////
+// An image pyramid
 // Proxy for image_impl
 class image {
 public:
@@ -49,10 +16,19 @@ public:
   static image clear_3d(image_format format, unsigned width, unsigned height,
                         unsigned depth, const glm::vec4 &rgba);
 
+  // mark this image for rescheduling
+  image &schedule();
+
+  auto &name() const { return impl_->name_; }
+
+  image &set_name(std::string name) {
+    impl_->name_ = std::move(name);
+    return *this;
+  }
+
   image subimage(const rect_2d &rect);
   image cast(image_format format);
   image &set_storage_hint(storage_hint hint);
-  image eager();
 
   //////////////////////////////////////////////
   // Operation of filter():
@@ -61,12 +37,12 @@ public:
   // bind other resources
   // return: image bound to img unit #0
   template <typename... Resources>
-  image filter(const char *glsl, Resources &&... resources) {}
+  image filter(const glsl_snippet& snip, Resources &&... resources) {}
 
   template <typename... Resources>
   image filter(gl_compute_pipeline &pp, int local_size_x, int local_size_y,
                Resources &&... resources) {
-    shader_resources res;
+    /*shader_resources res;
     shader_resource tex0;
     tex0.access = shader_resource_access::read;
     tex0.type = shader_resource_type::sampled_image;
@@ -99,18 +75,46 @@ public:
         std::move(res));
 
     img_out->pred_ = n.get();
-    return image{std::move(img_out)};
+    return image{std::move(img_out)};*/
   }
 
-  // mark this image for rescheduling
-  image &schedule();
+  // Fullscreen fragment shader pass
+  template <typename... Resources>
+  image apply_frag(gl_graphics_pipeline &pp, Resources&&... resources)
+  {}
 
-  auto &name() const { return impl_->name_; }
-
-  image &set_name(std::string name) {
-    impl_->name_ = std::move(name);
-    return *this;
+  // same but with a GLSL snippet
+  template <typename... Resources>
+  image apply_frag(const glsl_snippet &snip, Resources&&... resources)
+  {
+      // TODO: get pipeline from GLSL snippet compiler cache
+      // call apply_frag
   }
+
+  // downsample the image (x2)
+  template <typename... Resources>
+  image downsample(const glsl_snippet& snip, Resources&&... resources)
+  {
+    // TODO
+  }
+
+  // regenerate the mip-maps
+  // will evaluate predecessors if necessary
+  image &generate_mip_maps()
+  {
+      // TODO
+  }
+
+  // regen the mip-maps with a custom GLSL filter
+  // will evaluate predecessors if necessary
+  template <typename... Resources>
+  image &generate_mip_maps(const glsl_snippet& snip, Resources&&... resources)
+  {
+      // TODO
+  }
+
+  //img.generate_mip_maps("void apply(vec4 a, vec4 b, vec4 c, vec4 d) { .... }");
+
 
   // TODO: downsample/upsample
   // TODO: gen_mip_maps

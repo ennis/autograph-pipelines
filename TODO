@@ -88,7 +88,35 @@ schedule animations
 
 
 Image pipelines:
+
 -> finish immediate draw/compute
 -> GLSL 'library' for common patterns (fullscreen FS, default vertex shader, default 2D VS, etc.)
 -> common patterns for compute (filter image, etc.)
+-> automatic mip-maps? image pyramids?
+
+Framebuffer:
+-> a collection of draw attachements and optionally one depth attachement
+-> groups together a set of render targets
+-> an image is implicitly convertible to a framebuffer
+-> cache the opengl framebuffer
+-> not a value type (only holds references)
+
+State group:
+-> a collection of bindings
+
+draw_utils.hpp
+- draw_2d_mesh<T>(framebuffer&, vertex_buffer<T>, GLSL, ...)
+- draw_2d_quad(framebuffer&, const rect_2d&, texcoords, ...)
+- draw_2d_quad(framebuffer&, vec4 p1, vec4 p2, texcoords, ...)
+- draw_line(...)
+- draw_3d_mesh(framebuffer&, vertex_buffer<T>, mat4 object, mat4 viewproj, ...)
+
+
+vis_utils.hpp
+Debug windows (ui + coroutines)
+- vis::show_image(image...)
+- image_vis_params:
+	clamp, scale, colormap
+	show color picker
+
 
