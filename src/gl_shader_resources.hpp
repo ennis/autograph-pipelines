@@ -2,6 +2,7 @@
 #include <vector>
 #include <gl_core_4_5.hpp>
 #include "utils.hpp"
+#include "gl_buffer.hpp"
 
 enum class gl_shader_resource_state_mask {
   texture_units = (1 << 0),
@@ -30,7 +31,7 @@ struct gl_shader_resources {
   std::vector<GLuint> ssbo;
   std::vector<GLsizeiptr> ssbo_sizes;
   std::vector<GLintptr> ssbo_offsets;
-  GLuint ibo;
+  gl_buffer_slice ibo;
   GLenum index_type;
 
   void reset();

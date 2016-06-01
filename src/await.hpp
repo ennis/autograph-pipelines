@@ -64,7 +64,7 @@ public:
   using observable_awaiter_base<T>::observable_awaiter_base;
 
   bool await_suspend(std::experimental::coroutine_handle<> resume_cb) {
-    obs_.subscribe(sub, [&resume_cb]() { resume_cb(); });
+    obs_.subscribe(sub, [resume_cb]() { resume_cb(); });
     return true;
   }
 };

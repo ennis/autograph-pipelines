@@ -3,6 +3,7 @@
 #include "buffer_node.hpp"
 #include "compute_node.hpp"
 #include "shader_resource.hpp"
+#include "glsl_snippet.hpp"
 
 /////////////////////////////////////////////////////
 // An image pyramid

@@ -352,7 +352,9 @@ std::future<void> resumable_render()
 
 std::future<void> cancellable_ui(cancellation_token cancel)
 {
-
+	ui::native_window dlg{ glm::ivec2{400, 300}, "Dialog" };
+	co_await dlg.should_close;
+	fmt::print(std::clog, "Closed dialog\n");
 }
 
 
@@ -385,9 +387,9 @@ int main() {
 
   fs::path proot = project_root();
   auto img1 = load_image(proot / "img/tonberry.jpg");
-  auto imgBlur = img1.subimage(rect_2d{0, 0, 128, 128})
+  /*auto imgBlur = img1.subimage(rect_2d{0, 0, 128, 128})
                      .filter(pp_blur_h, 16, 16, 1.0f)
-                     .filter(pp_blur_v, 16, 16, 1.0f);
+                     .filter(pp_blur_v, 16, 16, 1.0f);*/
 
   // NVG context for UI rendering
   auto nvg = nvgCreateGL3(NVG_ANTIALIAS);
@@ -428,6 +430,7 @@ int main() {
 
   // coroutine ui_task{chase};
   resumable_chase();
+  cancellable_ui(cancellation_token{});
 
   /* Loop until the user closes the window */
   while (!glfwWindowShouldClose(window)) {

@@ -1,7 +1,7 @@
 #include "gl_shader_resources.hpp"
 
 void gl_shader_resources::reset() {
-  ibo = 0;
+	ibo = gl_buffer_slice{};
   // ibo_type = gl::UNSIGNED_INT;
   std::fill(vbo.begin(), vbo.end(), 0);
   std::fill(vbo_offsets.begin(), vbo_offsets.end(), 0);
@@ -42,6 +42,6 @@ void gl_shader_resources::bind() {
     gl::BindSamplers(0, (GLsizei)samplers.size(), samplers.data());
   }
   if (not_empty(mask & gl_shader_resource_state_mask::index_buffer)) {
-    gl::BindBuffer(gl::ELEMENT_ARRAY_BUFFER, ibo);
+    gl::BindBuffer(gl::ELEMENT_ARRAY_BUFFER, ibo.obj);
   }
 }

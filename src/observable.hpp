@@ -26,8 +26,8 @@ class observable;
 ///////////////////////////////////////////////////////////////
 class scheduler {
 public:
-  template <typename T> void schedule(observable<T> &obs, T &&value);
-  template <typename T> void schedule(observable<T> &obs);
+  template <typename T> void schedule(observable<T> obs, T &&value);
+  template <typename T> void schedule(observable<T> obs);
 
   void execute() {
     for (auto &&d : deferred_)
@@ -61,15 +61,14 @@ public:
   friend class scheduler;
   using type = T;
 
-  // disable copy
-  observable() : ptr_{std::make_unique<state>()}
+  observable() : ptr_{std::make_shared<state>()}
   {}
 
-  observable(const observable &) = delete;
-  observable &operator=(const observable &) = delete;
+  //observable(const observable &) = delete;
+  //observable &operator=(const observable &) = delete;
   // TODO make them non-movable
-  observable(observable &&rhs) = default;
-  observable &operator=(observable &&) = default;
+  //observable(observable &&rhs) = default;
+  //observable &operator=(observable &&) = default;
 
   template <typename Func> void subscribe(subscription &sub, Func &&func) {
     ptr_->subscribe(sub, std::forward<Func>(func));
@@ -96,8 +95,6 @@ public:
   }
 
 private:
-
-
   struct state {
     void reap() {
       callbacks_.erase(
@@ -117,6 +114,13 @@ private:
       for (int i = 0; i < init_size; ++i)
         if (auto sp = callbacks_[i].sub_.lock())
           callbacks_[i].fn_(value);
+	  // ISSUE: one of the callbacks may resume a coroutine that owns the 
+	  // observable pointed by 'this'
+	  // If the coroutine ends, this observable is destroyed but the execution
+	  // still continues here in signal()
+	  // Solution: use a shared_ptr? make a copy of callbacks_?
+	  //
+	  // TL;DR: invoking a callback may destroy the current observable.
       reap();
     }
 
@@ -144,19 +148,19 @@ private:
     std::vector<detail::callback<T>> callbacks_;
   };
 
-  std::unique_ptr<state> ptr_;
+  std::shared_ptr<state> ptr_;
 };
 
 template <typename T>
-void scheduler::schedule(observable<T> &obs, T &&value) {
-  deferred_.emplace_back([ptr = obs.ptr_.get(), value{std::move(value)}]() {
-    ptr->signal(value);
+void scheduler::schedule(observable<T> obs, T &&value) {
+	deferred_.emplace_back([obs{ std::move(obs) }, value{ std::move(value) }] () mutable {
+    obs.signal(value);
   });
 }
 
 template <typename T>
-void scheduler::schedule(observable<T> &obs) {
-  deferred_.emplace_back([ptr = obs.ptr_.get()]() { ptr->signal(); });
+void scheduler::schedule(observable<T> obs) {
+  deferred_.emplace_back([obs{ std::move(obs) }] () mutable { obs.signal(); });
 }
 
 ///////////////////////////////////////////////////////////////

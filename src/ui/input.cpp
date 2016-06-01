@@ -9,56 +9,53 @@
 #include <iostream>
 
 namespace input {
-namespace {
 // synchronous stream of input events
-observable<input_event *> g_input_events;
-observable<> g_input_poll;
+observable<input_event *> events;
+observable<> poll;
+
+namespace {
 GLFWwindow *g_input_window;
 
 // GLFW event handlers
-void GLFWMouseButtonHandler(GLFWwindow* window, int button, int action,
-	int mods) {
-	mouse_button_event mb;
-	mb.button = button;
-	mb.state = action == GLFW_PRESS ? button_state::pressed
-		: button_state::released;
-	// input::events stream is synchronous
-	events.signal(&mb);
+void GLFWMouseButtonHandler(GLFWwindow *window, int button, int action,
+                            int mods) {
+  mouse_button_event mb;
+  mb.button = button;
+  mb.state =
+      action == GLFW_PRESS ? button_state::pressed : button_state::released;
+  // input::events stream is synchronous
+  events.signal(&mb);
 }
 
-void GLFWCursorPosHandler(GLFWwindow* window, double xpos,
-	double ypos)
-{
-	cursor_event cur;
-	cur.pos = glm::ivec2{ (int)xpos, (int)ypos };
-	events.signal(&cur);
+void GLFWCursorPosHandler(GLFWwindow *window, double xpos, double ypos) {
+  cursor_event cur;
+  cur.pos = glm::ivec2{(int)xpos, (int)ypos};
+  events.signal(&cur);
 }
 
-void GLFWCursorEnterHandler(GLFWwindow* window, int entered) {
-	//instance->on_cursor_enter(window, entered);
+void GLFWCursorEnterHandler(GLFWwindow *window, int entered) {
+  // instance->on_cursor_enter(window, entered);
 }
 
-void GLFWScrollHandler(GLFWwindow* window, double xoffset,
-	double yoffset) {
-	//instance->on_scroll(window, xoffset, yoffset);
+void GLFWScrollHandler(GLFWwindow *window, double xoffset, double yoffset) {
+  // instance->on_scroll(window, xoffset, yoffset);
 }
 
-void GLFWKeyHandler(GLFWwindow* window, int key, int scancode,
-	int action, int mods) {
-	//instance->on_key(window, key, scancode, action, mods);
+void GLFWKeyHandler(GLFWwindow *window, int key, int scancode, int action,
+                    int mods) {
+  // instance->on_key(window, key, scancode, action, mods);
 }
 
-void GLFWCharHandler(GLFWwindow* window, unsigned int codepoint) {
-	text_event text;
-	text.codepoint = codepoint;
-	events.signal(&text);
-	//instance->on_char(window, codepoint);
+void GLFWCharHandler(GLFWwindow *window, unsigned int codepoint) {
+  text_event text;
+  text.codepoint = codepoint;
+  events.signal(&text);
+  // instance->on_char(window, codepoint);
 }
-
 }
 
 key_action::key_action(int key) : key_{key} {
-  g_input_events.subscribe(sub_, [this](input_event *ev) {
+  events.subscribe(sub_, [this](input_event *ev) {
     if (ev->type == input_event_type::key) {
       if (this->key_ == static_cast<key_event *>(ev)->code) {
         signal();
@@ -72,7 +69,7 @@ key_action::~key_action() { sub_.unsubscribe(); }
 gamepad_button_action::gamepad_button_action(uint16_t button, bool autofire,
                                              float fire_rate)
     : button_{button}, autofire_{autofire}, fire_rate_{fire_rate} {
-  g_input_poll.subscribe(sub_, [this]() {
+  poll.subscribe(sub_, [this]() {
 #ifdef WIN32
     XINPUT_STATE xis;
     auto result = XInputGetState(0, &xis);
@@ -97,27 +94,22 @@ gamepad_button_action::gamepad_button_action(uint16_t button, bool autofire,
 
 gamepad_button_action::~gamepad_button_action() { sub_.unsubscribe(); }
 
-void initialize(GLFWwindow * window)
-{
-	g_input_window = window;
-	glfwSetCharCallback(window, GLFWCharHandler);
-	glfwSetCursorEnterCallback(window, GLFWCursorEnterHandler);
-	glfwSetCursorPosCallback(window, GLFWCursorPosHandler);
-	glfwSetKeyCallback(window, GLFWKeyHandler);
-	glfwSetMouseButtonCallback(window, GLFWMouseButtonHandler);
-	glfwSetScrollCallback(window, GLFWScrollHandler);
+void initialize(GLFWwindow *window) {
+  g_input_window = window;
+  glfwSetCharCallback(window, GLFWCharHandler);
+  glfwSetCursorEnterCallback(window, GLFWCursorEnterHandler);
+  glfwSetCursorPosCallback(window, GLFWCursorPosHandler);
+  glfwSetKeyCallback(window, GLFWKeyHandler);
+  glfwSetMouseButtonCallback(window, GLFWMouseButtonHandler);
+  glfwSetScrollCallback(window, GLFWScrollHandler);
 }
 
-void process_input() { g_input_poll.signal(); }
+void process_input() { poll.signal(); }
 
-glm::ivec2 cursor_pos()
-{
-	double x, y;
-	glfwGetCursorPos(g_input_window, &x, &y);
-	return glm::ivec2{ (int)x, (int)y };
+glm::ivec2 cursor_pos() {
+  double x, y;
+  glfwGetCursorPos(g_input_window, &x, &y);
+  return glm::ivec2{(int)x, (int)y};
 }
-
-observable<input_event*> events;
-
 
 }

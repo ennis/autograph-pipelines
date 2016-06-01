@@ -113,6 +113,7 @@ struct gamepad_state {
 };
 
 extern observable<input_event*> events;
+extern observable<> poll;
 
 /////////////////////////////////////////////
 // Translated inputs
