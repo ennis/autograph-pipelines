@@ -1,7 +1,10 @@
 #pragma once
 #include "coroutine.hpp"
 #include "observable.hpp"
+
+#ifdef WIN32
 #include <experimental/resumable>
+#endif
 
 // await: creates a callable that resumes the current coroutine/thread,
 // subscribe to
@@ -43,32 +46,45 @@ inline void xxawait(observable<void> &obs) {
   coroutine::suspend();
 }
 
-// resumable function version
-inline auto operator co_await(observable<void> &obs) {
-  class awaiter {
-  public:
-    explicit awaiter(observable<> &obs) : obs_{obs} {}
+//////////////////////////////////////////////////////////////////////////
+template <typename T> class observable_awaiter_base {
+public:
+  explicit observable_awaiter_base(observable<T> &obs) : obs_{obs} {}
+  bool await_ready() const { return false; }
+  void await_resume() {}
 
-    bool await_ready() const { return false; }
+protected:
+  subscription sub;
+  observable<T> &obs_;
+};
 
-    bool await_suspend(std::experimental::coroutine_handle<> resume_cb) {
-      obs_.subscribe(sub, [&resume_cb]() {
-		  resume_cb(); 
-	  });
-	  // TODO special case with cancellations?
-	  return true;	// always suspend
-    }
+template <typename T>
+class observable_awaiter : public observable_awaiter_base<T> {
+public:
+  using observable_awaiter_base<T>::observable_awaiter_base;
 
-    void await_resume() {}
+  bool await_suspend(std::experimental::coroutine_handle<> resume_cb) {
+    obs_.subscribe(sub, [&resume_cb]() { resume_cb(); });
+    return true;
+  }
+};
 
-    ~awaiter() {}
+template <typename U>
+class observable_awaiter<result<U>> : public observable_awaiter_base<U> {
+public:
+  using observable_awaiter_base<result<U>>::observable_awaiter_base;
 
-  private:
-	subscription sub;
-    observable<> &obs_;
-  };
+  bool await_suspend(std::experimental::coroutine_handle<> resume_cb) {
+    obs_.subscribe(sub, [&resume_cb](result<U> res) {
+      if (res.has_error())
+        resume_cb.destroy(); // will destroy variables with automatic storage
+      else
+        resume_cb(); // TODO also set promise return value
+    });
+    return true; // always suspend
+  }
+};
 
-  return awaiter{obs};
+template <typename T> inline auto operator co_await(observable<T> &obs) {
+  return observable_awaiter<T>{obs};
 }
-
-// TODO special version with cancellations

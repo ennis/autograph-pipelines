@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.2)
 
-project(pipelines CXX)
+project(pipelines C CXX)
 set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 add_definitions(-DNOMINMAX -DGLM_FORCE_RADIANS)

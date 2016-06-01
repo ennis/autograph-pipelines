@@ -29,7 +29,7 @@ native_window &initialize(GLFWwindow *root_window, NVGcontext *nvg_context) {
   g_ui_state->root_window_ = std::make_unique<native_window>(root_window);
   g_ui_state->renderer_ = std::make_unique<renderer>(nvg_context, root_window);
   input::events.subscribe(g_ui_state->input_sub_, [](auto ev) {
-	  process_input(*ev);
+      ui::process_input(*ev);
   });
   return *g_ui_state->root_window_;
 }

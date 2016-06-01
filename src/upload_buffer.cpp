@@ -1,5 +1,6 @@
 #include "upload_buffer.hpp"
 #include <algorithm>
+#include <cstring>
 
 // A ring buffer, used in the implementation of upload buffers
 upload_buffer::upload_buffer(size_t size)

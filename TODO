@@ -1,0 +1,94 @@
+UI:
+
+Case 1: checkbox that reveals new UI
+
+	{
+		ui::checkbox check_1{panel};	// checkbox appears
+		check_1.checked([&](){			// start coroutine when checked
+			ui::checkbox check_2{panel};	// new checkbox appears on panel
+			await(check_1.unchecked);		// coroutine suspends until check_1 is unchecked, or the observable is killed
+			// check_2 disappears
+		});
+
+		// check_1 disappears
+		// check_2 must be cleaned up: how?
+		//  solution #1: macro ui_await() that can return
+		//  solution #2: await() returns status
+		//	=> signal observers that the observable has been deleted
+
+		// check_1 disappears
+		// check_1.checked is deleted
+		// check_1.checked sends deletion signal
+		// await(check_1) resumes
+		// check_2 disappears
+	}
+
+Case 2: checkbox that enables/disables UI
+
+	{
+		observable<bool> value;
+		ui::checkbox check_1{panel, value};
+		ui::checkbox check_2{panel, value};
+		// check_1 & check_2 are in sync
+		// how?
+		// value is an observable (type boolean)
+		// (less intrusive) store a reference/pointer to value, and poll
+		// no need for a notification system (optional)
+		check_1.value([&](bool b){check_2.enable(b);});
+	}
+
+
+Case 3: coroutine termination/cancellation
+	auto r = await(stuff())
+	if (!r) return;
+	co_await apply.click | cancel;
+
+
+Case 4: FSM with coroutines, composition of awaitables
+	result = co_await apply.click | mousemove.click | cancel;
+	switch (result) 
+	{
+	case <0>:
+	case <1>:
+	case <2>:
+	}
+
+	show_dialog(cancellation cancel) 
+	{
+		auto ui_root = ui::root_window();
+		ui::input_float inpfloat{ui_root};
+		co_await inpfloat.value_changed | cancel;
+		return inpfloat.value;
+		// OR
+		// (can be cancelled by user or by program)
+		return co_await inpfloat.value | cancel | inpfloat.cancel;
+	}
+
+	main() 
+	{
+		cancellation close_dialog;
+		show_dialog(close_dialog);
+		=> cancellation destructor cancels the coroutine
+		co_await 20s;	// timeout
+		close_dialog.cancel();
+	}
+
+Coroutine suspension:
+	await
+	yield
+
+
+Asynchronous coroutine resume?
+i.e. when an event is signalled, but we do not want to run the coroutine immediately
+DONE with schedules
+
+
+Animation system:
+schedule animations
+
+
+Image pipelines:
+-> finish immediate draw/compute
+-> GLSL 'library' for common patterns (fullscreen FS, default vertex shader, default 2D VS, etc.)
+-> common patterns for compute (filter image, etc.)
+

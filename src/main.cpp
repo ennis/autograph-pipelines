@@ -44,7 +44,9 @@
 #include "project_root.hpp"
 #include <nanovg_gl.h>
 
+#ifdef WIN32
 #include <Xinput.h>
+#endif
 
 namespace fs = std::experimental::filesystem;
 

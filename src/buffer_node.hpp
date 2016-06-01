@@ -1,6 +1,7 @@
 #pragma once
 #include "buffer.hpp"
 #include "gl_buffer.hpp"
+#include <cstring>
 
 /////////////////////////////////////////////////
 struct buffer_node : public node {

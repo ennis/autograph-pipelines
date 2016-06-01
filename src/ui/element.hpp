@@ -106,5 +106,6 @@ private:
 native_window& initialize(GLFWwindow* root_window, NVGcontext* nvg_context);
 native_window& root_window();
 void render();
+void process_input(const input::input_event& ev);
 
 }
