@@ -6,14 +6,13 @@ namespace ui {
 native_window::native_window(const glm::ivec2 &initial_size,
                              const std::string &title)
     : container{&ui::root_window()}, owns_window_{true} {
-  window_ = glfwCreateWindow(initial_size.x, initial_size.y, title.c_str(), nullptr,
-                   ui::root_window().get_window_impl());
+  window_ = glfwCreateWindow(initial_size.x, initial_size.y, title.c_str(),
+                             nullptr, ui::root_window().get_window_impl());
 }
 
-native_window::~native_window()
-{
-	if (owns_window_) 
-		glfwDestroyWindow(window_);
+native_window::~native_window() {
+  if (owns_window_)
+    glfwDestroyWindow(window_);
 }
 
 void native_window::render(renderer &r) {
@@ -35,6 +34,16 @@ void native_window::render(renderer &r) {
   glfwMakeContextCurrent(ui::root_window().get_window_impl());
 }
 
+void native_window::fixed_update(scheduler &event_sched) {
+	container::fixed_update(event_sched);
+  if (glfwWindowShouldClose(window_))
+    // XXX ALWAYS use signal_deferred in UI event handlers
+    // If the event handler resumes a coroutine that terminates
+    // and happens to own the widget, then a synchronous call to signal()
+    // is basically equivalent to 'delete this'. And it's bad.
+    should_close.signal_deferred(event_sched);
+}
+
 void native_window::process_input(const input::input_event &ev,
                                   scheduler &event_sched) {
   for (auto p : children()) {
@@ -42,11 +51,5 @@ void native_window::process_input(const input::input_event &ev,
       // XXX should forward input to child only if it is visible
       p->process_input(ev, event_sched);
   }
-  if (glfwWindowShouldClose(window_))
-	  // XXX ALWAYS use signal_deferred in UI event handlers
-	  // If the event handler resumes a coroutine that terminates
-	  // and happens to own the widget, then a synchronous call to signal()
-	  // is basically equivalent to 'delete this'. And it's bad.
-    should_close.signal_deferred(event_sched);
 }
 }

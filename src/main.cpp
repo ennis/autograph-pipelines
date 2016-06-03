@@ -341,23 +341,18 @@ std::future<void> resumable_chase() {
   }
 }
 
-std::future<void> resumable_render()
-{
-	std::future<void> f;
-	for (int i = 0;; ++i)
-	{
-		co_await on_render;
-	}
+std::future<void> resumable_render() {
+  std::future<void> f;
+  for (int i = 0;; ++i) {
+    co_await on_render;
+  }
 }
 
-std::future<void> cancellable_ui(cancellation_token cancel)
-{
-	ui::native_window dlg{ glm::ivec2{400, 300}, "Dialog" };
-	co_await dlg.should_close;
-	fmt::print(std::clog, "Closed dialog\n");
+std::future<void> cancellable_ui(cancellation_token cancel) {
+  ui::native_window dlg{glm::ivec2{400, 300}, "Dialog"};
+  co_await (dlg.should_close | cancel);
+  fmt::print(std::clog, "Closed dialog\n");
 }
-
-
 
 int main() {
   /* Initialize the library */
@@ -399,7 +394,7 @@ int main() {
   auto &root = ui::initialize(window, nvg);
   ui::button button{root, "hello"};
   std::string filename;
-  ui::text_edit textedit{ root, filename };
+  ui::text_edit textedit{root, filename};
   button.pressed.subscribe(sub, []() { fmt::print(std::clog, "Boing!\n"); });
   // ui::slider slider{ root , 0.0f, 1.0f,};
 
@@ -413,24 +408,25 @@ int main() {
     for (;;) {
       co_await act_fire;
       fmt::print(std::clog, "Fire!\n");
-   }
-  };
-
-  auto jump_task = [&act_jump]() -> std::future<void> {
-    for (;;) {
-      co_await act_jump;
-      fmt::print(std::clog, "Jump!\n");
     }
   };
 
-  
-	auto f1 = fire_task();
-	auto f2 = jump_task();
-  
+  auto jump_task = [&act_jump](cancellation_token tk) -> std::future<void> {
+    for (;;) {
+      co_await act_jump;
+      fmt::print(std::clog, "Jump!\n");
+	  tk.signal();
+    }
+  };
+
 
   // coroutine ui_task{chase};
   resumable_chase();
-  cancellable_ui(cancellation_token{});
+  cancellation_token tk;
+  cancellable_ui(tk);
+
+  auto f1 = fire_task();
+  auto f2 = jump_task(tk);
 
   /* Loop until the user closes the window */
   while (!glfwWindowShouldClose(window)) {

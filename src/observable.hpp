@@ -20,8 +20,7 @@ private:
       std::make_shared<subscription_impl>();
 };
 
-template <typename T>
-class observable;
+template <typename T> class observable;
 
 ///////////////////////////////////////////////////////////////
 class scheduler {
@@ -39,16 +38,13 @@ private:
   std::vector<std::function<void()>> deferred_;
 };
 
-namespace detail
-{
-template <typename U>
-struct callback {
+namespace detail {
+template <typename U> struct callback {
   std::function<void(U)> fn_;
   std::weak_ptr<subscription_impl> sub_;
 };
 
-template <>
-struct callback<void> {
+template <> struct callback<void> {
   std::function<void()> fn_;
   std::weak_ptr<subscription_impl> sub_;
 };
@@ -61,14 +57,13 @@ public:
   friend class scheduler;
   using type = T;
 
-  observable() : ptr_{std::make_shared<state>()}
-  {}
+  observable() : ptr_{std::make_shared<state>()} {}
 
-  //observable(const observable &) = delete;
-  //observable &operator=(const observable &) = delete;
+  // observable(const observable &) = delete;
+  // observable &operator=(const observable &) = delete;
   // TODO make them non-movable
-  //observable(observable &&rhs) = default;
-  //observable &operator=(observable &&) = default;
+  // observable(observable &&rhs) = default;
+  // observable &operator=(observable &&) = default;
 
   template <typename Func> void subscribe(subscription &sub, Func &&func) {
     ptr_->subscribe(sub, std::forward<Func>(func));
@@ -94,7 +89,7 @@ public:
     sched.schedule(*this);
   }
 
-private:
+protected:
   struct state {
     void reap() {
       callbacks_.erase(
@@ -104,7 +99,8 @@ private:
     }
 
     template <typename Func> void subscribe(subscription &sub, Func &&func) {
-      callbacks_.push_back(detail::callback<T>{std::forward<Func>(func), sub.ptr_});
+      callbacks_.push_back(
+          detail::callback<T>{std::forward<Func>(func), sub.ptr_});
     }
 
     // see http://stackoverflow.com/questions/2892087/
@@ -114,13 +110,13 @@ private:
       for (int i = 0; i < init_size; ++i)
         if (auto sp = callbacks_[i].sub_.lock())
           callbacks_[i].fn_(value);
-	  // ISSUE: one of the callbacks may resume a coroutine that owns the 
-	  // observable pointed by 'this'
-	  // If the coroutine ends, this observable is destroyed but the execution
-	  // still continues here in signal()
-	  // Solution: use a shared_ptr? make a copy of callbacks_?
-	  //
-	  // TL;DR: invoking a callback may destroy the current observable.
+      // ISSUE: one of the callbacks may resume a coroutine that owns the
+      // observable pointed by 'this'
+      // If the coroutine ends, this observable is destroyed but the execution
+      // still continues here in signal()
+      // Solution: use a shared_ptr? make a copy of callbacks_?
+      //
+      // TL;DR: invoking a callback may destroy the current observable.
       reap();
     }
 
@@ -151,16 +147,15 @@ private:
   std::shared_ptr<state> ptr_;
 };
 
-template <typename T>
-void scheduler::schedule(observable<T> obs, T &&value) {
-	deferred_.emplace_back([obs{ std::move(obs) }, value{ std::move(value) }] () mutable {
-    obs.signal(value);
-  });
+template <typename T> void scheduler::schedule(observable<T> obs, T &&value) {
+  deferred_.emplace_back(
+      [ obs{std::move(obs)}, value{std::move(value)} ]() mutable {
+        obs.signal(value);
+      });
 }
 
-template <typename T>
-void scheduler::schedule(observable<T> obs) {
-  deferred_.emplace_back([obs{ std::move(obs) }] () mutable { obs.signal(); });
+template <typename T> void scheduler::schedule(observable<T> obs) {
+  deferred_.emplace_back([obs{std::move(obs)}]() mutable { obs.signal(); });
 }
 
 ///////////////////////////////////////////////////////////////
@@ -214,41 +209,56 @@ struct multi_observable : public observable<eggs::variant<Types...>> {
 
 // error(empty) or T (optional type)
 template <typename T = void> struct result {
+  result() = default;
+  result(T &&v) : v_{std::move(v)} {}
+
   bool has_error() const { return v_.empty(); }
   std::experimental::optional<T> v_;
 };
 
 template <> struct result<void> {
+  result() = default;
+  result(bool error) : has_error_{error} {}
+
   bool has_error() const { return has_error_; }
-  bool has_error_;
+  bool has_error_{true};
+
+  static result<void> ok() { return result<void>{false}; }
+  static result<void> error() { return result<void>{true}; }
 };
 
-class cancellation_token : public observable<result<>> {};
+class cancellation_token : public observable<> {};
+
+template <typename T> class combined_observable : public observable<result<T>> {
+public:
+  subscription sub_;
+};
 
 template <typename T>
-auto operator|(observable<T> &obs, cancellation_token &cancel) {
-  class combined_observable : public observable<T> {
-  public:
-    // issue: I need to signal this observable, so I need to
-    // keep a reference to it in the callbacks that are passed
-    // to 'obs' and 'cancel'
-    // BUT the address of this observable may change (because it can be moved)
-    // when returned from a function, thus invalidating the references.
-    //
-    // Solution: use a shared_ptr/unique_ptr internally
-    // -> Issue: heap allocation
-    // -> -> Mitigation: object pools
-    //  ** best solution **
-    //
-    // Solution 2: do not attach until the observable has finished moving
-    //    can't do it in ctor, must keep ref to obs and cancel
-    //
-    // Solution 3: on move, detach and reattach
-    //    no
-
-  private:
+auto operator|(observable<T> obs, cancellation_token cancel) {
+  struct combined_observable : public observable<result<T>> {
     subscription sub_;
-  };
+  } combined_obs;
+  obs.subscribe(combined_obs.sub_, [combined_obs](auto &&v) mutable {
+    combined_obs.signal(result<T>{std::move(v)});
+  });
+  cancel.subscribe(combined_obs.sub_, [combined_obs]() mutable {
+    combined_obs.signal(result<T>{});
+  });
+  return std::move(combined_obs);
+}
+
+inline auto operator|(observable<void> obs, cancellation_token cancel) {
+  struct combined_observable : public observable<result<>> {
+    subscription sub_;
+  } combined_obs;
+  obs.subscribe(combined_obs.sub_, [combined_obs]() mutable {
+    combined_obs.signal(result<void>::ok());
+  });
+  cancel.subscribe(combined_obs.sub_, [combined_obs]() mutable {
+    combined_obs.signal(result<void>::error());
+  });
+  return std::move(combined_obs);
 }
 
 // TODO: operator | (obs<T>, obs<U>) -> observable<variant<T,U>>

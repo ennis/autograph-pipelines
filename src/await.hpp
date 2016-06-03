@@ -70,12 +70,12 @@ public:
 };
 
 template <typename U>
-class observable_awaiter<result<U>> : public observable_awaiter_base<U> {
+class observable_awaiter<result<U>> : public observable_awaiter_base<result<U>> {
 public:
   using observable_awaiter_base<result<U>>::observable_awaiter_base;
 
   bool await_suspend(std::experimental::coroutine_handle<> resume_cb) {
-    obs_.subscribe(sub, [&resume_cb](result<U> res) {
+    obs_.subscribe(sub, [resume_cb] (result<U> res) mutable {
       if (res.has_error())
         resume_cb.destroy(); // will destroy variables with automatic storage
       else

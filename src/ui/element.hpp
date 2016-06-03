@@ -1,9 +1,9 @@
 #pragma once
 #include "../rect.hpp"
-#include <vector>
+#include "input.hpp"
 #include "renderer.hpp"
 #include <nanovg.h>
-#include "input.hpp"
+#include <vector>
 
 struct GLFWwindow;
 
@@ -34,15 +34,12 @@ public:
   // this should be a cheap operation (no vector resize or scan)
   virtual ~element();
 
-  element *parent() {
-	  return parent_;
-  }
+  element *parent() { return parent_; }
 
-  void set_parent(element *parent)
-  {
-	  if (parent_)
-		  parent_->remove_child(index_);
-	  parent_ = parent;
+  void set_parent(element *parent) {
+    if (parent_)
+      parent_->remove_child(index_);
+    parent_ = parent;
   }
 
   virtual int add_child(element *elem) { return -1; }
@@ -52,19 +49,17 @@ public:
 
   glm::ivec2 cache_measure(renderer &r) { return content_size_ = measure(r); }
   virtual glm::ivec2 measure(renderer &r) = 0;
-  virtual void process_input(const input::input_event& ev, scheduler& event_sched)
-  {}
+  virtual void process_input(const input::input_event &ev,
+                             scheduler &event_sched) {}
 
-  glm::ivec2 content_size() const {
-	  return content_size_;
-  }
+  // called once per frame for each widget
+  // whether it is visible or not
+  virtual void fixed_update(scheduler &event_sched) {}
 
-  void set_geometry(const rect_2d& geom) {
-	  geometry_ = geom;
-  }
-  const rect_2d& geometry() const {
-	  return geometry_;
-  }
+  glm::ivec2 content_size() const { return content_size_; }
+
+  void set_geometry(const rect_2d &geom) { geometry_ = geom; }
+  const rect_2d &geometry() const { return geometry_; }
 
   virtual void render(renderer &r) = 0;
 
@@ -99,13 +94,19 @@ public:
     // TODO
   }
 
+  virtual void fixed_update(scheduler &event_sched) override {
+    for (auto ch : children_) {
+      if (ch)
+        ch->fixed_update(event_sched);
+    }
+  }
+
 private:
   std::vector<ui::element *> children_;
 };
 
-native_window& initialize(GLFWwindow* root_window, NVGcontext* nvg_context);
-native_window& root_window();
+native_window &initialize(GLFWwindow *root_window, NVGcontext *nvg_context);
+native_window &root_window();
 void render();
-void process_input(const input::input_event& ev);
-
+void process_input(const input::input_event &ev);
 }

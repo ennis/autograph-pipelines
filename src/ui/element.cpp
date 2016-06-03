@@ -31,6 +31,11 @@ native_window &initialize(GLFWwindow *root_window, NVGcontext *nvg_context) {
   input::events.subscribe(g_ui_state->input_sub_, [](auto ev) {
       ui::process_input(*ev);
   });
+  input::poll.subscribe(g_ui_state->input_sub_, []() {
+	  scheduler sched;
+	  ui::root_window().fixed_update(sched);
+	  sched.execute();
+  });
   return *g_ui_state->root_window_;
 }
 

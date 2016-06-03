@@ -26,6 +26,7 @@ public:
   void process_input(const input::input_event &ev,
                      scheduler &event_sched) override;
   void render(renderer &r) override;
+  void fixed_update(scheduler &event_sched) override;
 
   GLFWwindow *get_window_impl() { return window_; }
 
