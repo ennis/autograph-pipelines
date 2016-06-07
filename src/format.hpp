@@ -12,6 +12,7 @@ enum class image_format {
 	rgba8_unorm,
 	rgba8_snorm,
 	rgb_11_11_10_float_packed,
+	depth32_float,
 	max
 };
 

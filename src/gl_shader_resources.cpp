@@ -44,4 +44,7 @@ void gl_shader_resources::bind() {
   if (not_empty(mask & gl_shader_resource_state_mask::index_buffer)) {
     gl::BindBuffer(gl::ELEMENT_ARRAY_BUFFER, ibo.obj);
   }
+  if (not_empty(mask & gl_shader_resource_state_mask::framebuffer)) {
+	  gl::BindFramebuffer(gl::FRAMEBUFFER, fbo);
+  }
 }

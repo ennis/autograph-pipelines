@@ -27,6 +27,17 @@ public:
     return *this;
   }
 
+  // return the opengl texture object associated with this image (if any)
+  gl_texture* texture() const {
+	  // XXX UB if image data is in main RAM
+	  return impl_->storage.device_tex;
+  }
+
+  storage_type storage_type() const {
+	  return impl_->stype;
+  }
+
+
   image subimage(const rect_2d &rect);
   image cast(image_format format);
   image &set_storage_hint(storage_hint hint);
@@ -43,7 +54,7 @@ public:
   template <typename... Resources>
   image filter(gl_compute_pipeline &pp, int local_size_x, int local_size_y,
                Resources &&... resources) {
-    /*shader_resources res;
+    shader_resources res;
     shader_resource tex0;
     tex0.access = shader_resource_access::read;
     tex0.type = shader_resource_type::sampled_image;
@@ -56,18 +67,13 @@ public:
     img0.type = shader_resource_type::storage_image;
     img0.slot = 0;
     img0.resource = img_out;
+	res.push_back(std::move(img0));
 
     // TODO
     // iterate over resources
     // image -> sampled_image
     // buffer -> uniform buffer
     // T -> uniform buffer
-
-    bind_resource_context context;
-    context.image_index = 1;
-    context.texture_index = 1;
-    for_each_in_tuple(std::forward_as_tuple(resources...),
-                      [&](auto &&v) { bind_shader_resource(context, res, v); });
 
     auto n = compute_node::create(
         pp, compute_workspace::make_2d(glm::ivec2{(int)this->impl_->desc_.width,
@@ -76,7 +82,8 @@ public:
         std::move(res));
 
     img_out->pred_ = n.get();
-    return image{std::move(img_out)};*/
+	impl_->add_successor(n);
+    return image{std::move(img_out)};
   }
 
   // Fullscreen fragment shader pass

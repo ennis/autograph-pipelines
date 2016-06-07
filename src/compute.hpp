@@ -42,10 +42,10 @@ void compute(gl_compute_pipeline &pp, const compute_workspace &ws,
   BindContext context;
   bind_shader_resources_rec(context, resources...);
   pp.bind();
-  g_device->bind_state();
+  //g_device->bind_state();
   gl::DispatchCompute(ws.x, ws.y, ws.z);
-  gl::MemoryBarrier(gl::TEXTURE_UPDATE_BARRIER_BIT); // congratulations, you
-                                                     // found a random hack
+  //gl::MemoryBarrier(gl::TEXTURE_UPDATE_BARRIER_BIT); // congratulations, you
+  //                                                   // found a random hack
 }
 
 #endif // !COMPUTE_HPP

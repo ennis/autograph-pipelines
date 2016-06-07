@@ -35,9 +35,16 @@ struct image_impl : public value_impl {
   image_desc desc_;
 
   ///////////////////////////////////////////
+  // current storage state
   storage_type stype;
   union U {
     uint8_t *linear_data;
     gl_texture *device_tex;
   } storage;
+
+  // return the opengl texture object associated with this image (if any)
+  gl_texture* texture() const {
+	  return storage.device_tex;
+  }
+  
 };

@@ -1,5 +1,6 @@
 #pragma once
 #include "buffer.hpp"
+#include "framebuffer.hpp"
 #include "gl_sampler.hpp"
 #include "gl_shader_resources.hpp"
 #include "gl_framebuffer.hpp"
@@ -9,7 +10,6 @@
 #include <stdexcept>
 #include <tuple>
 
-namespace bind {
 ////////////////////////// BindContext
 /*struct bind_context {
   unsigned draw_attachement_index = 0;
@@ -93,28 +93,27 @@ namespace bind {
 /////////////////////////////
 struct storage_image {
   int slot;
-  std::shared_ptr<image_impl> img;
+  image img;
   shader_resource_access access;
 };
 
 /////////////////////////////
 struct sampled_image {
   int slot;
-  std::shared_ptr<image_impl> img;
+  image img;
   gl_sampler &sampler;
 };
 
 /////////////////////////////
 struct uniform_buffer {
   int slot;
-  std::shared_ptr<buffer_impl> buf;
+  buffer buf;
 };
 
 /////////////////////////////
-struct storage_buffer {
+template <typename T> struct constant {
   int slot;
-  std::shared_ptr<buffer_impl> buf;
-  shader_resource_access access;
+  T value;
 };
 
 /////////////////////////////
@@ -125,13 +124,19 @@ struct framebuffer {
   mutable gl_framebuffer fbo_;
 };
 
+struct storage_buffer {
+  int slot;
+  buffer buf;
+  shader_resource_access access;
+};
 
 /////////////////////////////
-template <typename T> struct index_buffer { std::shared_ptr<buffer_impl> buf; };
+template <typename T> struct index_buffer { buffer buf; };
 
 /////////////////////////////
 template <typename T> struct vertex_buffer {
-  std::shared_ptr<buffer_impl> buf;
+  int slot;
+  buffer buf;
 };
 
 /////////////////////////////
@@ -148,58 +153,118 @@ GLenum index_buffer_type(const index_buffer<uint32_t> &) {
 }
 
 template <typename U> struct binder<index_buffer<U>> {
-  void bind(shader_resources &res, const index_buffer<U> &buf) {
+  static void bind(shader_resources &res, const index_buffer<U> &buf) {
     shader_resource r;
     r.type = shader_resource_type::index_buffer;
     r.access = shader_resource_access::read;
     r.slot = 0;
-    r.resource = res;
+    r.resource = buf.buf.impl;
     res.emplace_back(std::move(r));
   }
 
-  void bind_gl(gl_shader_resources &gl_res, const index_buffer<U> &buf) {
+  static void bind_gl(gl_shader_resources &gl_res, const index_buffer<U> &buf) {
     if (buf.buf->stype != storage_type::device)
       throw std::logic_error(
           "Buffer bound as a shader resource must be resident on device");
-    gl_res.ibo = buf.buf->storage.device_buf;
+    gl_res.ibo = buf.buf.impl_->storage.device_buf;
     gl_res.index_type = detail::index_buffer_type(buf);
   }
 };
 
 template <typename U> struct binder<vertex_buffer<U>> {
-  void bind(shader_resources &res, const vertex_buffer<U> &buf) {}
-  void bind_gl(gl_shader_resources &gl_res, const vertex_buffer<U> &buf) {}
+  static void bind(shader_resources &res, const vertex_buffer<U> &buf) {
+    shader_resource r;
+    r.type = shader_resource_type::vertex_buffer;
+    r.access = shader_resource_access::read;
+    r.slot = buf.slot;
+    r.resource = buf.buf.impl_;
+    res.emplace_back(std::move(r));
+  }
+
+  static void bind_gl(gl_shader_resources &gl_res,
+                      const vertex_buffer<U> &buf) {
+    const auto &slice = buf.buf.impl->storage.device_buf;
+    gl_res.vbo[buf.slot] = slice.obj;
+    gl_res.vbo_offsets[buf.slot] = slice.offset;
+    gl_res.vbo_strides[buf.slot] = sizeof(U);
+  }
 };
 
-template <>
-struct binder<uniform_buffer> {
-  void bind(shader_resources &res, const uniform_buffer &buf) {}
-  void bind_gl(gl_shader_resources &gl_res, const uniform_buffer &buf) {}
+template <> struct binder<uniform_buffer> {
+  static void bind(shader_resources &res, const uniform_buffer &buf) {}
+
+  static void bind_gl(gl_shader_resources &gl_res, const uniform_buffer &buf) {
+    const auto &slice = buf.buf.impl_->storage.device_buf;
+    gl_res.ubo[buf.slot] = slice.obj;
+    gl_res.ubo_offsets[buf.slot] = slice.offset;
+    gl_res.ubo_sizes[buf.slot] = slice.size;
+  }
 };
 
-template <>
-struct binder<storage_buffer> {
-  void bind(shader_resources &res, const storage_buffer &buf) {}
-  void bind_gl(gl_shader_resources &gl_res, const storage_buffer &buf) {}
+template <typename U> struct binder<constant<U>> 
+{
+  static void bind(shader_resources &res, const constant<U> &val) {
+    // TODO allocate a CPU-side to hold the constant?
+  }
+
+  static void bind_gl(gl_shader_resources &gl_res, const constant<U> &val) {}
 };
 
-template <>
-struct binder<sampled_image> {
-  void bind(shader_resources &res, const sampled_image &img) {}
-  void bind_gl(gl_shader_resources &gl_res, const sampled_image &img) {}
+template <> struct binder<sampled_image> {
+  static void bind(shader_resources &res, const sampled_image &img) {
+    shader_resource r;
+    r.resource = img.img.impl_;
+    r.access = shader_resource_access::read;
+    r.slot = img.slot;
+    r.type = shader_resource_type::sampled_image;
+    res.emplace_back(std::move(r));
+  }
+
+  static void bind_gl(gl_shader_resources &gl_res, const sampled_image &img) {
+    gl_res.textures[img.slot] = img.img.impl_->texture()->object();
+    gl_res.samplers[img.slot] = img.sampler.object();
+  }
 };
 
-template <>
-struct binder<storage_image> {
-  void bind(shader_resources &res, const storage_image &img) {}
-  void bind_gl(gl_shader_resources &gl_res, const storage_image &img) {}
+template <> struct binder<storage_image> {
+  static void bind(shader_resources &res, const storage_image &img) {
+    shader_resource r;
+    r.resource = img.img.impl_;
+    r.access = img.access;
+    r.slot = img.slot;
+    r.type = shader_resource_type::storage_image;
+    res.emplace_back(std::move(r));
+  }
+
+  static void bind_gl(gl_shader_resources &gl_res, const storage_image &img) {
+    gl_res.images[img.slot] = img.slot;
+  }
 };
 
-template <>
-struct binder<framebuffer> {
-  void bind(shader_resources& res, const framebuffer& att) {}
-  void bind_gl(gl_shader_resources& res, const framebuffer& att) {}
+template <> struct binder<framebuffer> {
+  static void bind(shader_resources &res, framebuffer &fb) {
+    int i = 0;
+    for (auto &&img : fb.get_color_attachements()) {
+      shader_resource r;
+      r.resource = img.impl_;
+      r.access = shader_resource_access::write;
+      r.slot = i;
+      r.type = shader_resource_type::color_attachement;
+      res.emplace_back(std::move(r));
+    }
+    shader_resource r;
+    r.resource = fb.get_depth_attachement().impl_;
+    r.access = shader_resource_access::write;
+    r.slot = 0;
+    r.type = shader_resource_type::depth_attachement;
+    res.emplace_back(std::move(r));
+  }
+
+  static void bind_gl(gl_shader_resources &gl_res, framebuffer &fb) {
+    gl_res.fbo = fb.get_gl_framebuffer().obj_.get();
+  }
 };
+
 
 
 ////////////////////////// Bind<index_buffer<T> >
@@ -240,5 +305,3 @@ inline void bind_shader_resource(bind_context &context, shader_resources &res,
                          si.img->storage.device_tex->obj_.get());
 }
 */
-
-}

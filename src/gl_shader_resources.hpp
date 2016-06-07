@@ -12,7 +12,7 @@ enum class gl_shader_resource_state_mask {
   vertex_buffers = (1 << 4),
   index_buffer = (1 << 5),
   sampler_objects = (1 << 6),
-  draw_attachements = (1 << 7),
+  framebuffer = (1 << 7),
   all = 0xFF
 };
 

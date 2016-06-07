@@ -18,10 +18,11 @@ struct cast_node : public node {
   	image_desc dest_desc = n->src->desc_;
   	dest_desc.format = fmt;
   	n->dest = image_impl{n.get(), dest_desc, 0};
+	src->add_successor(n);
   	return std::shared_ptr<image_impl>{n, &n->dest};
   }  
 
-  virtual void traverse(traversal_visitor &v) override {
-	  v.visit_value(dest);
+  virtual void traverse(node_traversal_func fn) override {
+	  fn(dest);
   }
 };

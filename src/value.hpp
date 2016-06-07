@@ -12,6 +12,8 @@ enum class value_flags {
   eager_eval = (1 << 0),
 };
 
+using value_traversal_func = std::function<void(node&)>;
+
 ENUM_BIT_FLAGS_OPERATORS(value_flags)
 
 struct node;
@@ -34,7 +36,7 @@ struct value_impl {
   void set_data(value_impl_data* data) { data_ = data; }
 
   // traverse successors
-  void traverse(traversal_visitor& v);
+  void traverse(value_traversal_func fn);
   void add_successor(std::weak_ptr<node> wp);
 
   std::string name_;

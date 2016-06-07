@@ -6,6 +6,26 @@ void gl_framebuffer::init() {
   obj_ = fbo;
 }
 
+void gl_framebuffer::attach(GLenum attachement, gl_texture & tex)
+{
+	gl::NamedFramebufferTexture(obj_.get(), attachement, tex.obj_.get(), 0);
+	if (size_.x != 0) 
+		size_ = tex.size();
+	else 
+		if (size_ != tex.size())
+			throw std::logic_error("Invalid framebuffer attachements");
+}
+
+void gl_framebuffer::set_draw_buffers(int num_buffers)
+{
+	static const GLenum drawBuffers[8] = {
+		gl::COLOR_ATTACHMENT0,     gl::COLOR_ATTACHMENT0 + 1,
+		gl::COLOR_ATTACHMENT0 + 2, gl::COLOR_ATTACHMENT0 + 3,
+		gl::COLOR_ATTACHMENT0 + 4, gl::COLOR_ATTACHMENT0 + 5,
+		gl::COLOR_ATTACHMENT0 + 6, gl::COLOR_ATTACHMENT0 + 7 };
+	gl::NamedFramebufferDrawBuffers(obj_.get(), (GLsizei)num_buffers, drawBuffers);
+}
+
 void bind_framebuffer_textures(GLuint fbo,
 								gsl::span<gl_texture*> color_tex,
                                unsigned &width, unsigned &height) {
@@ -25,23 +45,24 @@ void bind_framebuffer_textures(GLuint fbo,
 	}
   }
 
-  static const GLenum drawBuffers[8] = {
-      gl::COLOR_ATTACHMENT0,     gl::COLOR_ATTACHMENT0 + 1,
-      gl::COLOR_ATTACHMENT0 + 2, gl::COLOR_ATTACHMENT0 + 3,
-      gl::COLOR_ATTACHMENT0 + 4, gl::COLOR_ATTACHMENT0 + 5,
-      gl::COLOR_ATTACHMENT0 + 6, gl::COLOR_ATTACHMENT0 + 7};
-  gl::NamedFramebufferDrawBuffers(fbo, (GLsizei)color_tex.size(), drawBuffers);
 }
 
 gl_framebuffer::gl_framebuffer(gsl::span<gl_texture*> color_attachements) {
   init();
-  bind_framebuffer_textures(obj_.get(), color_attachements, width, height);
+  int i = 0;
+  for (auto tex : color_attachements) {
+	  attach(gl::COLOR_ATTACHMENT0 + i, *tex);
+	  ++i;
+  }
 }
 
 gl_framebuffer::gl_framebuffer(gsl::span<gl_texture*> color_attachements,
                                gl_texture &depth_tex) {
   init();
-  bind_framebuffer_textures(obj_.get(), color_attachements, width, height);
-  gl::NamedFramebufferTexture(obj_.get(), gl::DEPTH_ATTACHMENT,
-                              depth_tex.obj_.get(), 0);
+  int i = 0;
+  for (auto tex : color_attachements) {
+	  attach(gl::COLOR_ATTACHMENT0 + i, *tex);
+	  ++i;
+  }
+  attach(gl::DEPTH_ATTACHMENT, depth_tex);
 }

@@ -43,7 +43,7 @@ struct compute_node : public node {
   gl_compute_pipeline* pp;
   shader_resources res;
 
-  virtual void traverse(traversal_visitor &v) override;
+  virtual void traverse(node_traversal_func fn) override;
 
   virtual void allocate_resources(allocation_context&) override;
 
@@ -62,4 +62,16 @@ struct compute_node : public node {
   bool alloc_ = false;  
   std::vector<std::unique_ptr<gl_texture> > texres_;
   std::vector<std::unique_ptr<gl_buffer> > bufres_; 
+
+  // outputs
+  std::vector<std::unique_ptr<image_impl>> outimg_;
+  std::vector<std::unique_ptr<buffer_impl>> outbuf_;
+};
+
+
+struct output_image
+{
+	unsigned slot;
+	image& out_img;	
+	image_desc out_img_desc;
 };

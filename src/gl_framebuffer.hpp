@@ -16,9 +16,11 @@ struct gl_framebuffer {
                  gl_texture &depth_attachement);
 
   void init();
+  void attach(GLenum attachement, gl_texture& tex);
+  void set_draw_buffers(int num_buffers);
+  glm::ivec2 size() const { return size_; }
+  GLuint object() const { return obj_.get(); }
 
-  unsigned width;
-  unsigned height;
-
+  glm::ivec2 size_;
   gl_handle<framebuffer_deleter> obj_;
 };

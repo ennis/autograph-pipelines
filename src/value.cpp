@@ -3,10 +3,10 @@
 
 size_t value_impl::global_value_uid = 0;
 
-void value_impl::traverse(traversal_visitor &v) {
+void value_impl::traverse(value_traversal_func fn) {
   for (auto wp : successors) {
     if (auto sp = wp.lock())
-      v.visit_node(*sp.get());
+      fn(*sp);
   }
 
   // collect expired refs
