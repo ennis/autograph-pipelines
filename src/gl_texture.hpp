@@ -17,6 +17,10 @@ struct gl_texture {
 	  return glm::ivec2{ desc_.width, desc_.height };
   }
 
+  GLuint object() const {
+	  return obj_.get();
+  }
+
   gl_handle<texture_deleter> obj_;
   image_desc desc_;
 };

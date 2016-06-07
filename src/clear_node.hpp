@@ -9,9 +9,8 @@ struct clear_node : public node {
 
   static bool classof(const node &n) { return n.kind() == node_kind::clear; }
 
-  virtual void traverse(traversal_visitor& v) override {
-	  // TODO
-	  v.visit_value(dest);
+  virtual void traverse(node_traversal_func fn) override {
+	  fn(dest);
   }
 
   static std::shared_ptr<image_impl> create(const image_desc& desc, const glm::vec4& clear_color)

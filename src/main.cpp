@@ -22,6 +22,8 @@
 #include "image.hpp"
 #include "node.hpp"
 #include "value.hpp"
+#include "dyn_cast.hpp"
+#include "dump_graph.hpp"
 
 #include "await.hpp"
 #include "gl_device.hpp"
@@ -49,6 +51,22 @@
 #endif
 
 namespace fs = std::experimental::filesystem;
+
+gl_sampler sam_linear_clamp{{gl::CLAMP_TO_EDGE, gl::CLAMP_TO_EDGE,
+                             gl::CLAMP_TO_EDGE, gl::LINEAR, gl::LINEAR}};
+gl_sampler sam_nearest_clamp{{gl::CLAMP_TO_EDGE, gl::CLAMP_TO_EDGE,
+                              gl::CLAMP_TO_EDGE, gl::NEAREST, gl::NEAREST}};
+gl_sampler sam_linear_repeat{
+    {gl::REPEAT, gl::REPEAT, gl::REPEAT, gl::LINEAR, gl::LINEAR}};
+gl_sampler sam_nearest_repeat{
+    {gl::REPEAT, gl::REPEAT, gl::REPEAT, gl::NEAREST, gl::NEAREST}};
+
+gl_sampler sam_linear_repeat_mipmap{{gl::REPEAT, gl::REPEAT, gl::REPEAT,
+                                     gl::LINEAR_MIPMAP_NEAREST,
+                                     gl::LINEAR_MIPMAP_NEAREST}};
+gl_sampler sam_linear_repeat_mipmap_linear{{gl::REPEAT, gl::REPEAT, gl::REPEAT,
+                                            gl::LINEAR_MIPMAP_LINEAR,
+                                            gl::LINEAR_MIPMAP_LINEAR}};
 
 constexpr gl_blend_state no_blend{
     false,   gl::FUNC_ADD, gl::FUNC_ADD, gl::SRC_ALPHA, gl::ONE_MINUS_SRC_ALPHA,
@@ -128,6 +146,7 @@ constexpr unsigned init_height = 480;
 
 observable<> on_render;
 observable<> on_update;
+
 
 // UI:
 // Goal: make is easy to implement complex behaviors/compose them
@@ -350,7 +369,7 @@ std::future<void> resumable_render() {
 
 std::future<void> cancellable_ui(cancellation_token cancel) {
   ui::native_window dlg{glm::ivec2{400, 300}, "Dialog"};
-  co_await (dlg.should_close | cancel);
+  co_await(dlg.should_close | cancel);
   fmt::print(std::clog, "Closed dialog\n");
 }
 
@@ -382,9 +401,33 @@ int main() {
 
   fs::path proot = project_root();
   auto img1 = load_image(proot / "img/tonberry.jpg");
-  /*auto imgBlur = img1.subimage(rect_2d{0, 0, 128, 128})
+  auto imgBlur = img1.subimage(rect_2d{0, 0, 128, 128})
                      .filter(pp_blur_h, 16, 16, 1.0f)
-                     .filter(pp_blur_v, 16, 16, 1.0f);*/
+                     .filter(pp_blur_v, 16, 16, 1.0f);
+
+  image img_out;
+  compute(pp_something, 
+	  // inputs
+	  image_unit{0, img1},
+      // outputs
+	  output_image{ 0, img_out, image_format::rgba32_float, {1024, 1024} },	
+	  output_buffer{0, buf_out, buf_in.size()}
+  );
+
+  auto target = draw_target{ {1024, 768}, {image_format::rgba32_float}, ... };
+  auto color0 = target.color_attachement(0);
+
+  dump_graph_dot({ img1.impl_->pred_ }, std::clog);
+
+  auto img2 = image::clear_2d(image_format::rgba32_float, 1024, 1024,
+                              glm::vec4{0.0f, 1.0f, 0.0f, 1.0f});
+
+  auto depth_img = image::clear_2d(image_format::depth32_float, 1024, 1024,
+                                   glm::vec4{1.0f, 1.0f, 1.0f, 1.0f});
+
+  framebuffer fbo{color_attachements{img2}, depth_attachement{depth_img}};
+
+  draw(pp_copy_tex, fbo, 0, sampled_image{0, img1, sam_linear_clamp});
 
   // NVG context for UI rendering
   auto nvg = nvgCreateGL3(NVG_ANTIALIAS);
@@ -415,10 +458,9 @@ int main() {
     for (;;) {
       co_await act_jump;
       fmt::print(std::clog, "Jump!\n");
-	  tk.signal();
+      tk.signal();
     }
   };
-
 
   // coroutine ui_task{chase};
   resumable_chase();

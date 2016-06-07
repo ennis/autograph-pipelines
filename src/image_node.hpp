@@ -68,7 +68,7 @@ struct image_node : public node {
     return std::shared_ptr<image_impl>{n, &n->dest};
   }
 
-  virtual void traverse(traversal_visitor &v) override { v.visit_value(dest); }
+  virtual void traverse(node_traversal_func fn) override { fn(dest); }
 
   image_impl dest;
   storage_type storage_type_;

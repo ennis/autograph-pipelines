@@ -1,27 +1,32 @@
 #pragma once
-#include "autograph/utils.hpp"
+#include "utils.hpp"
 #include "node_kind.hpp"
 #include "traversal_visitor.hpp"
 #include <functional>
 #include <glm/glm.hpp>
 #include <vector>
+#include <memory>
 
 struct value_impl;
 struct node;
 struct allocation_context;
 struct execution_context;
 
+using node_traversal_func = std::function<void(value_impl&)>;
+
 // Represents an operation
 // Nodes have one or more output values, and zero or more inputs
 // Nodes allocate and manage the resources for their outputs (if necessary)
 // (this is done in member function allocate_resources)
 // Values are computed in member function execute()
-struct node {
+struct node : public std::enable_shared_from_this<node>
+{
   node(node_kind kind) : kind_(kind) { uid_ = global_node_uid++; }
 
   virtual ~node() {}
 
-  virtual void traverse(traversal_visitor &v) {
+  // traverse successor values
+  virtual void traverse(node_traversal_func fn) {
     throw std::logic_error("unimplemented");
   }
 
@@ -37,6 +42,7 @@ struct node {
 
   bool dirty() const { return dirty_; }
   void set_dirty() { dirty_ = true; }
+  void add_dependency(value_impl& v);
 
   bool dirty_ = true;
   node_kind kind_;

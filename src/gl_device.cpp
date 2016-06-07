@@ -33,9 +33,10 @@ uint64_t getFrameExpirationDate(unsigned frame_id) {
 
 // constructor
 gl_device::gl_device(const gl_device_config &config_)
-    : config{config_}, frame_id{0}, screen_fbo{0} {
-  screen_fbo.width = config_.init_fb_width;
-  screen_fbo.height = config_.init_fb_height;
+    : config{config_}, frame_id{0}, screen_fbo{0} 
+{
+  screen_fbo.size_.x = config_.init_fb_width;
+  screen_fbo.size_.y = config_.init_fb_height;
   setDebugCallback();
   constexpr std::size_t upload_buf_size = 3 * 1024 * 1024;
   frame_fence = gl_fence{0};
@@ -79,8 +80,7 @@ void gl_device::init(const gl_device_config &config) {
 
 void gl_device::set_size(unsigned width, unsigned height)
 {
-g_device->screen_fbo.width = width;
-	g_device->screen_fbo.height= height;
+	g_device->screen_fbo.size_ = glm::ivec2{ width, height };
 }
 
 debug_group::debug_group(std::string msg)

@@ -4,6 +4,7 @@
 #include "node.hpp"
 #include "gl_pipeline.hpp"
 #include "shader_resource.hpp"
+#include "framebuffer.hpp"
 
 // also: type-generic pipelines/programs
 // eg. if image type is RGBA8, use pipeline with FMT_RGBA8
@@ -28,12 +29,6 @@ struct draw_command_params {
   };
 };
 
-struct draw_attachements {
-  std::vector<std::shared_ptr<image_impl>> color;
-  std::shared_ptr<image_impl> depth;
-  // cached framebuffer object
-  mutable GLuint fbo;
-};
 
 // draw node
 // cannot allocate resources
@@ -55,18 +50,18 @@ struct draw_node : public node {
 
   static bool classof(const node &n) { return n.kind() == node_kind::draw; }
 
-  virtual void traverse(traversal_visitor &v) override {
-    for (auto &a : att.color) {
-      v.visit_value(*a);
+  virtual void traverse(node_traversal_func fn) override {
+    /*for (auto &a : att.color) {
+		fn(*a);
     }
 
     if (att.depth) {
-      v.visit_value(*att.depth);
-    }
+		fn(*att.depth);
+    }*/
 
     for (auto &r : res) {
       if (not_empty(r.access & shader_resource_access::write)) {
-        v.visit_value(*r.resource);
+		  fn(*r.resource);
       }
     }
   }
@@ -75,7 +70,8 @@ struct draw_node : public node {
   gl_draw_state ds;
   draw_command_params cmd;
   shader_resources res;
-  draw_attachements att;
+  // TODO copy or shared_ptr?
+  //framebuffer fbo;
   gl_graphics_pipeline* pp;
 };
 

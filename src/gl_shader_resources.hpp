@@ -12,6 +12,7 @@ enum class gl_shader_resource_state_mask {
   vertex_buffers = (1 << 4),
   index_buffer = (1 << 5),
   sampler_objects = (1 << 6),
+  framebuffer = (1 << 7),
   all = 0xFF
 };
 
@@ -33,6 +34,7 @@ struct gl_shader_resources {
   std::vector<GLintptr> ssbo_offsets;
   gl_buffer_slice ibo;
   GLenum index_type;
+  GLuint fbo;
 
   void reset();
   void bind();
