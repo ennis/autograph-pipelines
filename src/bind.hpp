@@ -2,6 +2,7 @@
 #include "buffer.hpp"
 #include "gl_sampler.hpp"
 #include "gl_shader_resources.hpp"
+#include "gl_framebuffer.hpp"
 #include "image_impl.hpp"
 #include "shader_resource.hpp"
 #include "utils.hpp"
@@ -117,15 +118,13 @@ struct storage_buffer {
 };
 
 /////////////////////////////
-struct draw_attachement {
-  int slot;
-  std::shared_ptr<image_impl> img;
+/// persistent
+struct framebuffer {
+  std::vector<std::shared_ptr<image_impl>> color_attachements;
+  std::shared_ptr<image_impl> depth_attachement;
+  mutable gl_framebuffer fbo_;
 };
 
-/////////////////////////////
-struct depth_attachement {
-  std::shared_ptr<image_impl> img;
-};
 
 /////////////////////////////
 template <typename T> struct index_buffer { std::shared_ptr<buffer_impl> buf; };
@@ -179,6 +178,12 @@ struct binder<uniform_buffer> {
 };
 
 template <>
+struct binder<storage_buffer> {
+  void bind(shader_resources &res, const storage_buffer &buf) {}
+  void bind_gl(gl_shader_resources &gl_res, const storage_buffer &buf) {}
+};
+
+template <>
 struct binder<sampled_image> {
   void bind(shader_resources &res, const sampled_image &img) {}
   void bind_gl(gl_shader_resources &gl_res, const sampled_image &img) {}
@@ -189,6 +194,13 @@ struct binder<storage_image> {
   void bind(shader_resources &res, const storage_image &img) {}
   void bind_gl(gl_shader_resources &gl_res, const storage_image &img) {}
 };
+
+template <>
+struct binder<framebuffer> {
+  void bind(shader_resources& res, const framebuffer& att) {}
+  void bind_gl(gl_shader_resources& res, const framebuffer& att) {}
+};
+
 
 ////////////////////////// Bind<index_buffer<T> >
 /*template <typename T>
