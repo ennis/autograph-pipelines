@@ -4,24 +4,29 @@
 #include "image.hpp"
 
 struct clear_node : public node {
-  clear_node(glm::vec4 clear_color) : node{node_kind::clear}, clear_color_{clear_color}
-  {}
+  clear_node(glm::ivec2 size, image_format fmt, glm::vec4 clear_color) : 
+	  node{node_kind::clear}, 
+	  clear_color_{clear_color}
+  {
+	  output_ = image_impl::create_2d(size, fmt, this);
+  }
 
   static bool classof(const node &n) { return n.kind() == node_kind::clear; }
 
-  virtual void traverse(node_traversal_func fn) override {
-	  fn(dest);
+  void validate_inputs(graph_context& ctx) override {
+	  // nothing to do
   }
 
-  static std::shared_ptr<image_impl> create(const image_desc& desc, const glm::vec4& clear_color)
-  {
-  	auto n = std::make_shared<clear_node>(clear_color);
-  	n->dest = image_impl{n.get(), desc, 0};
-	return std::shared_ptr<image_impl>{n, &n->dest};
+  void finalize(graph_context& ctx) override {
+	  // same
+  }
+
+  void execute(graph_context& ctx) override {
+	  auto& tex = output_->get_texture();
+	  gl::ClearTexImage(tex.object(), 0, gl::RGBA, gl::FLOAT, &clear_color_[0]);
   }
 
   glm::vec4 clear_color_;
 
-  // port 0
-  image_impl dest;
+  image_impl::ptr output_;
 };

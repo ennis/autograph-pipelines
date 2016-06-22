@@ -5,7 +5,7 @@
 #include <cppformat/format.h>
 #include "image_node.hpp"
 
-image load_image(std::experimental::filesystem::path path)
+/*image load_image(std::experimental::filesystem::path path)
 {
 	auto pathstr = path.string();
 	int x, y, comp;
@@ -22,3 +22,4 @@ image load_image(std::experimental::filesystem::path path)
 	desc.dimensions = image_dimensions::img_2d;
 	return image{ image_node::create(desc, raw_data) };
 }
+*/

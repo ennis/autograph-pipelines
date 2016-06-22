@@ -112,6 +112,8 @@ draw_utils.hpp
 - draw_3d_mesh(framebuffer&, vertex_buffer<T>, mat4 object, mat4 viewproj, ...)
 
 
+
+
 vis_utils.hpp
 Debug windows (ui + coroutines)
 - vis::show_image(image...)
@@ -119,4 +121,49 @@ Debug windows (ui + coroutines)
 	clamp, scale, colormap
 	show color picker
 
+API proposal:
 
+node:
+	node states: 
+		instantiated
+		bound
+		validated
+		finalized
+	virtual methods:
+		+ validate_inputs
+		+ finalize
+		+ execute
+
+resource_allocator:
+	+ request_framebuffer(images)
+	+ request_image(desc)
+	+ request_buffer(size...)
+	+ request_dynamic_buffer(...)
+
+edge != resource
+
+node creation: named constructor
+value binding: pass to constructor
+
+
+Issue: passing on frame-varying uniforms
+
+
+
+Dummy nodes VS unbound inputs?
+
+Unbound, but specified inputs 
+
+node.input(0).bind(prev.output(0))
+node.input(1).bind(prev.output(0).subimage(0).subregion({0,0},{120,120}))
+
+dummy_node img0 { format...};
+dummy_node img1 { format...};
+node = new node{img0, img1};
+img0.bind(prev.output(0).subimage(0));
+img0.bind(prev.output(0).subimage(0).subregion({0,0},{120,120}))
+
+
+node.input(0).bind(...) => must check that the new binding has the same format 
+
+// can rebind
