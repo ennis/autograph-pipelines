@@ -125,8 +125,8 @@ Debug windows (ui + coroutines)
 	* generic code for handling resource residency
 
 - draw, then compute, then draw
-	image img1 { format::rgba32f, ... };
-	image img2 { format::depth32f, ...};
+	image img1 { format::rgba32f,  ... };
+	image img2 { format::depth32f, ... };
 	auto draw = op_draw({img1, img2}, ...);
 	auto color_out = draw.output(0);
 -> user manipulates resources (buffers & images) vs nodes?
@@ -150,4 +150,45 @@ Debug windows (ui + coroutines)
 	- format 
 		-> list of supported formats?
 		-> callback to check if the format is correct
+
+	- declaring inputs?
+		this->input(0).validate([](auto in) { in.type == ...; }
+
+	- for each input: callback for verification
+	- allow_subimages / allow_regions / allow_buffer_slices
+		-> always met: if a node cannot operate on subimages/regions, 
+			then a new image is created with the region contents 
+
+-> actual resources: not owned by image & buffer nodes
+	passed to ops when executing
+
+-> Type safety?
+
+-> node states:
+	
+	UNBOUND - inputs not bound
+	PARTIALLY BOUND - some inputs bound, output partially specified (optional)
+	BOUND - node is fully bound
+	VALIDATED - node is fully bound and its inputs are validated, outputs are specified
+	FINALIZED - resources for input and output are resolved, the node is ready to be executed
+
+-> concrete resources:
+	image, CPU/GPU (full)
+	subimage, CPU/GPU
+	region, CPU/GPU
+	buffer
+
+clear_op
+region_op 
+subimage_op
+compute_op
+draw_op
+msaa_resolve_op
+generate_mipmaps_op
+ping_pong_op
+
+subimage_op:
+	- in: format=any, size=any, residency=any
+	- out: format=in.format, size=any, residency=same as in
+		storage=in.subresource[index]
 
