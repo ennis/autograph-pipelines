@@ -17,31 +17,3 @@ image_desc nd_image_desc(image_format format, image_dimensions dims,
   return d;
 }
 }
-
-image image::clear_1d(image_format format, unsigned width,
-                      const glm::vec4 &rgba) {
-  return image{clear_node::create(
-      nd_image_desc(format, image_dimensions::img_1d, width, 1, 1), rgba)};
-}
-
-image image::clear_2d(image_format format, unsigned width, unsigned height,
-                      const glm::vec4 &rgba) {
-  return image{clear_node::create(
-      nd_image_desc(format, image_dimensions::img_2d, width, height, 1), rgba)};
-}
-
-image image::clear_3d(image_format format, unsigned width, unsigned height,
-                      unsigned depth, const glm::vec4 &rgba) {
-  return image{clear_node::create(
-      nd_image_desc(format, image_dimensions::img_3d, width, height, depth),
-      rgba)};
-}
-
-image image::subimage(const rect_2d &rect) {
-  return image{subimage_2d_node::create(impl_, rect)};
-}
-
-image image::cast(image_format format) {
-  return image{cast_node::create(impl_, format)};
-}
-

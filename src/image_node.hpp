@@ -13,7 +13,9 @@ struct image_node : public node {
   }
 
   static bool classof(const node &n) { return n.kind() == node_kind::image; }
-
+  
+  
+  /*
   /////////////////////////////////////////////////////////////////////
   // device version
   static std::shared_ptr<image_impl> create(const image_desc &desc,
@@ -66,7 +68,7 @@ struct image_node : public node {
 	n->dest.storage.linear_data = n->storage.linear_data.get();
 	n->dest.stype = n->storage_type_;
     return std::shared_ptr<image_impl>{n, &n->dest};
-  }
+  }*/
 
   virtual void traverse(node_traversal_func fn) override { fn(dest); }
 

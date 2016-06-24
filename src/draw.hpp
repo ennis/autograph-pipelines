@@ -3,11 +3,10 @@
 #include "bind.hpp"
 #include "gl_pipeline.hpp"
 #include "image.hpp"
-#include "framebuffer.hpp"
 
 ////////////////////////// draw
 // resources: buffer, images, etc.
-template <typename DrawCommand, typename... ShaderResources>
+/*template <typename DrawCommand, typename... ShaderResources>
 void draw(gl_graphics_pipeline& pipeline,
 		  framebuffer& target,
 		  DrawCommand&& draw_command,
@@ -21,4 +20,4 @@ void draw(gl_graphics_pipeline& pipeline,
 		typename binder<V>::bind_gl(gl_res, std::forward<V>(v));
 	});
 	// TODO: execute the draw command
-}
+}*/

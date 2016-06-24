@@ -11,6 +11,7 @@ struct texture_deleter {
 enum class texture_dimension { tex_1d, tex_2d, tex_3d };
 
 struct gl_texture {
+	gl_texture() = default;
   gl_texture(const image_desc& desc);
 
   glm::ivec2 size() const {

@@ -1,26 +1,23 @@
 #pragma once
-#include "utils.hpp"
 #include "node_kind.hpp"
-#include "traversal_visitor.hpp"
+#include "utils.hpp"
 #include <functional>
 #include <glm/glm.hpp>
-#include <vector>
 #include <memory>
+#include <vector>
 
 struct value_impl;
 struct node;
-struct allocation_context;
-struct execution_context;
+struct graph_context;
 
-using node_traversal_func = std::function<void(value_impl&)>;
+using node_traversal_func = std::function<void(value_impl &)>;
 
 // Represents an operation
 // Nodes have one or more output values, and zero or more inputs
 // Nodes allocate and manage the resources for their outputs (if necessary)
 // (this is done in member function allocate_resources)
 // Values are computed in member function execute()
-struct node : public std::enable_shared_from_this<node>
-{
+struct node : public std::enable_shared_from_this<node> {
   node(node_kind kind) : kind_(kind) { uid_ = global_node_uid++; }
 
   virtual ~node() {}
@@ -30,19 +27,24 @@ struct node : public std::enable_shared_from_this<node>
     throw std::logic_error("unimplemented");
   }
 
-  virtual void allocate_resources(allocation_context &) {
-    throw std::logic_error("unimplemented");
+  virtual void validate_inputs(graph_context &) {
   }
 
-  virtual void execute(execution_context &) {
-    throw std::logic_error("unimplemented");
+  virtual void finalize(graph_context&) {
+  }
+
+  virtual void execute(graph_context &) {
   }
 
   node_kind kind() const { return kind_; }
 
   bool dirty() const { return dirty_; }
   void set_dirty() { dirty_ = true; }
-  void add_dependency(value_impl& v);
+
+  //void bind_input_image(image_impl& out_img, std::shared_ptr<image_impl> in_img);
+  //void bind_input_buffer(buffer_impl& out_buf, std::shared_ptr<buffer_impl> in_buf, storage_hint storage = storage_hint::automatic);
+  //void bind_output_image(image_impl& out_img, const image_desc& desc);
+  //void create_output_image(image_impl& out_img, std::shared_ptr<image_impl>);
 
   bool dirty_ = true;
   node_kind kind_;

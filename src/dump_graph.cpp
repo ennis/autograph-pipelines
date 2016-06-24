@@ -12,7 +12,7 @@
 
 void dump_node_info(std::ostream &out, const node &n) {
   // Nxxx [label="{}"]
-  const char *ty = "?";
+  /*const char *ty = "?";
   if (auto clearNode = dyn_cast<const clear_node>(&n)) {
     ty = "clear_node";
   } else if (auto imageNode = dyn_cast<const image_node>(&n)) {
@@ -21,21 +21,21 @@ void dump_node_info(std::ostream &out, const node &n) {
     // unknown
   }
 
-  fmt::print(out, "N{:03} [label=\"{{ {} }}\"];\n", n.uid_, ty);
+  fmt::print(out, "N{:03} [label=\"{{ {} }}\"];\n", n.uid_, ty);*/
 }
 
 void dump_value_info(std::ostream &out, const value_impl &v) {
-  const char *ty = "?";
+  /*const char *ty = "?";
   if (auto imageVal = dyn_cast<const image_impl>(&v)) {
     ty = "image";
   } else if (auto bufVal = dyn_cast<const buffer_impl>(&v)) {
     ty = "buffer";
   }
-  fmt::print(out, "E{:03} [label=\"{{ {} }}\"];\n", v.uid_, ty);
+  fmt::print(out, "E{:03} [label=\"{{ {} }}\"];\n", v.uid_, ty);*/
 }
 
 void dump_graph_dot(std::vector<node *> roots, std::ostream &out) {
-  std::vector<node *> visiting;
+  /*std::vector<node *> visiting;
   std::unordered_set<node *> visited;
   std::vector<node *> to_visit;
 
@@ -76,5 +76,5 @@ void dump_graph_dot(std::vector<node *> roots, std::ostream &out) {
     to_visit.clear();
   }
 
-  fmt::print(out, "}}\n");
+  fmt::print(out, "}}\n");*/
 }

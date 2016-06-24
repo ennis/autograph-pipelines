@@ -33,7 +33,6 @@
 #include "imgui_impl_glfw_gl3.h"
 #include <GLFW/glfw3.h>
 
-#include "load_image.hpp"
 #include <experimental/filesystem>
 
 #include "ui/button.hpp"
@@ -369,8 +368,15 @@ std::future<void> resumable_render() {
 
 std::future<void> cancellable_ui(cancellation_token cancel) {
   ui::native_window dlg{glm::ivec2{400, 300}, "Dialog"};
-  co_await(dlg.should_close | cancel);
+  co_await (dlg.should_close | cancel);
   fmt::print(std::clog, "Closed dialog\n");
+
+  // alternate version
+ /* ui::native_window dialog {
+	  ui::vertical_box {
+		ui::vertical_box::slot{ ui::button{"Close dialog"} }
+	  }
+  };*/
 }
 
 int main() {
@@ -400,34 +406,6 @@ int main() {
   ImGui_ImplGlfwGL3_Init(window, true);
 
   fs::path proot = project_root();
-  auto img1 = load_image(proot / "img/tonberry.jpg");
-  auto imgBlur = img1.subimage(rect_2d{0, 0, 128, 128})
-                     .filter(pp_blur_h, 16, 16, 1.0f)
-                     .filter(pp_blur_v, 16, 16, 1.0f);
-
-  image img_out;
-  compute(pp_something, 
-	  // inputs
-	  image_unit{0, img1},
-      // outputs
-	  output_image{ 0, img_out, image_format::rgba32_float, {1024, 1024} },	
-	  output_buffer{0, buf_out, buf_in.size()}
-  );
-
-  auto target = draw_target{ {1024, 768}, {image_format::rgba32_float}, ... };
-  auto color0 = target.color_attachement(0);
-
-  dump_graph_dot({ img1.impl_->pred_ }, std::clog);
-
-  auto img2 = image::clear_2d(image_format::rgba32_float, 1024, 1024,
-                              glm::vec4{0.0f, 1.0f, 0.0f, 1.0f});
-
-  auto depth_img = image::clear_2d(image_format::depth32_float, 1024, 1024,
-                                   glm::vec4{1.0f, 1.0f, 1.0f, 1.0f});
-
-  framebuffer fbo{color_attachements{img2}, depth_attachement{depth_img}};
-
-  draw(pp_copy_tex, fbo, 0, sampled_image{0, img1, sam_linear_clamp});
 
   // NVG context for UI rendering
   auto nvg = nvgCreateGL3(NVG_ANTIALIAS);
@@ -439,13 +417,9 @@ int main() {
   std::string filename;
   ui::text_edit textedit{root, filename};
   button.pressed.subscribe(sub, []() { fmt::print(std::clog, "Boing!\n"); });
-  // ui::slider slider{ root , 0.0f, 1.0f,};
 
   input::gamepad_button_action act_fire{XINPUT_GAMEPAD_X, true};
   input::gamepad_button_action act_jump{XINPUT_GAMEPAD_A, true};
-
-  // act_fire.subscribe(sub, []() { fmt::print(std::clog, "Fire!\n"); });
-  // act_jump.subscribe(sub, []() { fmt::print(std::clog, "Jump!\n"); });
 
   auto fire_task = [&act_fire]() -> std::future<void> {
     for (;;) {
@@ -475,10 +449,6 @@ int main() {
     ImGui_ImplGlfwGL3_NewFrame();
     /* Render here */
     render();
-    ImGui::Image(reinterpret_cast<ImTextureID>(
-                     img1.impl_->storage.device_tex->obj_.get()),
-                 ImVec2{(float)img1.impl_->desc_.width,
-                        (float)img1.impl_->desc_.height});
     ImGui::Render();
     on_render.signal();
     input::process_input();

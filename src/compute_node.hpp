@@ -1,9 +1,9 @@
 #pragma once
-#include "gsl.h"
 #include "node.hpp"
 #include "gl_pipeline.hpp"
 #include "shader_resource.hpp"
-#include "value.hpp"
+#include "image_impl.hpp"
+#include "buffer.hpp"
 
 namespace detail {
 inline int div_round_up(int numToRound, int multiple) {
@@ -26,9 +26,6 @@ struct compute_workspace {
         (unsigned)detail::div_round_up(global_size.y, local_size.y),
         1};
   }
-
-  // make_2d(global size, work group size)
-  // make_3d(global size, work group size)
 };
 
 // compute node
@@ -39,39 +36,37 @@ struct compute_node : public node {
     return n.kind() == node_kind::compute_shader;
   }
 
-  compute_workspace ws;
-  gl_compute_pipeline* pp;
-  shader_resources res;
-
-  virtual void traverse(node_traversal_func fn) override;
-
-  virtual void allocate_resources(allocation_context&) override;
-
-  static std::shared_ptr<compute_node> create(gl_compute_pipeline& prog,
-                     const compute_workspace &ws, shader_resources res) 
+  void bind_sampled_image(unsigned slot, image_impl::ptr img)
   {
-	  auto n = std::make_shared<compute_node>();
-	  n->ws = ws;
-	  n->res = std::move(res);
-	  n->pp = &prog;
-	  return std::move(n);
   }
 
-  ////////////////////////////////////////////////
-  // allocated resources
-  bool alloc_ = false;  
-  std::vector<std::unique_ptr<gl_texture> > texres_;
-  std::vector<std::unique_ptr<gl_buffer> > bufres_; 
+  // bind a readonly storage image
+  void bind_storage_image(unsigned slot, image_impl::ptr img, shader_resource_access access)
+  {
+  }
 
-  // outputs
-  std::vector<std::unique_ptr<image_impl>> outimg_;
-  std::vector<std::unique_ptr<buffer_impl>> outbuf_;
+  // bind a read/write storage image
+  void bind_storage_image(unsigned slot, image_impl::ptr img_in, image_impl::ptr& img_out, shader_resource_access access)
+  {
+  }
+
+  void bind_uniform_buffer(unsigned slot, buffer_impl::ptr buf)
+  {
+  }
+
+  /*void bind_storage_buffer(buffer_impl::ptr buf, shader_resource_access access)
+  {
+  }*/
+  
+  compute_workspace ws;
+  gl_compute_pipeline* pp;
+  shader_resources res_;
+
+  // input resources
+  std::vector<image_impl::ptr> input_images_;
+  std::vector<buffer_impl::ptr> input_buffers_;
+  // output resources
+  std::vector<image_impl::ptr> output_images_;
+  std::vector<buffer_impl::ptr> output_buffers_;
 };
 
-
-struct output_image
-{
-	unsigned slot;
-	image& out_img;	
-	image_desc out_img_desc;
-};

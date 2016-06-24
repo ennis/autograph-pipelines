@@ -1,6 +1,5 @@
 #pragma once
 #include "buffer.hpp"
-#include "framebuffer.hpp"
 #include "gl_sampler.hpp"
 #include "gl_shader_resources.hpp"
 #include "gl_framebuffer.hpp"
@@ -194,10 +193,10 @@ template <> struct binder<uniform_buffer> {
   static void bind(shader_resources &res, const uniform_buffer &buf) {}
 
   static void bind_gl(gl_shader_resources &gl_res, const uniform_buffer &buf) {
-    const auto &slice = buf.buf.impl_->storage.device_buf;
+    /*const auto &slice = buf.buf.impl_->storage.device_buf;
     gl_res.ubo[buf.slot] = slice.obj;
     gl_res.ubo_offsets[buf.slot] = slice.offset;
-    gl_res.ubo_sizes[buf.slot] = slice.size;
+    gl_res.ubo_sizes[buf.slot] = slice.size;*/
   }
 };
 
@@ -212,58 +211,35 @@ template <typename U> struct binder<constant<U>>
 
 template <> struct binder<sampled_image> {
   static void bind(shader_resources &res, const sampled_image &img) {
-    shader_resource r;
+    /*shader_resource r;
     r.resource = img.img.impl_;
     r.access = shader_resource_access::read;
     r.slot = img.slot;
     r.type = shader_resource_type::sampled_image;
-    res.emplace_back(std::move(r));
+    res.emplace_back(std::move(r));*/
   }
 
   static void bind_gl(gl_shader_resources &gl_res, const sampled_image &img) {
-    gl_res.textures[img.slot] = img.img.impl_->texture()->object();
-    gl_res.samplers[img.slot] = img.sampler.object();
+    /*gl_res.textures[img.slot] = img.img.impl_->texture()->object();
+    gl_res.samplers[img.slot] = img.sampler.object();*/
   }
 };
 
 template <> struct binder<storage_image> {
   static void bind(shader_resources &res, const storage_image &img) {
-    shader_resource r;
+   /* shader_resource r;
     r.resource = img.img.impl_;
     r.access = img.access;
     r.slot = img.slot;
     r.type = shader_resource_type::storage_image;
-    res.emplace_back(std::move(r));
+    res.emplace_back(std::move(r));*/
   }
 
   static void bind_gl(gl_shader_resources &gl_res, const storage_image &img) {
-    gl_res.images[img.slot] = img.slot;
+    //gl_res.images[img.slot] = img.slot;
   }
 };
 
-template <> struct binder<framebuffer> {
-  static void bind(shader_resources &res, framebuffer &fb) {
-    int i = 0;
-    for (auto &&img : fb.get_color_attachements()) {
-      shader_resource r;
-      r.resource = img.impl_;
-      r.access = shader_resource_access::write;
-      r.slot = i;
-      r.type = shader_resource_type::color_attachement;
-      res.emplace_back(std::move(r));
-    }
-    shader_resource r;
-    r.resource = fb.get_depth_attachement().impl_;
-    r.access = shader_resource_access::write;
-    r.slot = 0;
-    r.type = shader_resource_type::depth_attachement;
-    res.emplace_back(std::move(r));
-  }
-
-  static void bind_gl(gl_shader_resources &gl_res, framebuffer &fb) {
-    gl_res.fbo = fb.get_gl_framebuffer().obj_.get();
-  }
-};
 
 
 

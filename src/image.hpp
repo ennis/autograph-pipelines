@@ -1,25 +1,9 @@
 #pragma once
 #include "image_impl.hpp"
-#include "buffer_node.hpp"
-#include "compute_node.hpp"
 #include "shader_resource.hpp"
-#include "glsl_snippet.hpp"
 
-/////////////////////////////////////////////////////
-// An image pyramid
-// Proxy for image_impl
 class image {
 public:
-  static image clear_1d(image_format format, unsigned width,
-                        const glm::vec4 &rgba);
-  static image clear_2d(image_format format, unsigned width, unsigned height,
-                        const glm::vec4 &rgba);
-  static image clear_3d(image_format format, unsigned width, unsigned height,
-                        unsigned depth, const glm::vec4 &rgba);
-
-  // mark this image for rescheduling
-  image &schedule();
-
   auto &name() const { return impl_->name_; }
 
   image &set_name(std::string name) {
@@ -27,108 +11,19 @@ public:
     return *this;
   }
 
-  // return the opengl texture object associated with this image (if any)
-  gl_texture* texture() const {
-	  // XXX UB if image data is in main RAM
-	  return impl_->storage.device_tex;
-  }
-
-  storage_type storage_type() const {
-	  return impl_->stype;
-  }
-
-
-  image subimage(const rect_2d &rect);
-  image cast(image_format format);
-  image &set_storage_hint(storage_hint hint);
-
-  //////////////////////////////////////////////
-  // Operation of filter():
-  // bind the input image to texture unit #0
-  // bind the output image to image unit #0
-  // bind other resources
-  // return: image bound to img unit #0
-  template <typename... Resources>
-  image filter(const glsl_snippet& snip, Resources &&... resources) {}
-
-  template <typename... Resources>
-  image filter(gl_compute_pipeline &pp, int local_size_x, int local_size_y,
-               Resources &&... resources) {
-    shader_resources res;
-    shader_resource tex0;
-    tex0.access = shader_resource_access::read;
-    tex0.type = shader_resource_type::sampled_image;
-    tex0.slot = 0;
-    tex0.resource = impl_;
-    res.push_back(std::move(tex0));
-    shader_resource img0;
-    auto img_out = std::make_shared<image_impl>(nullptr, impl_->desc_);
-    img0.access = shader_resource_access::write;
-    img0.type = shader_resource_type::storage_image;
-    img0.slot = 0;
-    img0.resource = img_out;
-	res.push_back(std::move(img0));
-
-    // TODO
-    // iterate over resources
-    // image -> sampled_image
-    // buffer -> uniform buffer
-    // T -> uniform buffer
-
-    auto n = compute_node::create(
-        pp, compute_workspace::make_2d(glm::ivec2{(int)this->impl_->desc_.width,
-                                                  (int)impl_->desc_.height},
-                                       glm::ivec2{local_size_x, local_size_y}),
-        std::move(res));
-
-    img_out->pred_ = n.get();
-	impl_->add_successor(n);
-    return image{std::move(img_out)};
-  }
-
-  // Fullscreen fragment shader pass
-  template <typename... Resources>
-  image apply_frag(gl_graphics_pipeline &pp, Resources&&... resources)
-  {}
-
-  // same but with a GLSL snippet
-  template <typename... Resources>
-  image apply_frag(const glsl_snippet &snip, Resources&&... resources)
-  {
-      // TODO: get pipeline from GLSL snippet compiler cache
-      // call apply_frag
-  }
-
-  // downsample the image (x2)
-  template <typename... Resources>
-  image downsample(const glsl_snippet& snip, Resources&&... resources)
-  {
-    // TODO
-  }
-
-  // regenerate the mip-maps
-  // will evaluate predecessors if necessary
-  image &generate_mip_maps()
-  {
-      // TODO
-  }
-
-  // regen the mip-maps with a custom GLSL filter
-  // will evaluate predecessors if necessary
-  template <typename... Resources>
-  image &generate_mip_maps(const glsl_snippet& snip, Resources&&... resources)
-  {
-      // TODO
-  }
-
-  //img.generate_mip_maps("void apply(vec4 a, vec4 b, vec4 c, vec4 d) { .... }");
-
-
-  // TODO: downsample/upsample
-  // TODO: gen_mip_maps
-  // TODO: ...
-
   image(std::shared_ptr<image_impl> impl) : impl_(impl) {}
+
+  image create(glm::ivec2 size_2d, image_format fmt, node& n) {
+	  auto ptr = std::make_shared<image_impl>();
+	  ptr->desc_.dimensions = image_dimensions::img_2d;
+	  ptr->desc_.width = size_2d.x;
+	  ptr->desc_.height = size_2d.y;
+	  ptr->desc_.depth = 1;
+	  ptr->desc_.format = fmt;
+	  ptr->desc_.num_mips = 0;
+	  ptr->pred_ = &n;
+	  return image{ std::move(ptr) };
+  }
 
   std::shared_ptr<image_impl> impl_;
 };

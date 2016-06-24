@@ -2,7 +2,6 @@
 #include "element.hpp"
 #include "renderer.hpp"
 #include "sprite.hpp"
-#include "visual.hpp"
 #include "button_behavior.hpp"
 
 namespace ui {
