@@ -167,3 +167,96 @@ img0.bind(prev.output(0).subimage(0).subregion({0,0},{120,120}))
 node.input(0).bind(...) => must check that the new binding has the same format 
 
 // can rebind
+
+Alternate UI system:
+_____________________________
+
+Needs an entity-component framework
+
+Copy unity:
+RectTransform -> rect_transform component
+can attach layout controllers (that modifies the rect_transform according to child element)
+
+
+Programmatically creating UI elements:
+create entity, attach rect transform, attach layout controller, attach visual or interaction component
+
+RAII with entities:
+
+{
+Entity ent(this->entity());
+...
+<ent, children and attached components deleted here>
+}
+
+
+Entities:
+Owns their components
+Storage: either on the heap, or on the stack (unmovable) for temporary entities
+
+Requirements:
+adding/removing entities must have close to zero overhead
+same for components
+enumerating children must be fast
+
+Entities are:
+- UI elements
+- Scene objects
+
+Ownership and storage decoupled from hierarchy.
+Component storage: stack? owned?
+
+
+Prefabs = functions?
+Prefabs = entity hierarchy
+
+Grouping of entities: 
+entities can be in an std::vector<> (for owned entities)
+
+Key: DATA-DRIVEN
+
+{
+	Entity e;
+	e.addComponent<>();
+	e.addComponent<>();
+	return e;	// issue: if a component has stored a reference to the entity on initialization, this reference is invalidated
+	// solution: entity is a value type (reference wrapper) that stores a reference to the real entity, pass by copy
+	// issue: when to delete the underlying entity?
+	// solution 2: allocate all entities on the heap, use unique_ptr (entity::ptr)
+
+	entity::ptr e = entity::create();
+	e->add_component<...>(*e, ...);
+	e->add_component<...>(*e, ...);
+	return std::move(e);
+}
+
+{
+	entity::ptr e2 = ...;
+	entity::ptr e3 = ...;
+	// transferring ownership: e2 is now invalid
+	e->add_child(std::move(e2));
+	// not transferring ownership: e3 will be deleted when it goes out of scope
+	e->add_child(e3);
+	// creating children: 
+}
+
+class blinker : script_component 
+{
+public:
+	blinker() {
+
+	}
+
+	std::future<> blink() {
+		bool status = false;
+		while (true)
+		{
+			co_await (wait_for_seconds(20s) | terminate);
+			entity().get_component<Renderer>().set_visible(false);
+		}
+	}
+
+private:
+
+};
+

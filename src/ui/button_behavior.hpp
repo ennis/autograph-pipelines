@@ -7,7 +7,7 @@
 namespace ui {
 class button_behavior : public element {
 public:
-  button_behavior(element *parent) : element{parent} {}
+  button_behavior() : element{} {}
 
   observable<> hover_enter;
   observable<> hover_exit;

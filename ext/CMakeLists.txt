@@ -9,6 +9,9 @@ add_subdirectory(cppformat EXCLUDE_FROM_ALL)
 add_subdirectory(mcpp EXCLUDE_FROM_ALL)
 target_include_directories(mcpp INTERFACE mcpp/)
 
+# mstch
+add_subdirectory(mstch EXCLUDE_FROM_ALL)
+target_include_directories(mstch INTERFACE mstch/include)
 
 # assimp
 option(BUILD_SHARED_LIBS "..." OFF)

@@ -6,20 +6,20 @@ struct GLFWwindow;
 
 namespace ui {
 
-class native_window : public container {
+class native_window : public ui::element {
 public:
   native_window(GLFWwindow *window) : owns_window_{false}, window_{window} {}
-  native_window(const glm::ivec2 &initial_size, const std::string &title);
+  native_window(const glm::ivec2 &initial_size, const std::string &title, ui::elem_ref<ui::element> contents);
   ~native_window();
 
   observable<> should_close;
 
   glm::ivec2 measure(renderer &r) override {
     ruler a;
-    for (auto p : children()) {
+    /*for (auto p : children()) {
       if (p)
         a.append(p->cache_measure(r), ruler::placement::vertical);
-    }
+    }*/
     return a.size();
   }
 
@@ -33,5 +33,6 @@ public:
 private:
   bool owns_window_;
   GLFWwindow *window_;
+  ui::elem_ref<ui::element> contents_;
 };
 }

@@ -344,45 +344,36 @@ schedulers
         }
 }*/
 
-std::future<void> resumable_chase() {
-  auto &ui_root = ui::root_window();
-
-  for (;;) {
-    {
-      ui::button button{ui_root, "hello"};
-      co_await button.pressed;
-    }
-    {
-      ui::button button{ui_root, "world"};
-      co_await button.pressed;
-    }
-  }
-}
-
-std::future<void> resumable_render() {
+/*std::future<void> resumable_render() {
   std::future<void> f;
   for (int i = 0;; ++i) {
     co_await on_render;
   }
+}*/
+
+
+struct TT
+{};
+
+void test2(std::initializer_list<ui::elem_ref<TT>> tts)
+{
 }
 
-std::future<void> cancellable_ui(cancellation_token cancel) {
-  ui::native_window dlg{glm::ivec2{400, 300}, "Dialog"};
-  co_await (dlg.should_close | cancel);
-  fmt::print(std::clog, "Closed dialog\n");
-
-  // alternate version
- /* ui::native_window dialog {
-	  ui::vertical_box {
-		ui::vertical_box::slot{ ui::button{"Close dialog"} }
-	  }
-  };*/
+void try2()
+{
+	TT tt1;
+	TT tt2;
+	TT* tt3 = nullptr;
+	std::unique_ptr<TT> tt4;
+	test2({ tt1, tt2, *tt3, *tt4, TT{}, TT{} });
 }
 
 int main() {
   /* Initialize the library */
   if (!glfwInit())
     return -1;
+
+  try2();
 
   /* Create a windowed mode window and its OpenGL context */
   glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
@@ -413,36 +404,30 @@ int main() {
   subscription sub;
   input::initialize(window);
   auto &root = ui::initialize(window, nvg);
-  ui::button button{root, "hello"};
   std::string filename;
   ui::text_edit textedit{root, filename};
-  button.pressed.subscribe(sub, []() { fmt::print(std::clog, "Boing!\n"); });
 
   input::gamepad_button_action act_fire{XINPUT_GAMEPAD_X, true};
   input::gamepad_button_action act_jump{XINPUT_GAMEPAD_A, true};
 
-  auto fire_task = [&act_fire]() -> std::future<void> {
+  /*auto fire_task = [&act_fire]() -> std::future<void> {
     for (;;) {
       co_await act_fire;
       fmt::print(std::clog, "Fire!\n");
     }
-  };
+  };*/
 
-  auto jump_task = [&act_jump](cancellation_token tk) -> std::future<void> {
+  /*auto jump_task = [&act_jump](cancellation_token tk) -> std::future<void> {
     for (;;) {
       co_await act_jump;
       fmt::print(std::clog, "Jump!\n");
       tk.signal();
     }
-  };
+  };*/
 
-  // coroutine ui_task{chase};
-  resumable_chase();
+  /*auto f1 = fire_task();
   cancellation_token tk;
-  cancellable_ui(tk);
-
-  auto f1 = fire_task();
-  auto f2 = jump_task(tk);
+  auto f2 = jump_task(tk);*/
 
   /* Loop until the user closes the window */
   while (!glfwWindowShouldClose(window)) {

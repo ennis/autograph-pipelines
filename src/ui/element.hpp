@@ -17,6 +17,54 @@ struct child_slot {
   int slot;
 };
 
+//
+// optionally owning pointer
+// construct from unique_ptr or rvalue ref: it's owned
+// construct from T* or T&: it's a reference
+template <typename T> class elem_ref {
+public:
+  elem_ref() : owned_{false} { u.ptr_ = nullptr; }
+
+  elem_ref(std::unique_ptr<T> v) : owned_{true} { u.value_ = std::move(v); }
+
+  elem_ref(T &&v) : elem_ref{std::make_unique<T>(std::move(v))} {}
+
+  elem_ref(T &ref) : owned_{false} { u.ptr_ = &ref; }
+
+  ~elem_ref() {
+    if (owned_) {
+      u.value_.~unique_ptr();
+    }
+  }
+
+  bool is_owned() const { return owned_; }
+
+  T *get() {
+    if (owned_)
+      return u.value_.get();
+    else
+      return u.ptr_;
+  }
+
+  /*static elem_ptr<T> make_owned(T &&v) {
+    return elem_ptr<T>(std::make_unique<T>(std::move(v)));
+  }
+
+  static elem_ptr<T> make_ref(T *v) { return elem_ptr<T>(v); }
+  static elem_ptr<T> make_ref(T &v) { return elem_ptr<T>(&v); }*/
+
+private:
+  bool owned_;
+  union U {
+    U() : value_{nullptr} {}
+
+    ~U() {}
+
+    std::unique_ptr<T> value_;
+    T *ptr_;
+  } u;
+};
+
 class element {
 public:
   //
@@ -68,41 +116,6 @@ private:
   int index_;
   glm::ivec2 content_size_;
   rect_2d geometry_;
-};
-
-class container : public element {
-public:
-  container(element *parent = nullptr) : element{parent} {}
-  container(const child_slot &slot) : element{slot} {}
-
-  const auto &children() const { return children_; }
-
-  int add_child(element *elem) {
-    children_.push_back(elem);
-    return (int)(children_.size() - 1);
-  }
-
-  void add_child(element *elem, int slot) {
-    if (slot < children_.size())
-      return;
-    children_[slot] = elem;
-  }
-
-  void remove_child(int slot) { children_[slot] = nullptr; }
-
-  void remove_child(element *elem) {
-    // TODO
-  }
-
-  virtual void fixed_update(scheduler &event_sched) override {
-    for (auto ch : children_) {
-      if (ch)
-        ch->fixed_update(event_sched);
-    }
-  }
-
-private:
-  std::vector<ui::element *> children_;
 };
 
 native_window &initialize(GLFWwindow *root_window, NVGcontext *nvg_context);
