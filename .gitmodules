@@ -25,3 +25,6 @@
 [submodule "ext/variant"]
 	path = ext/variant
 	url = https://github.com/eggs-cpp/variant.git
+[submodule "ext/bustache"]
+	path = ext/bustache
+	url = https://github.com/jamboree/bustache
