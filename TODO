@@ -260,3 +260,75 @@ private:
 
 };
 
+=======
+- make it easy to create new nodes
+	* generic code for input validation
+	* generic code for handling resource residency
+
+- draw, then compute, then draw
+	image img1 { format::rgba32f,  ... };
+	image img2 { format::depth32f, ... };
+	auto draw = op_draw({img1, img2}, ...);
+	auto color_out = draw.output(0);
+-> user manipulates resources (buffers & images) vs nodes?
+	- resources: need multiple return values & by-ref returns
+		- not clear who owns the resource
+-> sequencing draws:
+	- use draw_nodes and compute_nodes
+-> in-place draws:
+	- enforced by the resource allocator
+	- immediate draws must go through a draw_node or a compute_node
+	- cannot draw on an arbitrary image
+	- no need to create a framebuffer manually
+
+-> node inputs: need validation
+	- verify constraints on creation
+
+-> I/O constraints:
+	- residency (host/device/implicit) or don't care
+		-> residency constraints always met (handled by the allocator)
+	- dimension (1d, 2d, 3d, cubemap) or don't care
+	- format 
+		-> list of supported formats?
+		-> callback to check if the format is correct
+
+	- declaring inputs?
+		this->input(0).validate([](auto in) { in.type == ...; }
+
+	- for each input: callback for verification
+	- allow_subimages / allow_regions / allow_buffer_slices
+		-> always met: if a node cannot operate on subimages/regions, 
+			then a new image is created with the region contents 
+
+-> actual resources: not owned by image & buffer nodes
+	passed to ops when executing
+
+-> Type safety?
+
+-> node states:
+	
+	UNBOUND - inputs not bound
+	PARTIALLY BOUND - some inputs bound, output partially specified (optional)
+	BOUND - node is fully bound
+	VALIDATED - node is fully bound and its inputs are validated, outputs are specified
+	FINALIZED - resources for input and output are resolved, the node is ready to be executed
+
+-> concrete resources:
+	image, CPU/GPU (full)
+	subimage, CPU/GPU
+	region, CPU/GPU
+	buffer
+
+clear_op
+region_op 
+subimage_op
+compute_op
+draw_op
+msaa_resolve_op
+generate_mipmaps_op
+ping_pong_op
+
+subimage_op:
+	- in: format=any, size=any, residency=any
+	- out: format=in.format, size=any, residency=same as in
+		storage=in.subresource[index]

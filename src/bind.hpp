@@ -2,6 +2,7 @@
 #include "buffer.hpp"
 #include "gl_sampler.hpp"
 #include "gl_shader_resources.hpp"
+#include "gl_framebuffer.hpp"
 #include "image_impl.hpp"
 #include "shader_resource.hpp"
 #include "utils.hpp"
@@ -115,6 +116,13 @@ template <typename T> struct constant {
 };
 
 /////////////////////////////
+/// persistent
+struct framebuffer {
+  std::vector<std::shared_ptr<image_impl>> color_attachements;
+  std::shared_ptr<image_impl> depth_attachement;
+  mutable gl_framebuffer fbo_;
+};
+
 struct storage_buffer {
   int slot;
   buffer buf;
@@ -192,7 +200,8 @@ template <> struct binder<uniform_buffer> {
   }
 };
 
-template <typename U> struct binder<constant<U>> {
+template <typename U> struct binder<constant<U>> 
+{
   static void bind(shader_resources &res, const constant<U> &val) {
     // TODO allocate a CPU-side to hold the constant?
   }
@@ -230,6 +239,8 @@ template <> struct binder<storage_image> {
     //gl_res.images[img.slot] = img.slot;
   }
 };
+
+
 
 
 ////////////////////////// Bind<index_buffer<T> >
