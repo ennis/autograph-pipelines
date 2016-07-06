@@ -8,10 +8,7 @@ namespace ui {
 
 class button : public button_behavior {
 public:
-  button(element &parent, std::string label);
-  button(element &parent, std::string label, ui::sprite &icon);
-
-  void set_icon(ui::sprite &icon);
+  button(std::string label);
 
   virtual glm::ivec2 measure(renderer &r) override;
   virtual void render(renderer &r) override;

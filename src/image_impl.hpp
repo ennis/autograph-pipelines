@@ -65,9 +65,13 @@ struct image_impl : public value_impl {
   }
 
   // bind a value
-  image_impl& bind(image_impl::ptr from)
+  image_impl& bind(image_impl from)
   {
-
+	  if (from.share_) {
+		  share_ = std::move(from.share_);
+	  } else {
+		
+	  }
   }
 
   image_impl::ptr as_texture() {

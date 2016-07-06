@@ -2,13 +2,9 @@
 #include "visual_state.hpp"
 
 namespace ui {
-button::button(element &parent, std::string label)
-    : button_behavior{&parent}, label_{std::move(label)} {}
+button::button(std::string label)
+    : label_{std::move(label)} {}
 
-button::button(element &parent, std::string label, ui::sprite &icon)
-    : button_behavior{&parent}, label_{std::move(label)}, icon_{&icon} {}
-
-void button::set_icon(ui::sprite &icon) { icon_ = &icon; }
 
 glm::ivec2 button::measure(renderer &r) {
   return r.measure_button(label_, icon_);
