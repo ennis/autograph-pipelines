@@ -123,10 +123,10 @@ void render() {
   ImGui::BulletText("hello");
   ImGui::BulletText("world");
 
-  vec2 p = ImGui::GetCursorScreenPos();
+  /*vec2 p = ImGui::GetCursorScreenPos();
   dl->AddBezierCurve(p + vec2{0.0f, 0.0f}, p + vec2{20.0f, 0.0f},
                      p + vec2{100.0f - 20.0f, 50.0f}, p + vec2{100.0f, 50.0f},
-                     ImColor{0.0f, 1.0f, 0.0f}, 3.0f);
+                     ImColor{0.0f, 1.0f, 0.0f}, 3.0f);*/
 
   // dl->AddRectFilled(ImVec2{ 0.0f, 0.0f }, ImVec2{ 300.0f, 300.0f },
   // ImColor::HSV(1.0f, 0.5f, 1.0f), 0.5f);
@@ -351,29 +351,10 @@ schedulers
   }
 }*/
 
-
-struct TT
-{};
-
-void test2(std::initializer_list<ui::elem_ref<TT>> tts)
-{
-}
-
-void try2()
-{
-	TT tt1;
-	TT tt2;
-	TT* tt3 = nullptr;
-	std::unique_ptr<TT> tt4;
-	test2({ tt1, tt2, *tt3, *tt4, TT{}, TT{} });
-}
-
 int main() {
   /* Initialize the library */
   if (!glfwInit())
     return -1;
-
-  try2();
 
   /* Create a windowed mode window and its OpenGL context */
   glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
@@ -401,14 +382,14 @@ int main() {
   // NVG context for UI rendering
   auto nvg = nvgCreateGL3(NVG_ANTIALIAS);
 
-  subscription sub;
+  /*subscription sub;
   input::initialize(window);
   auto &root = ui::initialize(window, nvg);
   std::string filename;
   ui::text_edit textedit{root, filename};
 
   input::gamepad_button_action act_fire{XINPUT_GAMEPAD_X, true};
-  input::gamepad_button_action act_jump{XINPUT_GAMEPAD_A, true};
+  input::gamepad_button_action act_jump{XINPUT_GAMEPAD_A, true};*/
 
   /*auto fire_task = [&act_fire]() -> std::future<void> {
     for (;;) {
@@ -443,7 +424,7 @@ int main() {
     /* Poll for and process events */
     glfwPollEvents();
   }
-  sub.unsubscribe();
+  //sub.unsubscribe();
 
   ImGui_ImplGlfwGL3_Shutdown();
 

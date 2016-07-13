@@ -9,7 +9,7 @@ namespace ui {
 class native_window : public ui::element {
 public:
   native_window(GLFWwindow *window) : owns_window_{false}, window_{window} {}
-  native_window(const glm::ivec2 &initial_size, const std::string &title, ui::elem_ref<ui::element> contents);
+  native_window(const glm::ivec2 &initial_size, const std::string &title);
   ~native_window();
 
   observable<> should_close;

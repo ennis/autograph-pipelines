@@ -4,10 +4,9 @@
 namespace ui {
 
 native_window::native_window(const glm::ivec2 &initial_size,
-                             const std::string &title,
-                             ui::elem_ref<ui::element> contents)
-    : element{&ui::root_window()}, owns_window_{true},
-      contents_{std::move(contents)} {
+                             const std::string &title)
+    : element{&ui::root_window()}, owns_window_{true}
+       {
   window_ = glfwCreateWindow(initial_size.x, initial_size.y, title.c_str(),
                              nullptr, ui::root_window().get_window_impl());
 }

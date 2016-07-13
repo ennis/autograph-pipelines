@@ -76,7 +76,7 @@ int STB_TEXTEDIT_KEYTOTEXT(int key) { return key >= 0x300000 ? 0 : key; }
 }
 
 text_edit::text_edit(element &parent, std::string &str)
-    : button_behavior{&parent}, text_{str, nullptr} {
+    : text_{str, nullptr} {
   state_ = std::make_unique<stb::STB_TexteditState>();
 }
 

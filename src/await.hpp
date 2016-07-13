@@ -47,7 +47,7 @@ inline void xxawait(observable<void> &obs) {
 }
 
 //////////////////////////////////////////////////////////////////////////
-template <typename T> class observable_awaiter_base {
+/*template <typename T> class observable_awaiter_base {
 public:
   explicit observable_awaiter_base(observable<T> &obs) : obs_{obs} {}
   bool await_ready() const { return false; }
@@ -87,4 +87,4 @@ public:
 
 template <typename T> inline auto operator co_await(observable<T> &obs) {
   return observable_awaiter<T>{obs};
-}
+}*/

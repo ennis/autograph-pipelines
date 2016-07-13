@@ -29,7 +29,11 @@ using namespace clang;
 using namespace clang::driver;
 using namespace clang::tooling;
 
+// Reflection DB: hierarchical (scope hierarchy)
+
 static llvm::cl::OptionCategory ToolingSampleCategory("Tooling Sample");
+
+using namespace bustache;
 
 // By implementing RecursiveASTVisitor, we can specify which AST nodes
 // we're interested in by overriding relevant methods.
@@ -37,20 +41,43 @@ class MyASTVisitor : public RecursiveASTVisitor<MyASTVisitor> {
 public:
   MyASTVisitor(bustache::array &reflectionDB) : RDB(reflectionDB) {}
 
-  bool VisitFunctionDecl(FunctionDecl *f) {
-    // Only function definitions (with bodies), not declarations.
-    if (f->hasBody()) {
-      // add a function entry
-      RDB.push_back(bustache::object{{"type", "function"},
-                                     {"name", f->getNameAsString()}});
-	  fmt::print("Visited a function {}\n", f->getNameAsString());
+  bool VisitDecl(Decl* D)
+  {
+      array attribs;
+      for (auto A : D->attrs()) {
+          if (auto AA = dyn_cast<AnnotateAttr>(A)) {
+              // handle attributes?
+          }
+      }
+      curobj["attributes"] = std::move(attribs);
+      return true;
+  }
+
+    bool VisitNamedDecl(NamedDecl* D)
+    {
+        curobj["name"] = D->getNameAsString();
+        return true;
     }
 
+  bool VisitFunctionDecl(FunctionDecl *F) {
+    // Only function definitions (with bodies), not declarations.
+    if (!F->hasBody()) return true;
+    curobj["declKind"] = "function";
+    curobj["isFunction"] = true;
+    return true;
+  }
+
+  bool VisitCXXRecordDecl(CXXRecordDecl* RD) {
+    if (!RD->hasDefinition()) return true;
+    curobj["declKind"] = "struct";
+    curobj["isStruct"] = true;
     return true;
   }
 
 private:
-  bustache::array &RDB;
+  object curobj;
+  // array of top-level decls
+  array &RDB;
 };
 
 // Implementation of the ASTConsumer interface for reading an AST produced
