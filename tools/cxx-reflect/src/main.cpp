@@ -9,9 +9,10 @@
 // This code is in the public domain
 //------------------------------------------------------------------------------
 #include <sstream>
-#include <type_traits>
 #include <string>
+#include <type_traits>
 
+#include <bustache/model.hpp>
 #include <clang/AST/AST.h>
 #include <clang/AST/ASTConsumer.h>
 #include <clang/AST/RecursiveASTVisitor.h>
@@ -21,9 +22,8 @@
 #include <clang/Rewrite/Core/Rewriter.h>
 #include <clang/Tooling/CommonOptionsParser.h>
 #include <clang/Tooling/Tooling.h>
-#include <llvm/Support/raw_ostream.h>
-#include <bustache/model.hpp>
 #include <cppformat/format.h>
+#include <llvm/Support/raw_ostream.h>
 
 using namespace clang;
 using namespace clang::driver;
@@ -41,34 +41,36 @@ class MyASTVisitor : public RecursiveASTVisitor<MyASTVisitor> {
 public:
   MyASTVisitor(bustache::array &reflectionDB) : RDB(reflectionDB) {}
 
-  bool VisitDecl(Decl* D)
-  {
-      array attribs;
-      for (auto A : D->attrs()) {
-          if (auto AA = dyn_cast<AnnotateAttr>(A)) {
-              // handle attributes?
-          }
+  bool VisitDecl(Decl *D) {
+    array attribs;
+    for (auto A : D->attrs()) {
+      if (auto AA = dyn_cast<AnnotateAttr>(A)) {
+        // handle attributes?
       }
-      curobj["attributes"] = std::move(attribs);
-      return true;
+    }
+    curobj["attributes"] = std::move(attribs);
+    return true;
   }
 
-    bool VisitNamedDecl(NamedDecl* D)
-    {
-        curobj["name"] = D->getNameAsString();
-        return true;
-    }
+  bool VisitNamedDecl(NamedDecl *D) {
+	  fmt::print("VisitNamedDecl\n");
+    curobj["name"] = D->getNameAsString();
+	curobj["qualName"] = D->getQualifiedNameAsString();
+    return true;
+  }
 
   bool VisitFunctionDecl(FunctionDecl *F) {
     // Only function definitions (with bodies), not declarations.
-    if (!F->hasBody()) return true;
+    if (!F->hasBody())
+      return true;
     curobj["declKind"] = "function";
     curobj["isFunction"] = true;
     return true;
   }
 
-  bool VisitCXXRecordDecl(CXXRecordDecl* RD) {
-    if (!RD->hasDefinition()) return true;
+  bool VisitCXXRecordDecl(CXXRecordDecl *RD) {
+    if (!RD->hasDefinition())
+      return true;
     curobj["declKind"] = "struct";
     curobj["isStruct"] = true;
     return true;
