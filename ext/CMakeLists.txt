@@ -9,9 +9,8 @@ add_subdirectory(cppformat EXCLUDE_FROM_ALL)
 add_subdirectory(mcpp EXCLUDE_FROM_ALL)
 target_include_directories(mcpp INTERFACE mcpp/)
 
-# mustache
-add_library(mustache INTERFACE)
-target_include_directories(mustache INTERFACE Mustache/)
+# bustache
+add_subdirectory(bustache EXCLUDE_FROM_ALL)
 
 # assimp
 option(BUILD_SHARED_LIBS "..." OFF)
@@ -104,3 +103,7 @@ target_link_libraries(nanovg PRIVATE stb)
 # variant 
 add_library(variant INTERFACE)
 target_include_directories(variant INTERFACE variant/include)
+
+# json
+add_library(json INTERFACE)
+target_include_directories(json INTERFACE json/src)
