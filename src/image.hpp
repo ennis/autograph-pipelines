@@ -2,7 +2,7 @@
 #include "image_impl.hpp"
 #include "shader_resource.hpp"
 
-class image {
+class[[cxxr::reflect]] image {
 public:
   auto &name() const { return impl_->name_; }
 
