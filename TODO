@@ -415,3 +415,26 @@ ${#attributes}$
 ${/attributes}$
 }};
 ${/decls}$
+
+
+
+
+Choosing a scripting language:
+____________________________________
+
+1. Statically typed
+	with good generics
+	not javascript
+2. Compiles or JITs to native code
+3. Excellent tooling 
+	Autocompletion, go-to definition, type information on variables (at least the features of C# intellisense)
+	Also a good debugger
+4. Supports coroutines
+5. Can easily expose native objects/native functions
+6. Live code editing
+7. Good reflection abilities
+	Ideally: could write shaders in it
+
+Use C++ for the heavy lifting (physics, mesh processing, animation stuff, generation of command buffer, culling)
+Use the reflection generator to automatically generate bindings
+

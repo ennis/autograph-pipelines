@@ -1,4 +1,3 @@
-#pragma once
 #include "format.hpp"
 
 /*enum class image_format {

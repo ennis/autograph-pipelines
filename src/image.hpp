@@ -2,7 +2,12 @@
 #include "image_impl.hpp"
 #include "shader_resource.hpp"
 
-class[[cxxr::reflect]] image {
+struct EditorAttribute
+{
+	int value;
+};
+
+class[[cxxr::reflect, cxxr::meta(EditorAttribute{3+4})]] image {
 public:
   auto &name() const { return impl_->name_; }
 
