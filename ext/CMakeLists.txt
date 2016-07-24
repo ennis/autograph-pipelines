@@ -1,6 +1,3 @@
-# autograph
-add_subdirectory(autograph EXCLUDE_FROM_ALL)
-target_include_directories(autograph INTERFACE autograph/src/)
 
 # cppformat
 add_subdirectory(cppformat EXCLUDE_FROM_ALL)
