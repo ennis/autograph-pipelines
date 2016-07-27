@@ -37,4 +37,6 @@ add_executable(editor src/main.cpp ${EDITOR_RES} ${NODE_EDITOR_SRC})
 
 # Use the Widgets module from Qt 5.
 target_link_libraries(editor autograph Qt5::Widgets Qt5::OpenGL cppformat json glm nanovg variant)
-
+if(UNIX)
+target_link_libraries(editor -lstdc++fs)
+endif()

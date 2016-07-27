@@ -2,6 +2,7 @@
 #include "shader_preprocessor.hpp"
 #include <iostream>
 #include <ostream>
+#include <cstring>
 
 namespace ag {
 

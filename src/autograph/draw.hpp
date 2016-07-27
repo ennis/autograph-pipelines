@@ -43,8 +43,9 @@ struct draw_indexed {
 template <typename Drawable>
 void draw(framebuffer& fbo,
           program& prog, 
-	Drawable&& drawable) {
-	bind_framebuffer(fbo);
+        Drawable&& drawable) {
+        shader_resource_bind_context context;
+        bind_framebuffer(fbo);
   glUseProgram(prog.object());
   context.state.program = prog.object();
   drawable.draw(context);

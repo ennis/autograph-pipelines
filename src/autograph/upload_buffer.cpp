@@ -49,7 +49,7 @@ bool upload_buffer::tryAllocateContiguousFreeSpace(uint64_t expirationDate,
                                                    size_t size, size_t align,
                                                    size_t &alloc_begin) {
   std::lock_guard<std::mutex> guard(mutex);
-  assert(size < buffer.byte_size_);
+  assert(size < buffer.size());
   if ((begin_ptr < write_ptr) || ((begin_ptr == write_ptr) && (used == 0))) {
     size_t slack_space = buffer.size() - write_ptr;
     // try to put the buffer in the slack space at the end

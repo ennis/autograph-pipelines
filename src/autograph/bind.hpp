@@ -185,7 +185,7 @@ void bind_shader_resource(shader_resource_bind_context &context,
 ////////////////////////// Bind<texture_unit<>>
 inline void bind_shader_resource(shader_resource_bind_context &context,
                                  const texture_unit &tex_unit) {
-  assert(tex_unit.slot < get_impl_limits().max_texture_units);
+  assert(tex_unit.unit < get_impl_limits().max_texture_units);
   glBindTextureUnit(tex_unit.unit, tex_unit.tex.object());
   glBindSampler(tex_unit.unit, tex_unit.sampler.object());
 }
@@ -193,7 +193,7 @@ inline void bind_shader_resource(shader_resource_bind_context &context,
 ////////////////////////// Bind<image_unit<>>
 inline void bind_shader_resource(shader_resource_bind_context &context,
                                  const image_unit &img_unit) {
-  assert(tex_unit.slot < get_impl_limits().max_combined_texture_image_units);
+  assert(img_unit.unit < get_impl_limits().max_combined_texture_image_units);
   auto obj = img_unit.tex.object();
   glBindImageTextures(img_unit.unit, 1, &obj);
 }

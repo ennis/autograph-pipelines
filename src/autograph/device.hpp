@@ -1,5 +1,6 @@
 #ifndef DEVICE_HPP
 #define DEVICE_HPP
+#include <array>
 #include "buffer.hpp"
 
 namespace ag {

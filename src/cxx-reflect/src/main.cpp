@@ -98,11 +98,11 @@ public:
     // 1. The decl has the cxxr::reflect attribute
     // 2. The innermost parent scope of the decl that has a 'reflect' or
     // 'noreflect' attribute has a 'reflect' attribute
-    if (D->getAttr<CxxrReflectAttr>()) {
+    /*if (D->getAttr<CxxrReflectAttr>()) {
       return true;
     } else if (D->getAttr<CxxrNoReflectAttr>()) {
       return false;
-    }
+    }*/
     return reflectAllInCurrentScope();
   }
 
@@ -147,17 +147,6 @@ public:
 
   void exitScope() { reflectionScopes.pop_back(); }
 
-  // Solution:
-  // Look recursively for every declaration this decl depends on
-  // If the decl is found in a header file, just #include it
-  // Otherwise, dump it
-  //
-  // Issue: what if we pull types that should not be exposed?
-  // e.g. a decl in an anonymous namespace that conflicts with another decl?
-  // If we try to expose a type declared in an anonymous namespace, generate an
-  // error.
-  // Error: Generating reflection data on type 'type' would expose 'decl'
-  // declared in an anonymous namespace.
 
   bool TraverseDecl(Decl *D) {
     if (!D)
@@ -325,7 +314,7 @@ public:
     auto &SM = Context_->getSourceManager();
     json obj = json::array();
     for (auto A : ND->attrs()) {
-      if (auto AA = dyn_cast<CxxrMetaAttr>(A)) {
+      /*if (auto AA = dyn_cast<CxxrMetaAttr>(A)) {
 		  int i = 0;
 		for (auto&&metaObjectExpr : AA->additionalMetaObjects()) {
 			json attrJson;
@@ -339,7 +328,7 @@ public:
 				.str();
 			obj.push_back(std::move(attrJson));
 		}
-      }
+      }*/
     }
     return obj;
   }
