@@ -15,6 +15,7 @@ public:
   static framebuffer create(std::initializer_list<texture*> color_tex);
   static framebuffer create(std::initializer_list<texture*> color_tex,
                  texture &depth_tex);
+  static framebuffer create_default(glm::ivec2 size);
 
   void init();
   auto object() { return obj_.get(); }

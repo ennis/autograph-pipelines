@@ -240,6 +240,14 @@ Key: DATA-DRIVEN
 	// creating children: 
 }
 
+// scene->create_entity() -> entity_ptr
+// Create an entity in the scene.
+// The entity lives until entity->destroy() is called and all components release their references to the entity.
+// 
+// unique_entity:
+// Wraps an entity_ptr. Calls entity_ptr->destroy() when the object goes out of scope.
+
+
 // all script instances are nonmoveable (but can be copied)
 [[meta(script)]]
 class blinker : script_component 
@@ -406,6 +414,45 @@ No need for animations.
 No need for observables. 
 Wrap ImGui?
 
+=> Qt: not suitable?
+	- issue with opengl contexts
+	- cannot use a custom function loader
+	- not embeddable in a full-screen game
+	+ a lot of stuff is already implemented, can be useful
+		(key shortcuts, etc.)
+
+=> ImGui:
+	- no support for multiple windows
+	- poor support for custom layouts
+	- no standard file dialogs, but easily completed by other libraries
+	+ extensions for dock windows
+	+ with enough determination, can add new features
+	+ some experience with it 
+
+Own:
+	* shared code between game UI and editor UI
+	* support for animations
+
+Idea:
+	UI elements are a tree of entities
+	box = rect_transform
+	layout system = set of layout script components
+	rendering = anything (nanovg, for example)
+		- hierarchy of clipping masks
+
+UI components:
+	- Rect transform
+	- visual component
+	- layout script
+	- behavior script
+
+
+Tree view?
+List view?
+Table view?
+	=> spawn temporary entities each frame
+
+
 
 Base editor:
 ______________________________
@@ -436,6 +483,8 @@ node_editor
 
 -> instantiate prefab node networks
 	-> problem: node networks could share resources?
+
+
 
 Extensible editor:
 ______________________________

@@ -51,4 +51,13 @@ framebuffer framebuffer::create(std::initializer_list<texture *> color_tex,
                             depth_tex.object(), 0);
   return out;
 }
+
+framebuffer framebuffer::create_default(glm::ivec2 size)
+{
+    framebuffer out;
+    out.obj_ = 0;
+    out.width_ = static_cast<unsigned>(size.x);
+    out.height_ = static_cast<unsigned>(size.y);
+}
+
 }

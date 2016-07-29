@@ -2,6 +2,7 @@
 #define DEVICE_HPP
 #include <array>
 #include "buffer.hpp"
+#include "framebuffer.hpp"
 
 namespace ag {
 struct device_config {
@@ -38,10 +39,10 @@ inline const gl_impl_limits &get_impl_limits() {
 	return g_gl_impl_limits;
 }
 
-
+framebuffer& get_default_framebuffer();
 void initialize(const device_config &cfg);
 // resize the framebuffer 0 of the current context
-void resize_screen(unsigned width, unsigned height);
+void resize_default_framebuffer(glm::ivec2 size);
 buffer_slice upload_frame_data(const void *data, size_t size, size_t alignment);
 template <typename T>
 buffer_slice upload_frame_array(const T *data, size_t num_elements,

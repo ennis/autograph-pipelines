@@ -59,6 +59,11 @@ buffer_slice upload_frame_data(const void *data, size_t size,
   return std::move(out_slice);
 }
 
+framebuffer& get_default_framebuffer()
+{
+    return g_screen_fbo;
+}
+
 void end_frame() {
   // sync on frame N-(max-in-flight)
   g_frame_id++;
@@ -83,10 +88,9 @@ void initialize(const device_config &config) {
   g_default_upload_buffer = std::make_unique<upload_buffer>(upload_buf_size);
 }
 
-void resize_screen(unsigned width, unsigned height)
+void resize_screen(glm::ivec2 size)
 {
-	//g_screen_fbo.width = width;
-	//g_screen_fbo.height = height;
+    g_screen_fbo = framebuffer::create_default(size);
 }
 
 uint64_t get_frame_count() { return g_frame_id; }
