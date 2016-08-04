@@ -171,7 +171,7 @@ auto make_defines_c_strings(std::vector<shader_pp_define> defines,
   for (auto &&d : out_str) {
     c_strings.push_back(d.c_str());
   }
-  return std::move(c_strings);
+  return c_strings;
 }
 
   // helper to create a program object from a single-source shader file

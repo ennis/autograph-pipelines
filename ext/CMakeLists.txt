@@ -95,7 +95,7 @@ add_subdirectory(glloadgen EXCLUDE_FROM_ALL)
 file(GLOB NANOVG_SOURCES nanovg/src/*.c)
 add_library(nanovg EXCLUDE_FROM_ALL STATIC ${NANOVG_SOURCES})
 target_include_directories(nanovg INTERFACE nanovg/src)
-target_link_libraries(nanovg PRIVATE stb)
+target_link_libraries(nanovg PUBLIC stb)
 
 # variant 
 add_library(variant INTERFACE)
@@ -104,3 +104,15 @@ target_include_directories(variant INTERFACE variant/include)
 # json
 add_library(json INTERFACE)
 target_include_directories(json INTERFACE json/src)
+
+# range-v3
+ADD_LIBRARY(range_v3 INTERFACE) 
+TARGET_INCLUDE_DIRECTORIES(range_v3 INTERFACE range-v3/include)
+
+# hana
+add_library(hana INTERFACE)
+TARGET_INCLUDE_DIRECTORIES(hana INTERFACE hana/include)
+
+# optional
+add_library(optional INTERFACE)
+TARGET_INCLUDE_DIRECTORIES(optional INTERFACE optional)

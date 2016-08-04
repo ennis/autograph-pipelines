@@ -1,5 +1,4 @@
-#ifndef DEVICE_HPP
-#define DEVICE_HPP
+#pragma once
 #include <array>
 #include "buffer.hpp"
 #include "framebuffer.hpp"
@@ -59,5 +58,3 @@ buffer_slice upload_frame_array(const std::array<T, N> &data,
 uint64_t get_frame_count();
 void end_frame();
 }
-
-#endif

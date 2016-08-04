@@ -56,7 +56,7 @@ buffer_slice upload_frame_data(const void *data, size_t size,
                                        out_slice)) {
     throw std::runtime_error("Upload buffer is full");
   }
-  return std::move(out_slice);
+  return out_slice;
 }
 
 framebuffer& get_default_framebuffer()
