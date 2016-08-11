@@ -15,7 +15,7 @@ add_library(autograph STATIC ${LIB_SOURCES})
 # libraries
 #====================================================================
 #====================================================================
-target_link_libraries(autograph glm assimp glfw cppformat stb mcpp nanovg variant)
+target_link_libraries(autograph glm glfw cppformat stb mcpp variant hana)
 target_include_directories(autograph INTERFACE .)
 
 if (WIN32)

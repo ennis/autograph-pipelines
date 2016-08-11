@@ -5,9 +5,9 @@
 
 namespace ag {
 struct device_config {
-  unsigned init_fb_width;
-  unsigned init_fb_height;
-  unsigned max_frames_in_flight;
+  unsigned init_fb_width = 0;
+  unsigned init_fb_height = 0;
+  unsigned max_frames_in_flight = 0;
 };
 
 struct gl_impl_limits {

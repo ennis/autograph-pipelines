@@ -31,14 +31,13 @@ private:
     size_t end_ptr;
   };
 
+  buffer buffer_;
   // start of free space in the ring
   size_t write_ptr;
   // end of free space in the ring
   size_t begin_ptr;
   // used space
   size_t used;
-
-  buffer buffer;
   void *mapped_region;
   std::queue<fenced_region> fencedRegions;
   std::mutex mutex;

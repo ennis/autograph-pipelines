@@ -41,6 +41,11 @@ uint64_t g_frame_id;
 framebuffer g_screen_fbo;
 std::unique_ptr<upload_buffer> g_default_upload_buffer;
 
+bool is_initialized()
+{
+	return g_device_config.max_frames_in_flight != 0;
+}
+
 void push_debug_group(const char *message) {
   glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 0,
                    static_cast<GLsizei>(std::strlen(message)), message);
@@ -49,7 +54,9 @@ void push_debug_group(const char *message) {
 void pop_debug_group() { glPopDebugGroup(); }
 
 buffer_slice upload_frame_data(const void *data, size_t size,
-                                  size_t alignment) {
+                                  size_t alignment) 
+{
+	assert(is_initialized());
   buffer_slice out_slice;
   if (!g_default_upload_buffer->upload(data, size, alignment,
                                        getFrameExpirationDate(g_frame_id),
@@ -61,10 +68,12 @@ buffer_slice upload_frame_data(const void *data, size_t size,
 
 framebuffer& get_default_framebuffer()
 {
+	assert(is_initialized());
     return g_screen_fbo;
 }
 
 void end_frame() {
+	assert(is_initialized());
   // sync on frame N-(max-in-flight)
   g_frame_id++;
   g_frame_fence.signal(g_frame_id);
@@ -90,6 +99,7 @@ void initialize(const device_config &config) {
 
 void resize_screen(glm::ivec2 size)
 {
+	assert(is_initialized());
     g_screen_fbo = framebuffer::create_default(size);
 }
 

@@ -41,3 +41,6 @@
 [submodule "ext/Optional"]
 	path = ext/Optional
 	url = https://github.com/akrzemi1/Optional
+[submodule "ext/GSL"]
+	path = ext/GSL
+	url = https://github.com/Microsoft/GSL

@@ -1,6 +1,7 @@
 #pragma once
 #include "format.hpp"
 #include "texture.hpp"
+#include "lazy_resource.hpp"
 #include <experimental/filesystem>
 
 namespace ag {
@@ -8,16 +9,21 @@ namespace ag {
 texture load_texture(std::experimental::filesystem::path path,
                      image_format tex_format = image_format::rgba8_unorm);
 
-struct image_file {
-  image_file() = default;
-  image_file(std::experimental::filesystem::path path);
+void save_texture(std::experimental::filesystem::path path, texture &tex);
 
-  texture &get_texture();
-
-  bool loaded_ = false;
-  std::experimental::filesystem::path path_;
-  texture tex_;
+// delayed loader for image files
+struct texture_from_file_t {
+	ag::texture
+		operator()(const std::experimental::filesystem::path &p,
+			ag::image_format tex_format = ag::image_format::rgba8_unorm) {
+		return load_texture(p, tex_format);
+	}
 };
 
-void save_texture(std::experimental::filesystem::path path, texture &tex);
+inline auto load_texture_lazy(std::experimental::filesystem::path path,
+	image_format tex_format = image_format::rgba8_unorm)
+{
+	return make_lazy_resource<ag::texture, texture_from_file_t>(std::move(path), std::move(tex_format));
+}
+
 }

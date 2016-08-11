@@ -1,13 +1,3 @@
-//------------------------------------------------------------------------------
-// Tooling sample. Demonstrates:
-//
-// * How to write a simple source tool using libTooling.
-// * How to use RecursiveASTVisitor to find interesting AST nodes.
-// * How to use the Rewriter API to rewrite the source code.
-//
-// Eli Bendersky (eliben@gmail.com)
-// This code is in the public domain
-//------------------------------------------------------------------------------
 #include <cstdbool>
 #include <fstream>
 #include <iostream>
@@ -40,8 +30,6 @@ using namespace clang;
 using namespace clang::driver;
 using namespace clang::tooling;
 
-// Reflection DB: hierarchical (scope hierarchy)
-
 static llvm::cl::OptionCategory CxxReflectCategory("cxx-reflect");
 
 using namespace nlohmann;
@@ -49,7 +37,7 @@ using namespace llvm;
 
 enum Action { ActRender, ActReflect, ActMerge };
 
-static cl::opt<::Action> ReflectAction(
+cl::opt<::Action> ReflectAction(
     "action", llvm::cl::desc(R"(
 Action
 )"),
@@ -58,27 +46,25 @@ Action
                clEnumValN(ActMerge, "merge", "..."), clEnumValEnd),
     cl::cat(CxxReflectCategory));
 
-static cl::opt<std::string> InputJsonDBFile("jsondb", llvm::cl::desc(R"(
+cl::opt<std::string> InputJsonDBFile("jsondb", llvm::cl::desc(R"(
 Input JSON reflection database.
 )"),
-                                            cl::Optional,
-                                            cl::cat(CxxReflectCategory));
+                                     cl::Optional, cl::cat(CxxReflectCategory));
 
-static cl::opt<std::string> OutputJsonDBFile("output-jsondb",
-                                             llvm::cl::desc(R"(
+cl::opt<std::string> OutputJsonDBFile("output-jsondb", llvm::cl::desc(R"(
 Output merged JSON database file.
 )"),
-                                             cl::cat(CxxReflectCategory));
+                                      cl::cat(CxxReflectCategory));
 
 // By implementing RecursiveASTVisitor, we can specify which AST nodes
 // we're interested in by overriding relevant methods.
-class MyASTVisitor : public RecursiveASTVisitor<MyASTVisitor> {
+class ReflectionASTVisitor : public RecursiveASTVisitor<ReflectionASTVisitor> {
 public:
-  MyASTVisitor() {}
+  ReflectionASTVisitor() {}
 
-  ~MyASTVisitor() {}
+  ~ReflectionASTVisitor() {}
 
-  using base = RecursiveASTVisitor<MyASTVisitor>;
+  using base = RecursiveASTVisitor<ReflectionASTVisitor>;
 
   bool reflectAllInCurrentScope() {
     if (reflectionScopes.empty())
@@ -98,22 +84,14 @@ public:
     // 1. The decl has the cxxr::reflect attribute
     // 2. The innermost parent scope of the decl that has a 'reflect' or
     // 'noreflect' attribute has a 'reflect' attribute
-    /*if (D->getAttr<CxxrReflectAttr>()) {
-      return true;
-    } else if (D->getAttr<CxxrNoReflectAttr>()) {
-      return false;
-    }*/
+	if (D->getAttr<CxxrReflectAttr>()) {
+		return true;
+	}
+	else if (D->getAttr<CxxrNoReflectAttr>()) {
+		return false;
+	}
     return reflectAllInCurrentScope();
   }
-
-  /*class DeclDependencyVisitor : public DeclVisitor<DeclDependencyVisitor>
-  {
-  public:
-          DeclDependencyVisitor(MyASTVisitor& V) : V_{ V }
-          {}
-  private:
-          MyASTVisitor& V_;
-  };*/
 
   void includeDeclSourceFile(NamedDecl *D) {
     // Check if the decl is in an anonymous namespace: fail if this is the case
@@ -132,7 +110,7 @@ public:
       return;
     }
     auto &SM = Context_->getSourceManager();
-    auto &DLoc = D->getLocation();
+    auto DLoc = D->getLocation();
     // Include the file containing the declaration. It is the responsibility
     // of the user to ensure that including this file in the generated sources
     // will not generate ODR-violations.
@@ -146,7 +124,6 @@ public:
   }
 
   void exitScope() { reflectionScopes.pop_back(); }
-
 
   bool TraverseDecl(Decl *D) {
     if (!D)
@@ -200,7 +177,7 @@ public:
     obj["classQualName"] = RD->getQualifiedNameAsString();
     obj["declKind"] = "struct";
     obj["isStruct"] = true;
-	obj["isType"] = true;
+    obj["isType"] = true;
     json methods, fields, bases;
 
     for (auto MD : RD->methods())
@@ -212,22 +189,25 @@ public:
     obj["numMethods"] = methods.size();
     obj["methods"] = std::move(methods);
 
-	int numPublicFields = 0;
-	for (auto FD : RD->fields()) {
-		fields.push_back(EmitFieldDecl(FD));
-		if (FD->getAccess() == AS_public) 
-			numPublicFields++;
-	}
+    int numPublicFields = 0;
+    for (auto FD : RD->fields()) {
+      fields.push_back(EmitFieldDecl(FD));
+      if (FD->getAccess() == AS_public)
+        numPublicFields++;
+    }
     if (fields.size()) {
       fields.front()["isFirst"] = true;
       fields.back()["isLast"] = true;
     }
     obj["numFields"] = fields.size();
-	obj["numPublicFields"] = numPublicFields;
+    obj["numPublicFields"] = numPublicFields;
     obj["fields"] = std::move(fields);
 
-    for (auto B : RD->bases())
-      bases.push_back(json{{"className", B.getType().getAsString()}});
+	for (auto B : RD->bases()) {
+		auto base_tyname = B.getType().getCanonicalType().getAsString(Context_->getPrintingPolicy());
+		bases.push_back(json{ {"baseClassName", base_tyname } });
+		//obj["base:" + base_tyname] = 
+	}
     if (bases.size()) {
       bases.front()["isFirst"] = true;
       bases.back()["isLast"] = true;
@@ -240,19 +220,20 @@ public:
 
   json EmitFieldDecl(FieldDecl *FD) {
     json obj = EmitNamedDecl(FD);
-    obj["qualType"] = FD->getType().getAsString();
-	obj["fieldIndex"] = FD->getFieldIndex();
-	if (FD->getAccess() == AS_public)
-		obj["isPublic"] = true;
-	if (FD->getAccess() == AS_private)
-		obj["isPrivate"] = true;
-	if (FD->getAccess() == AS_protected)
-		obj["isProtected"] = true;
+    obj["qualType"] = FD->getType().getCanonicalType().getAsString(Context_->getPrintingPolicy());
+    obj["fieldIndex"] = FD->getFieldIndex();
+    if (FD->getAccess() == AS_public)
+      obj["isPublic"] = true;
+    if (FD->getAccess() == AS_private)
+      obj["isPrivate"] = true;
+    if (FD->getAccess() == AS_protected)
+      obj["isProtected"] = true;
     return obj;
   }
 
   json EmitVarDecl(VarDecl *VD) {
     json obj = EmitNamedDecl(VD);
+	obj["qualType"] = VD->getType().getCanonicalType().getAsString(Context_->getPrintingPolicy());
     return obj;
   }
 
@@ -283,7 +264,7 @@ public:
     }
     obj["numEnumerators"] = enumerators.size();
     obj["enumerators"] = std::move(enumerators);
-	obj["isType"] = true;
+    obj["isType"] = true;
     obj["isEnum"] = true;
     obj["isScoped"] = ED->isScoped();
     obj["declKind"] = "enum";
@@ -310,25 +291,29 @@ public:
     return obj;
   }
 
-  json EmitMetaAttributes(NamedDecl *ND) {
+  json EmitMetaAttributes(NamedDecl *ND, json &base_decl) {
     auto &SM = Context_->getSourceManager();
     json obj = json::array();
+	int i = 0;
     for (auto A : ND->attrs()) {
-      /*if (auto AA = dyn_cast<CxxrMetaAttr>(A)) {
-		  int i = 0;
-		for (auto&&metaObjectExpr : AA->additionalMetaObjects()) {
-			json attrJson;
-			attrJson["attrID"] = i++;
-			attrJson["qualType"] = metaObjectExpr->getType().getAsString(
-				Context_->getPrintingPolicy());
-			attrJson["initializer"] =
-				Lexer::getSourceText(CharSourceRange::getTokenRange(
-					metaObjectExpr->getSourceRange()),
-					SM, Context_->getLangOpts())
-				.str();
-			obj.push_back(std::move(attrJson));
-		}
-      }*/
+      if (auto AA = dyn_cast<CxxrMetaAttr>(A)) {
+        for (auto &&metaObjectExpr : AA->additionalMetaObjects()) {
+          std::string attr_init;
+          llvm::raw_string_ostream ss{attr_init};
+		  //metaObjectExpr->dumpPretty(*Context_);
+          metaObjectExpr->printPretty(ss, nullptr,
+                                      Context_->getPrintingPolicy());
+		  ss.str();
+          auto attr_type = metaObjectExpr->getType().getCanonicalType().getAsString(
+              Context_->getPrintingPolicy());
+          json attrJson;
+          attrJson["attrID"] = i++;
+          attrJson["qualType"] = attr_type;
+          attrJson["initializer"] = attr_init;
+          obj.push_back(std::move(attrJson));
+          base_decl["attr:" + attr_type] = attr_init;
+        }
+      }
     }
     return obj;
   }
@@ -337,9 +322,9 @@ public:
     json obj;
     obj["name"] = ND->getNameAsString();
     obj["qualName"] = ND->getQualifiedNameAsString();
-	auto attrJson = EmitMetaAttributes(ND);
-	obj["numAttrs"] = attrJson.size();
-	obj["attrs"] = std::move(attrJson);
+    auto attrJson = EmitMetaAttributes(ND, obj);
+    obj["numAttrs"] = attrJson.size();
+    obj["attrs"] = std::move(attrJson);
     return obj;
   }
 
@@ -384,9 +369,9 @@ private:
 
 // Implementation of the ASTConsumer interface for reading an AST produced
 // by the Clang parser.
-class MyASTConsumer : public ASTConsumer {
+class ReflectionASTConsumer : public ASTConsumer {
 public:
-  MyASTConsumer(CompilerInstance &CI, MyASTVisitor &Visitor)
+  ReflectionASTConsumer(CompilerInstance &CI, ReflectionASTVisitor &Visitor)
       : CI_{CI}, Visitor_{Visitor} {}
 
   void Initialize(ASTContext &context) override {
@@ -409,7 +394,7 @@ private:
   json outDB_;
   ASTContext *Context = nullptr;
   CompilerInstance &CI_;
-  MyASTVisitor &Visitor_;
+  ReflectionASTVisitor &Visitor_;
 };
 
 void WriteJsonDatabase(json db, std::string fileName) {
@@ -434,9 +419,9 @@ json LoadJsonDatabase(std::string fileName) {
 }
 
 // For each source file provided to the tool, a new FrontendAction is created.
-class MyFrontendAction : public ASTFrontendAction {
+class ReflectionFrontendAction : public ASTFrontendAction {
 public:
-  MyFrontendAction() {}
+  ReflectionFrontendAction() {}
 
   void EndSourceFileAction() override {
     auto outputJsonDBFileName =
@@ -444,18 +429,18 @@ public:
     fmt::print("*** Writing JSON database file to {}...\n",
                outputJsonDBFileName);
     auto db = Visitor.GenerateDatabase();
-	db["metaHeaders"] = json::array({ getCurrentFile() });
+    db["metaHeaders"] = json::array({getCurrentFile()});
     WriteJsonDatabase(std::move(db), outputJsonDBFileName);
   }
 
   std::unique_ptr<ASTConsumer> CreateASTConsumer(CompilerInstance &CI,
                                                  StringRef file) override {
     llvm::errs() << "** Creating AST consumer for: " << file << "\n";
-    return llvm::make_unique<MyASTConsumer>(CI, Visitor);
+    return llvm::make_unique<ReflectionASTConsumer>(CI, Visitor);
   }
 
 private:
-  MyASTVisitor Visitor;
+  ReflectionASTVisitor Visitor;
 };
 
 //
@@ -491,8 +476,9 @@ int main(int argc, const char **argv) {
   CommonOptionsParser op(argc, argv, CxxReflectCategory);
 
   if (ReflectAction == ActReflect) {
+    // --action=reflect <file>
     ClangTool Tool(op.getCompilations(), op.getSourcePathList());
-    auto result = Tool.run(newFrontendActionFactory<MyFrontendAction>().get());
+    return Tool.run(newFrontendActionFactory<ReflectionFrontendAction>().get());
   } else if (ReflectAction == ActMerge) {
     //============================ DEPRECATED
     //===================================
@@ -509,7 +495,7 @@ int main(int argc, const char **argv) {
       json db = LoadJsonDatabase(dbFileName);
       auto &loadedDecls = db["decls"];
       for (auto &&D : loadedDecls) {
-        auto &name = D["qualName"].get<std::string>();
+        const auto &name = D["qualName"].get<std::string>();
         if (alreadyFoundDecls.count(name)) {
           // Same decl name in two TUs
           // TODO consistency check?
@@ -529,13 +515,23 @@ int main(int argc, const char **argv) {
     mergedDB["metaHeaders"] = std::move(mergedHdrs);
     WriteJsonDatabase(mergedDB, OutputJsonDBFile);
   } else if (ReflectAction == ActRender) {
+    // --action=render <templates> --jsondb <json db path>
+    using namespace llvm::sys;
+    if (!fs::exists(InputJsonDBFile)) {
+      fmt::print(std::cerr, "ERROR: JSON database file not found: {}\n",
+                 InputJsonDBFile);
+      return EXIT_FAILURE;
+    }
     json db = LoadJsonDatabase(InputJsonDBFile);
     fmt::print("*** Generating template model...\n");
     bustache::value templateModel = ConvertJsonToBustacheValue(db);
 
-    using namespace llvm::sys;
-    //
     for (auto &&inputTemplateFileName : op.getSourcePathList()) {
+      if (!fs::exists(inputTemplateFileName)) {
+        fmt::print(std::cerr, "ERROR: File not found: {}\n",
+                   inputTemplateFileName);
+        continue;
+      }
       std::string generatedSourceFileName =
           path::stem(inputTemplateFileName); // remove .in
       fmt::print("*** Generating {}...\n", generatedSourceFileName,
@@ -549,4 +545,5 @@ int main(int argc, const char **argv) {
       generatedSourceFileOut << generatedSource;
     }
   }
+  return 0;
 }

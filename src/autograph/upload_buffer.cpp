@@ -5,9 +5,9 @@
 namespace ag {
 // A ring buffer, used in the implementation of upload buffers
 upload_buffer::upload_buffer(size_t size)
-    : buffer{buffer::create(size, buffer_usage::upload)}, write_ptr(0),
+    : buffer_{buffer::create(size, buffer_usage::upload)}, write_ptr(0),
       begin_ptr(0), used(0) {
-  mapped_region = buffer.map(0, size);
+  mapped_region = buffer_.map(0, size);
 }
 
 upload_buffer::~upload_buffer() {}
@@ -26,7 +26,7 @@ bool upload_buffer::allocate(uint64_t expirationDate, size_t size, size_t align,
   size_t offset = 0;
   if (!tryAllocateContiguousFreeSpace(expirationDate, size, align, offset))
     return false;
-  slice.obj = buffer.object();
+  slice.obj = buffer_.object();
   slice.offset = offset;
   slice.size = size;
   return true;
@@ -49,9 +49,9 @@ bool upload_buffer::tryAllocateContiguousFreeSpace(uint64_t expirationDate,
                                                    size_t size, size_t align,
                                                    size_t &alloc_begin) {
   std::lock_guard<std::mutex> guard(mutex);
-  assert(size < buffer.size());
+  assert(size < buffer_.size());
   if ((begin_ptr < write_ptr) || ((begin_ptr == write_ptr) && (used == 0))) {
-    size_t slack_space = buffer.size() - write_ptr;
+    size_t slack_space = buffer_.size() - write_ptr;
     // try to put the buffer in the slack space at the end
     if (!align_offset(align, size, write_ptr, slack_space)) {
       // else, try to put it at the beginning (which is always correctly

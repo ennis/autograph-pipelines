@@ -12,14 +12,13 @@
 // the entity are released
 // reference-counted
 
-#include <algorithm> // std::remove_if
+#include "observable.hpp"
+#include <array> // std::array
 #include <atomic>
-#include <array>     // std::array
 #include <boost/hana.hpp>
 #include <boost/hana/ext/std/tuple.hpp>
 #include <boost/smart_ptr/intrusive_ptr.hpp>
 #include <memory> // std::unique_ptr
-#include <vector> // std::vector
 
 constexpr auto max_components = 16;
 
@@ -28,7 +27,8 @@ protected:
   static unsigned family_counter;
 };
 
-template <typename T> struct component_counter : public component_counter_base {
+template <typename T> struct component : public component_counter_base {
+	using component_type = T;
   static unsigned family() {
     static unsigned family_index = family_counter++;
     return family_index;
@@ -55,14 +55,14 @@ template <typename T> struct component_deleter : public component_deleter_base {
   }
 };
 
-template <typename T> 
+template <typename T>
 component_deleter_base *component_deleter_base::add_deleter() {
-    if (deleters[component_counter<T>::family()] == nullptr) {
-      deleters[component_counter<T>::family()] =
-          std::make_unique<component_deleter<T>>();
-    }
-    return deleters[component_counter<T>::family()].get();
+  if (deleters[T::family()] == nullptr) {
+    deleters[T::family()] =
+        std::make_unique<component_deleter<T>>();
   }
+  return deleters[T::family()].get();
+}
 
 class entity_ref_count {
 public:
@@ -87,7 +87,7 @@ public:
   friend class scene;
   using ptr = boost::intrusive_ptr<entity>;
 
-  entity() = default;
+  entity(scene &s_) : scene_{&s_} {}
 
   ~entity() { remove_all_components(); }
 
@@ -100,7 +100,8 @@ public:
   }
 
   template <typename T> void remove_component() {
-    remove_component(component_counter<T>::family());
+	  static_assert(std::is_base_of<component_counter_base, T>::value, "stuff");
+    remove_component(T::family());
   }
 
   void remove_component(int family) {
@@ -113,114 +114,73 @@ public:
 
   template <typename T> T *add_component() { return add_component(T{}); }
 
-  template <typename T> T *add_component(T &&init) {
-    component_deleter_base::add_deleter<T>();
-    remove_component<T>();
-    // move-construct
-    auto ptr = new T{std::forward<T>(init)};
-    comp_[component_counter<T>::family()] = ptr;
-    return ptr;
+  template <typename T, typename Derived = std::decay_t<T> >
+  Derived* add_component(T &&init)
+  {
+	  using namespace boost;
+	  static_assert(std::is_base_of<component_counter_base, Derived>::value, "stuff");
+	  using Base = typename Derived::component_type;
+	  component_deleter_base::add_deleter<Base>();
+	  remove_component<Base>();
+	  // move-construct
+	  auto ptr = new Derived{ std::forward<Derived>(init) };
+	  comp_[Base::family()] = ptr;
+	  // call initialize() method if the component has one
+	  auto has_initialize =
+		  hana::is_valid([](auto &&x) -> decltype(x.initialize(entity::ptr{})) {});
+	  hana::if_(has_initialize(*ptr),
+		  [this](auto &&p) { p.initialize(entity::ptr{ this }); },
+		  [](auto &&p) {})(*ptr);
+	  // call start() method if the component has one
+	  auto has_start = hana::is_valid([](auto &&x) -> decltype(x.start()) {});
+	  hana::if_(has_start(*ptr), [this](auto &&p) { p.start(); },
+		  [](auto &&p) {})(*ptr);
+	  return ptr;
   }
 
   template <typename T> T *get_component() const {
-    return static_cast<T *>(comp_[component_counter<T>::family()]);
+	  static_assert(std::is_base_of<component_counter_base, T>::value, "stuff");
+    return static_cast<T *>(comp_[T::family()]);
   }
 
+  auto &get_scene() { return *scene_; }
+
 private:
+  scene *scene_;
   std::array<void *, max_components> comp_{{nullptr}};
   bool deleted_ = false;
 };
 
-// a container for entities
-class scene {
-public:
-  entity::ptr create_entity() {
-    ent_.push_back(std::make_unique<entity>());
-    return entity::ptr{ent_.back().get()};
+//
+// Base class for scripting components
+template <typename T>
+struct behaviour : public component<T> {
+  template <typename T, typename F> void connect(observable<T> &obs, F &&fn) {
+    obs.subscribe(sub, std::move(fn));
   }
 
-  template <typename... Components>
-  entity::ptr create_entity(Components &&... comp) {
-    auto p = create_entity();
-    using namespace boost;
-    hana::for_each(std::forward_as_tuple(comp...), [&p](auto &&c) {
-      using CompT = std::decay_t<decltype(c)>;
-      p->add_component<CompT>(std::forward<CompT>(c));
+  // Called by entity::add_component. Not meant to be called manually or
+  // overriden.
+  void initialize(entity::ptr ent_) { ent = std::move(ent_); }
+
+  template <typename T, typename U, typename Derived>
+  void connect_member(observable<T> &obs, void (Derived::*fn)(U)) {
+    obs.subscribe(sub, [this, fn](T &&t) {
+      (static_cast<Derived *>(this)->*fn)(std::move(t));
     });
-    return p;
   }
 
-  // collect garbage
-  void collect() {
-    ent_.erase(std::remove_if(ent_.begin(), ent_.end(), [](auto &up) {
-      return up->deleted_ && (up->use_count() == 1);
-    }));
+  template <typename T, typename Derived>
+  void connect_member(observable<T> &obs, void (Derived::*fn)()) {
+    obs.subscribe(sub, [this, fn]() { (static_cast<Derived *>(this)->*fn)(); });
   }
 
-  size_t size() const { return ent_.size(); }
+  auto &get_scene() { return ent->get_scene(); }
 
-  template <typename T> auto find(bool include_deleted = false) const {
-    /*using namespace ranges;
-    // range-v3 is cool, but incredibly slow to compile
-    return ent_ | view::remove_if([include_deleted](auto &&u) {
-             return (!u->template get_component<T>()) ||
-                    (!include_deleted && u->deleted_);
-           }) |
-           view::transform([](auto &&e) { return e.get(); });*/
-    return entity_view{*this, component_counter<T>::family()};
-  }
+  template <typename T> T *get_component() { return ent->get_component<T>(); }
 
-private:
-  std::vector<std::unique_ptr<entity>> ent_;
-
-  class entity_iterator {
-  public:
-    entity_iterator(const scene &s, unsigned family, size_t current = 0)
-        : s_{s}, family_{family}, cur_{current} {
-      skip();
-    }
-
-    entity_iterator &operator++() {
-      ++cur_;
-      skip();
-	  return *this;
-    }
-
-    entity *operator*() { return s_.ent_[cur_].get(); }
-
-	friend inline bool operator==(const scene::entity_iterator &it1,
-		const scene::entity_iterator &it2) {
-		return (it1.family_ == it2.family_) && (it1.cur_ == it2.cur_);
-	}
-	
-	friend inline bool operator!=(const scene::entity_iterator &it1,
-		const scene::entity_iterator &it2) {
-		return !(it1 == it2);
-	}
-
-  private:
-    void skip() {
-      while (cur_ < s_.size() && s_.ent_[cur_]->comp_[family_] == nullptr)
-        ++cur_;
-    }
-
-
-	const scene &s_;
-	unsigned family_;
-	size_t cur_;
-  };
-
-  struct entity_view {
-    const scene &s_;
-    unsigned family_;
-    entity_view(const scene &scene, unsigned family) : s_{scene}, family_{family} {}
-    entity_iterator begin() const { return entity_iterator{s_, family_, 0}; }
-    entity_iterator end() const {
-      return entity_iterator{s_, family_, s_.size()};
-    }
-  };
+  entity::ptr ent;
+  subscription sub;
 };
-
-
 
 #endif /* end of include guard: ENTITY_HPP */

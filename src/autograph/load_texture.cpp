@@ -33,17 +33,6 @@ texture load_texture(std::experimental::filesystem::path path,
   return tex;
 }
 
-image_file::image_file(std::experimental::filesystem::path path)
-    : loaded_{false}, path_{path} {}
-
-texture &image_file::get_texture() {
-  if (!loaded_) {
-    tex_ = load_texture(path_);
-    loaded_ = true;
-  }
-  return tex_;
-}
-
 void save_texture(std::experimental::filesystem::path path, texture &tex) {
   fmt::print(std::cerr, "Saving texture {}...\n", path.string());
   auto pathstr = path.string();
@@ -55,4 +44,5 @@ void save_texture(std::experimental::filesystem::path path, texture &tex) {
                  4 * tex.width());
   delete[] pixels;
 }
+
 }

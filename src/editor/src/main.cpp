@@ -1,7 +1,6 @@
 // autograph
 #include "device.hpp"
 #include "draw.hpp"
-#include "entity.hpp"
 #include "load_texture.hpp"
 #include "project_root.hpp"
 #include "texture.hpp"
@@ -19,8 +18,22 @@
 #include <imgui.h>
 #include <imgui_impl_glfw_gl3.h>
 
+#include <eggs/variant.hpp>
 #include <experimental/filesystem>
 #include <optional.hpp>
+
+#include "input.hpp"
+#include "observable.hpp"
+#include "rect_transform.hpp"
+#include "scene.hpp"
+#include "sprite.hpp"
+#include "ui/button.hpp"
+#include "ui/layout.hpp"
+#include "ui/text.hpp"
+#include "ui/visual.hpp"
+#include "vector_sprite.hpp"
+
+#include "meta.hpp"
 
 const char *VS = R"(
 #version 440
@@ -40,244 +53,267 @@ void main() {
 }
 )";
 
-// lazy resources:
-// lazy_resource<T, loader>(Args...)
+auto sprite = ag::load_texture_lazy(project_root() / "img/tonberry.jpg");
 
-// loader that just calls the constructor
-template <typename T> struct lazy_ctor {
-public:
-  template <typename... Args> T operator()(Args &&... args) {
-    return T{std::forward<Args>(args)...};
-  }
+// image = ID that refers to a file in the resource directory
+// can ask for the associated ag::texture object
+//
+// resource<T>::has_changed()
+//
+// those queries should be fast
+// engine::texture_cache::get(resource<image>&) -> ag::texture
+// engine::texture_cache::get_atlas(resource<atlas>&) -> engine::texture_atlas
+// engine::shader_cache::get(resource<shader>&) -> ag::program
+// engine::render_pipeline_cache::get(resource<render_pipeline>&) -> ...
+// engine::prefab_cache::get(...) -> entity::ptr
+// engine::mesh_cache::get(...) -> engine::mesh
+//
+// resource ID types:
+// images
+//		-> concrete resources: images, textures, fonts, etc.
+// shaders
+//		-> concrete resources: shader instance?
+// prefabs (entity containers), scenes
+// render pipelines
+//
+// generated resources?
+// e.g. texture atlas generated from many images
+//
+// dependency DAG between resources?
+// relationship with render pipelines?
+//
+// Components should contain only resource IDs
+// Cache pointer to loaded resources in RIDs
+// RID = id (or pointer?) in global resource table
+//	-> cheap to copy
+//  -> creation: symbol table lookup
+//  -> ID = UID+revision count
+//
+// image_resource
+//		has_changed()
+//		get_texture()
+//      get_data()
+// mesh_resource
+//		get_mesh()
+// shader_resource
+//      get_program()
+//
+// Should scripts at runtime be able to see the file path of a resource?
+// => Depends.
+// use resource::get_asset_path(<texture or shader or mesh>) -> fs::path
+// serialize like this
+// Goal: no overhead if live-reload is not needed
+//
+// live-reload?
+// => change the underlying texture or shader, keep the same pointer?
+// => NO
+// => replace the reference using reflection data
 
-private:
-};
+// button script:
+// Subscribe to input events
+// On input event: check hit-test (from hit_shape_component or rect_transform)
+// update current_state
+// fire events (and also trigger animations)
+// change the visual component according to state
 
-struct texture_from_file_t {
-  ag::texture
-  operator()(const std::experimental::filesystem::path &p,
-             ag::image_format tex_format = ag::image_format::rgba8_unorm) {
-    return load_texture(p, tex_format);
-  }
-};
-
-template <typename T, typename Loader = lazy_ctor<T>, typename... Args>
-class lazy_resource {
-public:
-  lazy_resource(Args &&... args) : args_{args...} {}
-
-  T &get() {
-    if (!res_)
-      do_load();
-    return *res_;
-  }
-
-private:
-  void do_load() {
-    using namespace boost;
-    res_ = hana::unpack(args_, Loader{});
-  }
-
-  std::experimental::optional<T> res_;
-  std::tuple<Args...> args_;
-};
-
-template <typename T, typename Loader = lazy_ctor<T>, typename... Args>
-lazy_resource<T, Loader, Args...> make_lazy_resource(Args &&... args) {
-  return lazy_resource<T, Loader, Args...>(std::forward<Args>(args)...);
-}
-
-auto sprite = make_lazy_resource<ag::texture, texture_from_file_t>(
-    project_root() / "img/tonberry.jpg");
-int sprite_nvg_handle;
-
-struct rect_2d {
-  glm::vec2 pos;
-  glm::vec2 size;
-  glm::vec2 top_left() const { return pos; }
-  glm::vec2 top_right() const { return pos + glm::vec2{size.x, 0.0f}; }
-  glm::vec2 bottom_left() const { return pos + glm::vec2{0.0f, size.y}; }
-  glm::vec2 bottom_right() const { return pos + glm::vec2{size.x, size.y}; }
-};
-
-struct rect_transform {
-  // rect_transform() = default;
-  // rect_transform(rect_transform&&) { fmt::print("Move invoked\n"); };
-  // rect_transform(rect_transform const &) { fmt::print("Copy invoked"); }
-
-  glm::vec2 offset_a; // rect corners relative to anchors
-  glm::vec2 offset_b;
-
-  glm::vec2 anchor_a; // upper-left anchor rect position (normalized)
-  glm::vec2 anchor_b; // lower-right anchor rect position (normalized)
-
-  glm::vec2 pivot{0.5f, 0.5f};          // relative to
-  glm::vec3 rotation{0.0f, 0.0f, 0.0f}; // around pivot
-  glm::vec3 scale{1.0f, 1.0f, 1.0f};    // around pivot
-
-  rect_2d calc_rect(rect_2d parent) const {
-    // anchor positions (relative)
-    float anchor_top = parent.size.y * anchor_a.y;
-    float anchor_bottom = parent.size.y * anchor_b.y;
-    float anchor_left = parent.size.x * anchor_a.x;
-    float anchor_right = parent.size.x * anchor_b.x;
-
-    // rect corners
-    float rect_top = anchor_top + offset_a.y;
-    float rect_bottom = anchor_bottom + offset_b.y; // it can be negative
-    float rect_left = anchor_left + offset_a.x;
-    float rect_right = anchor_right + offset_b.x;
-
-    cached_rect_.pos.x = std::round(rect_left) + 0.5f;
-    cached_rect_.pos.y = std::round(rect_top) + 0.5f;
-    cached_rect_.size.x = std::round(rect_right - rect_left);
-    cached_rect_.size.y = std::round(rect_bottom - rect_top);
-    return cached_rect_;
-  }
-
-  void debug(NVGcontext *vg) {
-    nvgSave(vg);
-
-    glm::vec2 piv_trans = pivot * cached_rect_.size;
-    nvgTranslate(vg, cached_rect_.pos.x, cached_rect_.pos.y);
-    nvgTranslate(vg, piv_trans.x, piv_trans.y);
-    nvgRotate(vg, rotation.x);
-    // nvgScale(vg, scale.x, scale.y);
-    nvgTranslate(vg, -piv_trans.x, -piv_trans.y);
-
-    // Local space: draw stuff
-
-	nvgBeginPath(vg);
-	//nvgScissor(vg, 0.0f, 0.0f, cached_rect_.size.x, cached_rect_.size.y);
-	nvgFillPaint(vg, nvgImagePattern(vg, 0.0f, 0.0f, cached_rect_.size.x, cached_rect_.size.y, 0.0f, sprite_nvg_handle, 1.0f));
-	nvgRect(vg, 0, 0, cached_rect_.size.x, cached_rect_.size.y);
-	nvgFill(vg);
-
-    nvgBeginPath(vg);
-    nvgRect(vg, 0, 0, cached_rect_.size.x, cached_rect_.size.y);
-    nvgStrokeColor(vg, nvgRGBA(0, 0, 0, 255));
-    nvgStrokeWidth(vg, 1.0f);
-    nvgStroke(vg);
-
-    nvgBeginPath(vg);
-    nvgCircle(vg, piv_trans.x, piv_trans.y, 4.0f);
-    nvgStrokeColor(vg, nvgRGBA(0, 0, 0, 0));
-    nvgFillColor(vg, nvgRGB(255, 0, 0));
-    nvgFill(vg);
-
-    nvgRestore(vg);
-  }
-
-  void test_gui() {
-    ImGui::SliderFloat2("Offset A", &offset_a[0], 0.0f, 6000.0f, "%.1f", 1.3f);
-    ImGui::SliderFloat2("Offset B", &offset_b[0], 0.0f, 6000.0f, "%.1f", 1.3f);
-    ImGui::SliderFloat2("Anchor A", &anchor_a[0], 0.0f, 1.0f);
-    ImGui::SliderFloat2("Anchor B", &anchor_b[0], 0.0f, 1.0f);
-    ImGui::SliderFloat2("Pivot", &pivot[0], 0.0f, 1.0f);
-    ImGui::SliderFloat("Rotation", &rotation[0], 0.0f, 2.0f * 3.141592f);
-    ImGui::SliderFloat2("Scale", &scale[0], 0.01f, 60000.0f, "%.1f", 1.3f);
-    ImGui::Separator();
-    float calc[4];
-    calc[0] = cached_rect_.pos.x;
-    calc[1] = cached_rect_.pos.y;
-    calc[2] = cached_rect_.size.x;
-    calc[3] = cached_rect_.size.y;
-    ImGui::SliderFloat4("Calculated", calc, 0.0f, 60000.0f);
-  }
-
-  // cached calculated rect before scaling & rotation
-  mutable rect_2d cached_rect_;
-};
-
-// vector graphics component
-struct vector_graphics {
-  std::function<void(NVGcontext *, rect_transform)> on_draw;
-};
+// renderer (req. transform):
+//	- mesh
+//  - procedural? set mesh empty, add a script, subscribe to on_render()
+// canvas_visual (req. rect_transform):
+//  - mesh 2d
+//  - vector
+//	   - subscribe to callback
+//  - sprite
+//     - 9-patch
+// transform
+// rect_transform
+//
 
 GLFWwindow *window;
-NVGcontext *nvg = nullptr;
 constexpr auto init_width = 640;
 constexpr auto init_height = 480;
 int width = init_width;
 int height = init_height;
 
-class test {
-public:
-  void initializeGL() {
-    fmt::print(std::cerr, "initializeGL\n");
-    // initialize autograph
-    ag::device_config cfg;
-    cfg.init_fb_width = 640;
-    cfg.init_fb_height = 480;
-    cfg.max_frames_in_flight = 3;
-    ag::initialize(cfg);
-    // VAO: 2D vertices
-    default_vao.initialize({});
-    vao.initialize(
-        {ag::vertex_attribute{0, GL_FLOAT, 2, 2 * sizeof(float), false}});
-    // shader program
-    prog2d = ag::program::create(VS, FS);
-
-    // entity test
-    gui_entity = S.create_entity();
-    rect_transform rt_init;
-    rt_init.anchor_a = glm::vec2{0.0f, 0.0f};
-    rt_init.anchor_b = glm::vec2{1.0f, 1.0f};
-    rt_init.offset_a = glm::vec2{0.0f, 0.0f};
-    rt_init.offset_b = glm::vec2{0.0f, 0.0f};
-    gui_entity->add_component(rect_transform{rt_init});
+void render_ui_update_transforms(entity *e, rect_2d rect) {
+  if (auto rect_tr = e->get_component<rect_transform>()) {
+    rect_tr->calc_rect(rect);
+    if (auto layout_ctl = e->get_component<ui::layout_controller>())
+      layout_ctl->layout_contents();
+    for (auto &&child : rect_tr->children)
+      render_ui_update_transforms(child.get(), rect_tr->cached_rect_);
   }
+}
 
-  void render(int W, int H, int fbW, int fbH) {
-    // vertex and index data (a rectangle)
-    /*static const std::array<glm::vec2, 4> vertices{ {
-            {-0.5f, 0.5f}, {0.5f, 0.5f}, {-0.5f, -0.5f}, {0.5f, -0.5f},
-    } };
-    static const std::array<int, 6> indices{ {0, 1, 2, 2, 1, 3} };
-    // upload vertices to the ring buffer
-    auto vbo = ag::upload_frame_array(vertices);
-    // upload indices
-    auto ibo = ag::upload_frame_array(indices);
-    // setup transform
-    glm::mat4 transform = glm::mat4{ 1.0f };
-    // draw stuff
-    // this call will unfold into the corresponding glUniform*,
-    // glBindVertexBuffers, and glDraw* calls
-    ag::draw(
-            ag::get_default_framebuffer(), prog2d,
-            ag::draw_indexed{ GL_TRIANGLES, 0, 6, 0, ibo, GL_UNSIGNED_INT },
-            // Resources
-            vao, ag::vertex_buffer{ 0, vbo, sizeof(glm::vec2) },
-            ag::uniform_matrix4{ "transform", transform },
-            // We have to specify the viewport because we are binding the
-    framebuffer
-            // from a GLuint, which does not set a default viewport
-            ag::viewport{ 0, {0, 0, width, height} });*/
+void nvg_ui_push_transform(NVGcontext *vg, const rect_transform &rt) {
+  nvgSave(vg);
+  glm::vec2 piv_trans = rt.pivot * rt.cached_rect_.size;
+  nvgTranslate(vg, rt.cached_rect_.pos.x, rt.cached_rect_.pos.y);
+  nvgTranslate(vg, piv_trans.x, piv_trans.y);
+  nvgRotate(vg, rt.rotation.x);
+  nvgTranslate(vg, -piv_trans.x, -piv_trans.y);
+}
 
-    glViewport(0, 0, fbW, fbH);
-    glClearColor(0.0f, 1.0f, 0.0f, 1.0f);
-    glClear(GL_COLOR_BUFFER_BIT);
+void nvg_ui_pop_transform(NVGcontext *vg) { nvgRestore(vg); }
 
-    for (const entity *e : S.find<rect_transform>()) {
-      auto c = e->get_component<rect_transform>();
-      c->calc_rect(rect_2d{{0.0f, 0.0f},
-                           {static_cast<float>(fbW), static_cast<float>(fbH)}});
-      c->test_gui();
-      c->debug(nvg);
+void render_ui_recursive(NVGcontext *vg, entity *ent) {
+  auto vis = ent->get_component<ui::visual>();
+  auto rect_tr = ent->get_component<rect_transform>();
+  if (!rect_tr)
+    return;
+  nvg_ui_push_transform(vg, *rect_tr);
+  if (vis)
+    vis->render(vg, rect_tr->cached_rect_.size);
+  // pop the transform here, because the transform hierarchy is already
+  // flattened by render_ui_update_transforms
+  nvg_ui_pop_transform(vg);
+  for (auto &&child : rect_tr->children) {
+    render_ui_recursive(vg, child.get());
+  }
+}
+
+void render_ui(NVGcontext *vg, scene &S, entity::ptr root, int W, int H,
+               int fbW, int fbH) {
+  // update rect_transforms
+  render_ui_update_transforms(
+      root.get(), rect_2d{{0.0f, 0.0f},
+                          {static_cast<float>(fbW), static_cast<float>(fbH)}});
+
+  // DEBUG: clear viewports
+  glViewport(0, 0, fbW, fbH);
+  glClearColor(60.f / 255.f, 60.f / 255.f, 168.f / 255.f, 1.0f);
+  glClear(GL_COLOR_BUFFER_BIT);
+
+  //
+  render_ui_recursive(vg, root.get());
+}
+
+bool hit_test_ui_recursive(entity *ent, glm::vec2 p) {
+  if (auto tr = ent->get_component<rect_transform>()) {
+    if (!tr->cached_rect_.inside(p))
+      return false;
+    bool handled = false;
+    for (auto &&c : tr->children)
+      handled |= hit_test_ui_recursive(c.get(), p);
+    if (!handled)
+      if (auto sel = ent->get_component<ui::selectable>())
+        handled |= sel->on_pointer_down();
+    return handled;
+  } else
+    return false;
+}
+
+bool hit_test_ui(scene &S, entity *ent, glm::vec2 p) {
+  return hit_test_ui_recursive(ent, p);
+}
+
+entity::ptr create_button(scene &s, entity::ptr parent, std::string text) {
+  auto ent = s.create_entity(
+      rect_transform{parent},
+      ui::button{ui::button_visual_pressed, ui::button_visual_released},
+      ui::vector_visual{ui::button_visual_released});
+  if (parent)
+    parent->get_component<rect_transform>()->children.push_back(ent);
+  auto text_ent = s.create_entity(
+      rect_transform{parent},
+      ui::text_visual{std::move(text), 40.0f, {0.0f, 0.0f, 0.0f, 1.0f}, true});
+  ent->get_component<rect_transform>()->children.push_back(std::move(text_ent));
+  return ent;
+}
+
+entity::ptr create_panel(scene &s, entity::ptr parent) {
+  auto ent = s.create_entity(rect_transform{parent}, ui::layout_component{},
+                             ui::vertical_layout_controller{});
+  if (parent)
+    parent->get_component<rect_transform>()->children.push_back(ent);
+  return ent;
+}
+
+/*void display_gui_enum()
+{
+
+}*/
+void display_gui_typeindex(std::type_index ti, int indent = 0);
+
+void display_gui_struct(const meta::record_metaobject* mo, int indent)
+{
+	if (!mo) {
+		fmt::print(std::cerr, "{:>{}}", "", indent);
+		fmt::print(std::cerr, "[No metaobject]\n");
+		return;
+	}
+	fmt::print(std::cerr, "{:>{}} class {}\n", "", indent, mo->name);
+	for (auto&& base_class : mo->bases) {
+		display_gui_struct(static_cast<const meta::record_metaobject*>(meta::get_metaobject(base_class)), indent + 2);
+	}
+	for (auto &&field : mo->public_fields) {
+		fmt::print(std::cerr, "{:>{}}", "", indent);
+		fmt::print(std::cerr, "{} [{}] {}:\n", field.friendly_name, field.name,
+			field.offset);
+		display_gui_typeindex(field.typeindex, indent + 2);
+	}
+}
+
+//
+// Display a GUI for a struct using reflection data
+void display_gui_typeindex(std::type_index ti, int indent ) {
+  // GUIs for primitive types
+  if (ti == std::type_index{typeid(float)}) {
+    fmt::print(std::cerr, "{:>{}} float\n", "", indent);
+  } else if (ti == std::type_index{typeid(double)}) {
+    fmt::print(std::cerr, "{:>{}} double\n", "", indent);
+  } else if (ti == std::type_index{typeid(int)}) {
+    fmt::print(std::cerr, "{:>{}} int\n", "", indent);
+  }
+  // GUIs for GLM vector types
+  else if (ti == std::type_index{typeid(glm::vec2)}) {
+    fmt::print(std::cerr, "{:>{}} vec2\n", "", indent);
+  } else if (ti == std::type_index{typeid(glm::vec3)}) {
+    fmt::print(std::cerr, "{:>{}} vec3\n", "", indent);
+  } else if (ti == std::type_index{typeid(glm::vec4)}) {
+    fmt::print(std::cerr, "{:>{}} vec4\n", "", indent);
+  } else if (ti == std::type_index{typeid(glm::ivec2)}) {
+    fmt::print(std::cerr, "{:>{}} ivec2\n", "", indent);
+  } else if (ti == std::type_index{typeid(glm::ivec3)}) {
+    fmt::print(std::cerr, "{:>{}} ivec3\n", "", indent);
+  } else if (ti == std::type_index{typeid(glm::ivec4)}) {
+    fmt::print(std::cerr, "{:>{}} ivec4\n", "", indent);
+  } else {
+    auto mo = meta::get_metaobject(ti);
+    if (!mo) {
+      fmt::print(std::cerr, "{:>{}}", "", indent);
+      fmt::print(std::cerr, "[No metaobject]\n");
+      return;
+    }
+
+    if (auto struct_mo = mo->as<meta::record_metaobject>()) {
+		// print GUI for base classes
+		display_gui_struct(struct_mo, indent);
     }
   }
+}
 
-private:
-  scene S;
-  entity::ptr gui_entity;
-  rect_transform *rt;
-  ag::vertex_array default_vao;
-  ag::vertex_array vao;
-  ag::program prog2d;
-  ag::texture tex;
-  ag::texture depth_tex;
-  ag::framebuffer fbo;
-};
+// for OR against: abstract component classes
+//
+// (1) With: runtime polymorphism
+// cannot allocate component memory in advance
+// arguably more intuitive
+// Cannot use component-counter: T must derive from component<T>
+// alternative option: macro registration
+// alternative option: reflection data
+//
+// (2) Without: no dispatch in components
+// must switch in external system
+// scene can pre-allocate components
+//
+// Solution (1) preferred
+// Must be able to get metatype information for each component
+//
+// (3) Other solution: separate attributes & behaviors
+// attributes stored in component map, pure data
+// behaviors are free objects attached to one entity
+// behaviors cannot communicate with other behaviors. However they can
+// communicate through attributes and events stored in attributes.
 
 int main(int argc, char *argv[]) {
   /* Initialize the library */
@@ -290,42 +326,110 @@ int main(int argc, char *argv[]) {
   glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GL_TRUE);
   glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
   glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-  window = glfwCreateWindow(init_width, init_height, "Hello World", NULL, NULL);
+  window = glfwCreateWindow(init_width, init_height, "Render", NULL, NULL);
   if (!window) {
     glfwTerminate();
     return -1;
   }
 
+  /*GLFWwindow* debug_window = glfwCreateWindow(480, 640, "Debug", NULL, NULL);
+  if (!debug_window) {
+          glfwTerminate();
+          return -1;
+  }*/
+
   /* Make the window's context current */
   glfwMakeContextCurrent(window);
   ogl_LoadFunctions();
   ImGui_ImplGlfwGL3_Init(window, true);
+  input::initialize(window);
 
-  test t;
-  t.initializeGL();
   // NVG context for UI rendering
-  nvg = nvgCreateGL3(NVG_ANTIALIAS);
+  NVGcontext *nvg = nvgCreateGL3(NVG_ANTIALIAS);
+  // load default font
+  int handle = nvgCreateFont(
+      nvg, "Roboto", (project_root() / "Roboto-Regular.ttf").string().c_str());
+  fmt::print("font handle {}\n", handle);
+  nvgFontFace(nvg, "Roboto");
 
-  auto &sprite_tex = sprite.get();
-  sprite_nvg_handle = nvglCreateImageFromHandleGL3(nvg, sprite_tex.object(), sprite_tex.width(), sprite_tex.height(), 0);
+  scene s;
+  auto panel = create_panel(s, nullptr);
+  auto but = create_button(s, panel, "1");
+  auto but2 = create_button(s, panel, "1");
+  auto but3 = create_button(s, panel, "1");
+  create_button(s, panel, "1");
+  create_button(s, panel, "1");
+  create_button(s, panel, "2");
+  create_button(s, panel, "1");
+  create_button(s, panel, "1");
+  create_button(s, panel, "1");
+  create_button(s, panel, "6");
+  create_button(s, panel, "1");
+  create_button(s, panel, "5");
+  create_button(s, panel, "1");
+  create_button(s, panel, "7");
+  create_button(s, panel, "8");
+  create_button(s, panel, "8");
 
+  {
+    auto tr = panel->get_component<rect_transform>();
+    tr->anchor_a = {0.2f, 0.2f};
+    tr->anchor_b = {0.8f, 0.8f};
+    tr->offset_a = {0.0f, 0.0f};
+    tr->offset_b = {0.0f, 0.0f};
+    // tr->rotation.x = 0.2f;
+  }
+
+  {
+    panel->remove_component<ui::layout_controller>();
+    panel->add_component(ui::grid_layout_controller{4, 4});
+  }
+
+  // input handler
+  subscription sub;
+  input::events.subscribe(sub, [&s, &panel](auto ev) {
+    if (auto mb_ev = ev->template as<input::mouse_button_event>()) {
+      if (mb_ev->state == input::button_state::pressed) {
+        glm::vec2 cursor_pos;
+        cursor_pos.x = static_cast<float>(input::cursor_pos().x);
+        cursor_pos.y = static_cast<float>(input::cursor_pos().y);
+        hit_test_ui(s, panel.get(), cursor_pos);
+      }
+    }
+  });
+
+  // test reflection data
+  display_gui_typeindex(std::type_index{typeid(rect_transform)});
 
   /* Loop until the user closes the window */
   while (!glfwWindowShouldClose(window)) {
+    //====================================================
+    // DEBUG WINDOW: update
+    // glfwMakeContextCurrent(debug_window);
+    // trigger input polling
+    input::process_input();
+    // trigger scene update
+    s.update.signal();
+
+    //====================================================
+    // MAIN WINDOW: rendering
+    glfwMakeContextCurrent(window);
     glfwGetWindowSize(window, &width, &height);
     int fbWidth, fbHeight;
     glfwGetFramebufferSize(window, &fbWidth, &fbHeight);
     // Calculate pixel ratio for hi-dpi devices.
     auto pxRatio = (float)fbWidth / (float)width;
-    fmt::print("FB {}x{} window {}x{}\n", fbWidth, fbHeight, width, height);
-	ImGui_ImplGlfwGL3_NewFrame();
+    ImGui_ImplGlfwGL3_NewFrame();
     nvgBeginFrame(nvg, width, height, pxRatio);
-    t.render(width, height, fbWidth, fbHeight);
+    render_ui(nvg, s, panel, width, height, fbWidth, fbHeight);
     nvgEndFrame(nvg);
-	ImGui::Render();
-    ag::end_frame();
+    ImGui::Render();
+    // ag::end_frame();
     glfwSwapBuffers(window);
     glfwPollEvents();
+
+    // End frame: cleanup deleted entities
+    s.collect();
   }
 
   ImGui_ImplGlfwGL3_Shutdown();
