@@ -70,11 +70,11 @@ public:
   }
 
   template <typename U = T>
-  void signal(std::enable_if_t<!std::is_void<U>::value, U> value) {
+  void operator()(std::enable_if_t<!std::is_void<U>::value, U> value) {
     ptr_->signal(value);
   }
 
-  template <typename U = T> std::enable_if_t<std::is_void<U>::value> signal() {
+  template <typename U = T> std::enable_if_t<std::is_void<U>::value> operator()() {
     ptr_->signal();
   }
 
@@ -240,10 +240,10 @@ auto operator|(observable<T> obs, cancellation_token cancel) {
     subscription sub_;
   } combined_obs;
   obs.subscribe(combined_obs.sub_, [combined_obs](auto &&v) mutable {
-    combined_obs.signal(result<T>{std::move(v)});
+    combined_obs(result<T>{std::move(v)});
   });
   cancel.subscribe(combined_obs.sub_, [combined_obs]() mutable {
-    combined_obs.signal(result<T>{});
+    combined_obs(result<T>{});
   });
   return combined_obs;
 }
@@ -253,10 +253,10 @@ inline auto operator|(observable<void> obs, cancellation_token cancel) {
     subscription sub_;
   } combined_obs;
   obs.subscribe(combined_obs.sub_, [combined_obs]() mutable {
-    combined_obs.signal(result<void>::ok());
+    combined_obs(result<void>::ok());
   });
   cancel.subscribe(combined_obs.sub_, [combined_obs]() mutable {
-    combined_obs.signal(result<void>::error());
+    combined_obs(result<void>::error());
   });
   return combined_obs;
 }

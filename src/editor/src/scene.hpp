@@ -2,18 +2,24 @@
 #include <vector> // std::vector
 #include "entity.hpp"
 #include "observable.hpp"
+#include <msgpack.hpp>
+#include "meta.hpp"
 
 // a container for entities
 class scene {
 public:
 	// create a new entity in the scene without any components
-	entity::ptr create_entity();
+	entity::ptr create_entity(std::string name);
   // delete an entity and its transform children
   void delete_hierarchy(entity::ptr p);
   // reclaim memory of deleted entities
   void collect();
   // return the number of entities in the scene
   size_t size() const { return ent_.size(); }
+  // return a view of the entities
+  auto &get_entities() {
+	  return ent_;
+  }
   // return all entities in the scene that have a component of type T
   template <typename T> auto find(bool include_deleted = false) const {
     /*using namespace ranges;
@@ -28,8 +34,8 @@ public:
   }
   // create a new entity in the scene and add initial components
   template <typename... Components>
-  entity::ptr create_entity(Components &&... comp) {
-	  auto p = create_entity();
+  entity::ptr create_entity(std::string name, Components&&... comp) {
+	  auto p = create_entity(name);
 	  using namespace boost;
 	  hana::for_each(std::forward_as_tuple(comp...), [&p](auto &&c) {
 		  using CompT = std::decay_t<decltype(c)>;
@@ -37,6 +43,8 @@ public:
 	  });
 	  return p;
   }
+  // serialize the scene to a msgpack buffer
+  void serialize(meta::packer& p);
 
   // update() is triggered once per frame if the scene is active
   observable<void> update;

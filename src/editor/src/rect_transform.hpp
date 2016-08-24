@@ -14,6 +14,8 @@ struct Range
 };
 
 // Rect transform component
+// 2D transform + depth-order
+// reduces to a 2D transformation matrix (w/o scaling) + z-order + size + scale
 struct REFLECT rect_transform : public component<rect_transform>
 {
   rect_transform(entity::ptr parent_ = nullptr) : parent{parent_} {
@@ -36,30 +38,32 @@ struct REFLECT rect_transform : public component<rect_transform>
   glm::vec3 rotation META_FRIENDLY_NAME("Rotation") {0.0f, 0.0f, 0.0f};
   // scale around pivot
   glm::vec3 scale META_FRIENDLY_NAME("Scale") {1.0f, 1.0f, 1.0f};
+  // z-order
+  float z_order META_FRIENDLY_NAME("Z-order") { 0.0f };
 
-  rect_2d calc_rect(rect_2d parent) const {
-    // anchor positions (relative)
-    float anchor_top = parent.size.y * anchor_a.y;
-    float anchor_bottom = parent.size.y * anchor_b.y;
-    float anchor_left = parent.size.x * anchor_a.x;
-    float anchor_right = parent.size.x * anchor_b.x;
-
-    // rect corners
-    float rect_top = anchor_top + offset_a.y;
-    float rect_bottom = anchor_bottom + offset_b.y; // it can be negative
-    float rect_left = anchor_left + offset_a.x;
-    float rect_right = anchor_right + offset_b.x;
-
-    cached_rect_.pos.x = parent.pos.x + std::round(rect_left) + 0.5f;
-    cached_rect_.pos.y = parent.pos.y + std::round(rect_top) + 0.5f;
-    cached_rect_.size.x = std::round(rect_right - rect_left);
-    cached_rect_.size.y = std::round(rect_bottom - rect_top);
-    return cached_rect_;
+  // unconditionnally recomputes the calculated transformation matrix and size (ignores dirty flag)
+  // relative to a parent transform 
+  void update_transform(const glm::mat3& parent_tr, glm::vec2 parent_size);
+  // hit-test
+  bool point_inside(glm::vec2 world_pos)
+  {
+	  // world-to-local transform
+	  auto w2l = glm::inverse(calc_transform);
+	  auto invp = w2l * glm::vec3{ world_pos, 1.0f };
+	  if (invp.x >= 0.0f && invp.x <= calc_size.x &&  invp.y >= 0.0f && invp.y <= calc_size.y)
+		  return true;
+	  return false;
   }
 
+  // calculated local-to-world transform (minus scale)
+  glm::mat3 calc_transform;
+  glm::vec2 calc_size;
+  // flag to signal that a recomputation is necessary
+  bool dirty = false;
+
   // cached calculated rect before scaling & rotation
-  mutable rect_2d cached_rect_;
-  mutable uint64_t last_update_;
+  //mutable glm::mat3 transform_;
+  //mutable uint64_t last_update_;
 
   // debugging
   void debug(NVGcontext *vg);

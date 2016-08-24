@@ -5,13 +5,13 @@
 
 namespace ui {
 
-struct layout_component : public component<layout_component> {
+struct REFLECT layout_component : public component<layout_component> {
   glm::vec2 content_size;
   float rel_width;
   float rel_height;
 };
 
-struct layout_controller : public behaviour<layout_controller> {
+struct REFLECT layout_controller : public behaviour<layout_controller> {
   virtual ~layout_controller() {}
 
   auto &children() { return get_component<rect_transform>()->children; }
@@ -22,12 +22,12 @@ struct layout_controller : public behaviour<layout_controller> {
   glm::vec2 preferred_size;
 };
 
-struct vertical_layout_controller : public layout_controller {
-  float spacing = 2.0f;
-  float padding_left = 0.0f;
-  float padding_right = 0.0f;
-  float padding_top = 0.0f;
-  float padding_bottom = 0.0f;
+struct REFLECT vertical_layout_controller : public layout_controller {
+  float spacing META_FRIENDLY_NAME("Spacing"){2.0f};
+  float padding_left META_FRIENDLY_NAME("Padding - Left"){0.0f};
+  float padding_right META_FRIENDLY_NAME("Padding - Right"){0.0f};
+  float padding_top META_FRIENDLY_NAME("Padding - Top"){0.0f};
+  float padding_bottom META_FRIENDLY_NAME("Padding - Bottom"){0.0f};
 
   void measure_contents() override {
     float height = padding_top + padding_bottom + children().size() * spacing;
@@ -38,7 +38,6 @@ struct vertical_layout_controller : public layout_controller {
         height += layout->preferred_size.y;
       } else
         height += 10.0f;
-    
     }
     preferred_size.x = width;
     preferred_size.y = height;
@@ -68,7 +67,7 @@ struct vertical_layout_controller : public layout_controller {
   }
 };
 
-struct grid_layout_controller : public layout_controller {
+struct REFLECT grid_layout_controller : public layout_controller {
   grid_layout_controller() = default;
   grid_layout_controller(int num_rows_, int num_columns_,
                          float horizontal_spacing_ = 2.0f,
@@ -77,10 +76,10 @@ struct grid_layout_controller : public layout_controller {
         vertical_spacing{vertical_spacing_}, num_rows{num_rows_},
         num_columns{num_columns_} {}
 
-  float horizontal_spacing = 2.0f;
-  float vertical_spacing = 2.0f;
-  int num_rows = 5;
-  int num_columns = 5;
+  float horizontal_spacing META_FRIENDLY_NAME("Horizontal spacing"){2.0f};
+  float vertical_spacing META_FRIENDLY_NAME("Vertical spacing"){2.0f};
+  int num_rows META_FRIENDLY_NAME("Rows"){5};
+  int num_columns META_FRIENDLY_NAME("Columns"){5};
 
   void measure_contents() override {}
 
@@ -91,7 +90,7 @@ struct grid_layout_controller : public layout_controller {
     for (auto &&c : children()) {
       if (auto tr = c->get_component<rect_transform>()) {
         float x = j * xdiv;
-        float y = i * xdiv;
+        float y = i * ydiv;
         // override user values
         // fix anchor
         tr->anchor_a = glm::vec2{x, y};

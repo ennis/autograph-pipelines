@@ -4,6 +4,7 @@ project(pipelines C CXX)
 set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 add_definitions(-DNOMINMAX -DGLM_FORCE_RADIANS -D_CRT_SECURE_NO_WARNINGS)
+set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
 include("cmake/ReflectionGen.cmake")
 
 ############## Hack no1 ##############
@@ -13,8 +14,11 @@ if(UNIX)
 endif()
 
 find_package(OpenGL REQUIRED)
+find_package(JNI REQUIRED)
+link_directories(${MONO_LIBRARY_DIRS})
+
 set(Boost_USE_STATIC_LIBS ON)
-find_package(Boost COMPONENTS thread filesystem system REQUIRED)
+find_package(Boost COMPONENTS thread filesystem system context REQUIRED)
 
 add_subdirectory(ext EXCLUDE_FROM_ALL)
 add_subdirectory(src/project_root)

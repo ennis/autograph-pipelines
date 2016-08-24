@@ -1,3 +1,9 @@
+// std
+#include <eggs/variant.hpp>
+#include <experimental/filesystem>
+#include <iostream>
+#include <fstream>
+#include <optional.hpp>
 // autograph
 #include "device.hpp"
 #include "draw.hpp"
@@ -7,33 +13,28 @@
 #include "vertex_array.hpp"
 // GLFW
 #include <GLFW/glfw3.h>
-// misc
-#include <cppformat/format.h>
-#include <iostream>
-
+// nanovg + impl
 #include <nanovg.h>
 #define NANOVG_GL3_IMPLEMENTATION
-#include <nanovg_gl.h>
-
+#include <cppformat/format.h>
 #include <imgui.h>
 #include <imgui_impl_glfw_gl3.h>
-
-#include <eggs/variant.hpp>
-#include <experimental/filesystem>
-#include <optional.hpp>
-
+#include <nanovg_gl.h>
+// core engine stuff
+#include "await.hpp"
+#include "coroutine_script.hpp"
+#include "debug_imgui.hpp"
 #include "input.hpp"
+#include "meta.hpp"
 #include "observable.hpp"
 #include "rect_transform.hpp"
 #include "scene.hpp"
 #include "sprite.hpp"
+// UI stuff
 #include "ui/button.hpp"
 #include "ui/layout.hpp"
 #include "ui/text.hpp"
 #include "ui/visual.hpp"
-#include "vector_sprite.hpp"
-
-#include "meta.hpp"
 
 const char *VS = R"(
 #version 440
@@ -109,49 +110,28 @@ auto sprite = ag::load_texture_lazy(project_root() / "img/tonberry.jpg");
 // => NO
 // => replace the reference using reflection data
 
-// button script:
-// Subscribe to input events
-// On input event: check hit-test (from hit_shape_component or rect_transform)
-// update current_state
-// fire events (and also trigger animations)
-// change the visual component according to state
-
-// renderer (req. transform):
-//	- mesh
-//  - procedural? set mesh empty, add a script, subscribe to on_render()
-// canvas_visual (req. rect_transform):
-//  - mesh 2d
-//  - vector
-//	   - subscribe to callback
-//  - sprite
-//     - 9-patch
-// transform
-// rect_transform
-//
-
 GLFWwindow *window;
 constexpr auto init_width = 640;
 constexpr auto init_height = 480;
 int width = init_width;
 int height = init_height;
 
-void render_ui_update_transforms(entity *e, rect_2d rect) {
+void render_ui_update_transforms(entity *e, const glm::mat3 &parent_tr,
+                                 glm::vec2 parent_size) {
   if (auto rect_tr = e->get_component<rect_transform>()) {
-    rect_tr->calc_rect(rect);
+    rect_tr->update_transform(parent_tr, parent_size);
     if (auto layout_ctl = e->get_component<ui::layout_controller>())
       layout_ctl->layout_contents();
     for (auto &&child : rect_tr->children)
-      render_ui_update_transforms(child.get(), rect_tr->cached_rect_);
+      render_ui_update_transforms(child.get(), rect_tr->calc_transform,
+                                  rect_tr->calc_size);
   }
 }
 
 void nvg_ui_push_transform(NVGcontext *vg, const rect_transform &rt) {
   nvgSave(vg);
-  glm::vec2 piv_trans = rt.pivot * rt.cached_rect_.size;
-  nvgTranslate(vg, rt.cached_rect_.pos.x, rt.cached_rect_.pos.y);
-  nvgTranslate(vg, piv_trans.x, piv_trans.y);
-  nvgRotate(vg, rt.rotation.x);
-  nvgTranslate(vg, -piv_trans.x, -piv_trans.y);
+  const auto &m = rt.calc_transform;
+  nvgTransform(vg, m[0][0], m[0][1], m[1][0], m[1][1], m[2][0], m[2][1]);
 }
 
 void nvg_ui_pop_transform(NVGcontext *vg) { nvgRestore(vg); }
@@ -163,7 +143,7 @@ void render_ui_recursive(NVGcontext *vg, entity *ent) {
     return;
   nvg_ui_push_transform(vg, *rect_tr);
   if (vis)
-    vis->render(vg, rect_tr->cached_rect_.size);
+    vis->render(vg, rect_tr->calc_size);
   // pop the transform here, because the transform hierarchy is already
   // flattened by render_ui_update_transforms
   nvg_ui_pop_transform(vg);
@@ -176,8 +156,8 @@ void render_ui(NVGcontext *vg, scene &S, entity::ptr root, int W, int H,
                int fbW, int fbH) {
   // update rect_transforms
   render_ui_update_transforms(
-      root.get(), rect_2d{{0.0f, 0.0f},
-                          {static_cast<float>(fbW), static_cast<float>(fbH)}});
+      root.get(), glm::mat3{1.0f},
+      {static_cast<float>(fbW), static_cast<float>(fbH)});
 
   // DEBUG: clear viewports
   glViewport(0, 0, fbW, fbH);
@@ -190,7 +170,7 @@ void render_ui(NVGcontext *vg, scene &S, entity::ptr root, int W, int H,
 
 bool hit_test_ui_recursive(entity *ent, glm::vec2 p) {
   if (auto tr = ent->get_component<rect_transform>()) {
-    if (!tr->cached_rect_.inside(p))
+    if (!tr->point_inside(p))
       return false;
     bool handled = false;
     for (auto &&c : tr->children)
@@ -209,112 +189,32 @@ bool hit_test_ui(scene &S, entity *ent, glm::vec2 p) {
 
 entity::ptr create_button(scene &s, entity::ptr parent, std::string text) {
   auto ent = s.create_entity(
-      rect_transform{parent},
+      "Button", rect_transform{parent},
       ui::button{ui::button_visual_pressed, ui::button_visual_released},
       ui::vector_visual{ui::button_visual_released});
   if (parent)
     parent->get_component<rect_transform>()->children.push_back(ent);
   auto text_ent = s.create_entity(
-      rect_transform{parent},
+      "Text", rect_transform{parent},
       ui::text_visual{std::move(text), 40.0f, {0.0f, 0.0f, 0.0f, 1.0f}, true});
   ent->get_component<rect_transform>()->children.push_back(std::move(text_ent));
   return ent;
 }
 
 entity::ptr create_panel(scene &s, entity::ptr parent) {
-  auto ent = s.create_entity(rect_transform{parent}, ui::layout_component{},
-                             ui::vertical_layout_controller{});
+  auto ent =
+      s.create_entity("Panel", rect_transform{parent}, ui::layout_component{},
+                      ui::vertical_layout_controller{});
   if (parent)
     parent->get_component<rect_transform>()->children.push_back(ent);
   return ent;
 }
 
-/*void display_gui_enum()
-{
+constexpr float twopi_f = 6.28318530718f;
 
-}*/
-void display_gui_typeindex(std::type_index ti, int indent = 0);
-
-void display_gui_struct(const meta::record_metaobject* mo, int indent)
-{
-	if (!mo) {
-		fmt::print(std::cerr, "{:>{}}", "", indent);
-		fmt::print(std::cerr, "[No metaobject]\n");
-		return;
-	}
-	fmt::print(std::cerr, "{:>{}} class {}\n", "", indent, mo->name);
-	for (auto&& base_class : mo->bases) {
-		display_gui_struct(static_cast<const meta::record_metaobject*>(meta::get_metaobject(base_class)), indent + 2);
-	}
-	for (auto &&field : mo->public_fields) {
-		fmt::print(std::cerr, "{:>{}}", "", indent);
-		fmt::print(std::cerr, "{} [{}] {}:\n", field.friendly_name, field.name,
-			field.offset);
-		display_gui_typeindex(field.typeindex, indent + 2);
-	}
-}
-
-//
-// Display a GUI for a struct using reflection data
-void display_gui_typeindex(std::type_index ti, int indent ) {
-  // GUIs for primitive types
-  if (ti == std::type_index{typeid(float)}) {
-    fmt::print(std::cerr, "{:>{}} float\n", "", indent);
-  } else if (ti == std::type_index{typeid(double)}) {
-    fmt::print(std::cerr, "{:>{}} double\n", "", indent);
-  } else if (ti == std::type_index{typeid(int)}) {
-    fmt::print(std::cerr, "{:>{}} int\n", "", indent);
-  }
-  // GUIs for GLM vector types
-  else if (ti == std::type_index{typeid(glm::vec2)}) {
-    fmt::print(std::cerr, "{:>{}} vec2\n", "", indent);
-  } else if (ti == std::type_index{typeid(glm::vec3)}) {
-    fmt::print(std::cerr, "{:>{}} vec3\n", "", indent);
-  } else if (ti == std::type_index{typeid(glm::vec4)}) {
-    fmt::print(std::cerr, "{:>{}} vec4\n", "", indent);
-  } else if (ti == std::type_index{typeid(glm::ivec2)}) {
-    fmt::print(std::cerr, "{:>{}} ivec2\n", "", indent);
-  } else if (ti == std::type_index{typeid(glm::ivec3)}) {
-    fmt::print(std::cerr, "{:>{}} ivec3\n", "", indent);
-  } else if (ti == std::type_index{typeid(glm::ivec4)}) {
-    fmt::print(std::cerr, "{:>{}} ivec4\n", "", indent);
-  } else {
-    auto mo = meta::get_metaobject(ti);
-    if (!mo) {
-      fmt::print(std::cerr, "{:>{}}", "", indent);
-      fmt::print(std::cerr, "[No metaobject]\n");
-      return;
-    }
-
-    if (auto struct_mo = mo->as<meta::record_metaobject>()) {
-		// print GUI for base classes
-		display_gui_struct(struct_mo, indent);
-    }
-  }
-}
-
-// for OR against: abstract component classes
-//
-// (1) With: runtime polymorphism
-// cannot allocate component memory in advance
-// arguably more intuitive
-// Cannot use component-counter: T must derive from component<T>
-// alternative option: macro registration
-// alternative option: reflection data
-//
-// (2) Without: no dispatch in components
-// must switch in external system
-// scene can pre-allocate components
-//
-// Solution (1) preferred
-// Must be able to get metatype information for each component
-//
-// (3) Other solution: separate attributes & behaviors
-// attributes stored in component map, pure data
-// behaviors are free objects attached to one entity
-// behaviors cannot communicate with other behaviors. However they can
-// communicate through attributes and events stored in attributes.
-
+///////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////
+// MAIN
 int main(int argc, char *argv[]) {
   /* Initialize the library */
   if (!glfwInit())
@@ -377,12 +277,27 @@ int main(int argc, char *argv[]) {
     tr->anchor_b = {0.8f, 0.8f};
     tr->offset_a = {0.0f, 0.0f};
     tr->offset_b = {0.0f, 0.0f};
-    // tr->rotation.x = 0.2f;
+    tr->pivot = {0.5f, 0.5f};
+    tr->rotation.x = 0.2f;
   }
 
   {
     panel->remove_component<ui::layout_controller>();
-    panel->add_component(ui::grid_layout_controller{4, 4});
+    panel->add_component<ui::grid_layout_controller>(4, 4);
+    panel->add_script<coroutine_script>(
+        [](scene &s, entity::ptr e) {
+          auto tr = e->get_component<rect_transform>();
+          float rot = 0.0f;
+          while (true) {
+            await(s.update);
+            if (e->is_deleted())
+              return;
+            tr->rotation.x = rot;
+            rot += twopi_f / 180.0f;
+            rot = std::fmod(rot, twopi_f);
+          }
+        },
+        s, panel);
   }
 
   // input handler
@@ -398,8 +313,11 @@ int main(int argc, char *argv[]) {
     }
   });
 
-  // test reflection data
-  display_gui_typeindex(std::type_index{typeid(rect_transform)});
+  // serialization test
+  std::ofstream ser_out{ "scene.bin", std::ios::binary };
+  msgpack::packer<std::ostream> packer{ ser_out };
+  s.serialize(packer);
+  ser_out.close();
 
   /* Loop until the user closes the window */
   while (!glfwWindowShouldClose(window)) {
@@ -409,17 +327,18 @@ int main(int argc, char *argv[]) {
     // trigger input polling
     input::process_input();
     // trigger scene update
-    s.update.signal();
+    s.update();
 
     //====================================================
     // MAIN WINDOW: rendering
-    glfwMakeContextCurrent(window);
+    // glfwMakeContextCurrent(window);
     glfwGetWindowSize(window, &width, &height);
     int fbWidth, fbHeight;
     glfwGetFramebufferSize(window, &fbWidth, &fbHeight);
     // Calculate pixel ratio for hi-dpi devices.
     auto pxRatio = (float)fbWidth / (float)width;
     ImGui_ImplGlfwGL3_NewFrame();
+    scene_debug_gui(s);
     nvgBeginFrame(nvg, width, height, pxRatio);
     render_ui(nvg, s, panel, width, height, fbWidth, fbHeight);
     nvgEndFrame(nvg);

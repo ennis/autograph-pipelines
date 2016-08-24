@@ -44,3 +44,6 @@
 [submodule "ext/GSL"]
 	path = ext/GSL
 	url = https://github.com/Microsoft/GSL
+[submodule "ext/msgpack-c"]
+	path = ext/msgpack-c
+	url = https://github.com/msgpack/msgpack-c

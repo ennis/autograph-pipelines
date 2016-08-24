@@ -121,3 +121,14 @@ TARGET_INCLUDE_DIRECTORIES(optional INTERFACE optional)
 add_library(gsl INTERFACE)
 TARGET_INCLUDE_DIRECTORIES(gsl INTERFACE GSL)
 
+# JNI
+if (JNI_FOUND)
+add_library(jvm INTERFACE)
+target_include_directories(jvm INTERFACE ${JAVA_INCLUDE_PATH} ${JAVA_INCLUDE_PATH2})
+target_link_libraries(jvm INTERFACE ${JAVA_JVM_LIBRARY})
+endif()
+
+# msgpack
+add_library(msgpack INTERFACE)
+TARGET_INCLUDE_DIRECTORIES(msgpack INTERFACE msgpack-c/include)
+

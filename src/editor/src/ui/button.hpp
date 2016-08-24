@@ -7,6 +7,8 @@
 #include "../rect_transform.hpp"
 #include "../vector_sprite.hpp"
 #include "../scene.hpp"
+
+#include "selectable.hpp"
 #include "visual.hpp"
 
 namespace REFLECT ui {
@@ -33,17 +35,6 @@ auto button_visual_released = [](NVGcontext *vg, glm::vec2 size) {
   nvgFill(vg);
 };
 
-struct selectable : public behaviour<selectable> {
-  virtual ~selectable() {}
-
-  virtual bool on_pointer_down() { return true; }
-
-  selectable *select_left = nullptr;
-  selectable *select_right = nullptr;
-  selectable *select_down = nullptr;
-  selectable *select_up = nullptr;
-};
-
 struct button : public selectable {
   button() = default;
   button(vector_visual::callback_t pressed_visual_,
@@ -63,7 +54,7 @@ struct button : public selectable {
 
   bool on_pointer_down() override {
     fmt::print("button::on_pointer_down()\n");
-    pressed.signal();
+    pressed();
     return true;
   }
 

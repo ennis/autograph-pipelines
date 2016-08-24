@@ -1,5 +1,7 @@
 #include "input.hpp"
 #include <GLFW/glfw3.h>
+#include <imgui.h>
+#include <imgui_impl_glfw_gl3.h>
 #ifdef WIN32
 #include <Windows.h>
 #include <Xinput.h>
@@ -19,18 +21,19 @@ GLFWwindow *g_input_window;
 // GLFW event handlers
 void GLFWMouseButtonHandler(GLFWwindow *window, int button, int action,
                             int mods) {
+	ImGui_ImplGlfwGL3_MouseButtonCallback(window, button, action, mods);
   mouse_button_event mb;
   mb.button = button;
   mb.state =
       action == GLFW_PRESS ? button_state::pressed : button_state::released;
   // input::events stream is synchronous
-  events.signal(&mb);
+  events(&mb);
 }
 
 void GLFWCursorPosHandler(GLFWwindow *window, double xpos, double ypos) {
   cursor_event cur;
   cur.pos = glm::ivec2{(int)xpos, (int)ypos};
-  events.signal(&cur);
+  events(&cur);
 }
 
 void GLFWCursorEnterHandler(GLFWwindow *window, int entered) {
@@ -38,18 +41,21 @@ void GLFWCursorEnterHandler(GLFWwindow *window, int entered) {
 }
 
 void GLFWScrollHandler(GLFWwindow *window, double xoffset, double yoffset) {
+	ImGui_ImplGlfwGL3_ScrollCallback(window, xoffset, yoffset);
   // instance->on_scroll(window, xoffset, yoffset);
 }
 
 void GLFWKeyHandler(GLFWwindow *window, int key, int scancode, int action,
                     int mods) {
+	ImGui_ImplGlfwGL3_KeyCallback(window, key, scancode, action, mods);
   // instance->on_key(window, key, scancode, action, mods);
 }
 
 void GLFWCharHandler(GLFWwindow *window, unsigned int codepoint) {
+	ImGui_ImplGlfwGL3_CharCallback(window, codepoint);
   text_event text;
   text.codepoint = codepoint;
-  events.signal(&text);
+  events(&text);
   // instance->on_char(window, codepoint);
 }
 }
@@ -58,7 +64,7 @@ key_action::key_action(int key) : key_{key} {
   events.subscribe(sub_, [this](input_event *ev) {
     if (ev->type == input_event_type::key) {
       if (this->key_ == static_cast<key_event *>(ev)->code) {
-        signal();
+        operator()();
       }
     }
   });
@@ -68,7 +74,7 @@ key_action::~key_action() { sub_.unsubscribe(); }
 
 gamepad_button_action::gamepad_button_action(uint16_t button, bool autofire,
                                              float fire_rate)
-    : button_{button}, autofire_{autofire}, fire_rate_{fire_rate} {
+    : autofire_{ autofire }, fire_rate_{ fire_rate }, button_{ button } {
   poll.subscribe(sub_, [this]() {
 #ifdef WIN32
     XINPUT_STATE xis;
@@ -84,7 +90,7 @@ gamepad_button_action::gamepad_button_action(uint16_t button, bool autofire,
       if ((prev == button_state::released) || this->autofire_) {
         fmt::print(std::clog, "Controller 0 button {} pressed\n",
                    this->button_);
-        signal();
+        operator()();
       }
     } else
       this->prev_state_ = button_state::released;
@@ -104,7 +110,9 @@ void initialize(GLFWwindow *window) {
   glfwSetScrollCallback(window, GLFWScrollHandler);
 }
 
-void process_input() { poll.signal(); }
+void process_input() { 
+	poll(); 
+}
 
 glm::ivec2 cursor_pos() {
   double x, y;
