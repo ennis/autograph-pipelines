@@ -6,7 +6,6 @@
 #include <type_traits>
 #include <unordered_set>
 
-#include <bustache/model.hpp>
 #include <clang/AST/AST.h>
 #include <clang/AST/ASTConsumer.h>
 #include <clang/AST/DeclVisitor.h>
@@ -29,32 +28,11 @@
 using namespace clang;
 using namespace clang::driver;
 using namespace clang::tooling;
-
-static llvm::cl::OptionCategory CxxReflectCategory("cxx-reflect");
-
 using namespace nlohmann;
 using namespace llvm;
 
-enum Action { ActRender, ActReflect, ActMerge };
-
-cl::opt<::Action> ReflectAction(
-    "action", llvm::cl::desc(R"(
-Action
-)"),
-    cl::values(clEnumValN(ActRender, "render", "..."),
-               clEnumValN(ActReflect, "reflect", "..."),
-               clEnumValN(ActMerge, "merge", "..."), clEnumValEnd),
-    cl::cat(CxxReflectCategory));
-
-cl::opt<std::string> InputJsonDBFile("jsondb", llvm::cl::desc(R"(
-Input JSON reflection database.
-)"),
-                                     cl::Optional, cl::cat(CxxReflectCategory));
-
-cl::opt<std::string> OutputJsonDBFile("output-jsondb", llvm::cl::desc(R"(
-Output merged JSON database file.
-)"),
-                                      cl::cat(CxxReflectCategory));
+static cl::OptionCategory CxxReflectCategory("cxx-reflect");
+cl::opt<std::string> OutputJsonDBFile("o", cl::desc("Specify output JSON database file"), cl::value_desc("filename"), cl::Required);
 
 // By implementing RecursiveASTVisitor, we can specify which AST nodes
 // we're interested in by overriding relevant methods.
@@ -68,7 +46,7 @@ public:
 
   bool reflectAllInCurrentScope() {
     if (reflectionScopes.empty())
-      return false;
+      return true;
     return reflectionScopes.back();
   }
 
@@ -262,6 +240,8 @@ public:
       enumerators.front()["isFirst"] = true;
       enumerators.back()["isLast"] = true;
     }
+	obj["enumName"] = ED->getNameAsString();
+	obj["enumQualName"] = ED->getQualifiedNameAsString();
     obj["numEnumerators"] = enumerators.size();
     obj["enumerators"] = std::move(enumerators);
     obj["isType"] = true;
@@ -444,7 +424,7 @@ private:
 };
 
 //
-bustache::value ConvertJsonToBustacheValue(const json &jsonObj) {
+/*bustache::value ConvertJsonToBustacheValue(const json &jsonObj) {
   bustache::value tmpValue;
   if (jsonObj.is_array()) {
     bustache::array tmpArray;
@@ -470,80 +450,10 @@ bustache::value ConvertJsonToBustacheValue(const json &jsonObj) {
     tmpValue = jsonObj.get<std::string>();
 
   return tmpValue;
-}
+}*/
 
 int main(int argc, const char **argv) {
   CommonOptionsParser op(argc, argv, CxxReflectCategory);
-
-  if (ReflectAction == ActReflect) {
-    // --action=reflect <file>
-    ClangTool Tool(op.getCompilations(), op.getSourcePathList());
-    return Tool.run(newFrontendActionFactory<ReflectionFrontendAction>().get());
-  } else if (ReflectAction == ActMerge) {
-    //============================ DEPRECATED
-    //===================================
-    auto &fileList = op.getSourcePathList();
-    // now merge all the databases
-    std::unordered_set<std::string> alreadyFoundDecls;
-    std::unordered_set<std::string> includeSet;
-    json mergedDecls = json::array();
-    json mergedHdrs = json::array();
-    json mergedDB = json::object();
-    for (auto &&dbFileName : fileList) {
-      // Load database
-      fmt::print("*** Loading database file {}...\n", dbFileName);
-      json db = LoadJsonDatabase(dbFileName);
-      auto &loadedDecls = db["decls"];
-      for (auto &&D : loadedDecls) {
-        const auto &name = D["qualName"].get<std::string>();
-        if (alreadyFoundDecls.count(name)) {
-          // Same decl name in two TUs
-          // TODO consistency check?
-        } else {
-          // name not found, copy decl data
-          alreadyFoundDecls.insert(name);
-          mergedDecls.push_back(D);
-        }
-      }
-      auto &loadedHdrs = db["metaHeaders"];
-      for (auto &&hdr : loadedHdrs)
-        includeSet.insert(hdr.get<std::string>());
-    }
-    for (auto &&hdr : includeSet)
-      mergedHdrs.push_back(hdr);
-    mergedDB["decls"] = std::move(mergedDecls);
-    mergedDB["metaHeaders"] = std::move(mergedHdrs);
-    WriteJsonDatabase(mergedDB, OutputJsonDBFile);
-  } else if (ReflectAction == ActRender) {
-    // --action=render <templates> --jsondb <json db path>
-    using namespace llvm::sys;
-    if (!fs::exists(InputJsonDBFile)) {
-      fmt::print(std::cerr, "ERROR: JSON database file not found: {}\n",
-                 InputJsonDBFile);
-      return EXIT_FAILURE;
-    }
-    json db = LoadJsonDatabase(InputJsonDBFile);
-    fmt::print("*** Generating template model...\n");
-    bustache::value templateModel = ConvertJsonToBustacheValue(db);
-
-    for (auto &&inputTemplateFileName : op.getSourcePathList()) {
-      if (!fs::exists(inputTemplateFileName)) {
-        fmt::print(std::cerr, "ERROR: File not found: {}\n",
-                   inputTemplateFileName);
-        continue;
-      }
-      std::string generatedSourceFileName =
-          path::stem(inputTemplateFileName); // remove .in
-      fmt::print("*** Generating {}...\n", generatedSourceFileName,
-                 inputTemplateFileName);
-      std::ifstream templateFileIn{inputTemplateFileName};
-      std::stringstream templateFileBuf;
-      templateFileBuf << templateFileIn.rdbuf();
-      bustache::format templateStr{templateFileBuf.str()};
-      auto generatedSource = templateStr(templateModel);
-      std::ofstream generatedSourceFileOut{generatedSourceFileName};
-      generatedSourceFileOut << generatedSource;
-    }
-  }
-  return 0;
+  ClangTool Tool(op.getCompilations(), op.getSourcePathList());
+  return Tool.run(newFrontendActionFactory<ReflectionFrontendAction>().get());
 }

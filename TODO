@@ -398,11 +398,25 @@ Primitives =
 - EndpointsComponent: stores/manages inputs and outputs
 - NodeBehaviorComponent: stores behavior
 
+
+- Scene renderer node:
+	+ camera
+	+ subpixelJitter
+	+ temporalAAMask
+	Properties:
+	TAASampleIndex
+	TAASampleCount
+
 Shaders = GLSL expressions (GPU)
 OR
 C++ code (runtime-compiled)
 Can register external libraries and #include them in CPU shaders
 (cool for geometry generators)
+
+
+
+
+
 
 
 Editor UI? 
@@ -451,6 +465,15 @@ Tree view?
 List view?
 Table view?
 	=> spawn temporary entities each frame
+
+
+
+
+
+Entity system:
+______________________________
+
+
 
 
 
@@ -586,6 +609,8 @@ ____________________________________
 
 Use C++ for the heavy lifting (physics, mesh processing, animation stuff, generation of command buffer, culling)
 Use the reflection generator to automatically generate bindings
+=> NO C++ for the scripting (live coding) part
+	-> memory safety is absolutely mandatory 
 
 
 => Ideas:
@@ -627,3 +652,696 @@ B.cpp main pass:
 	stuff(A a): needs definition for A
 
 
+
+C# replacements:
+____________________________________
+
+GLM => GLMSharp or equivalent
+glloadgen => OpenTK.Next
+cppformat => BCL
+experimental/filesystem => BCL
+optional/variant/boost::hana => unapplicable
+boost::context => built-in coroutines
+imgui => ??? (windows forms?)
+nanovg => ??? ()
+autograph => custom port (has the potential to be cleaner)
+json => anything goes
+font rendering => ???
+
+
+
+Priorities 
+____________________________________
+
+1. Quick iteration
+   Hot module reload
+   live code editing
+   REPL with autocomplete
+
+2. Performance
+   Predictable and measurable
+   Low overhead
+
+
+3 options
+____________________________________
+
+* Full C++, with lightweight scripting (Lua)
+
+* Full C#, with perf-critical parts in C++
+	* Scripts in another assembly
+	* Can probably embed a REPL
+	* HUGE benefits in terms of ease of coding
+	* Issue: interop (must load an external DLL and C++ runtime)
+	* Issue: portability
+	* Issue: interop with the **many** existing C/C++ libraries
+	* Issue: no precise memory management
+	* At some point, will probably be able to compile to native code
+	* Abandon autograph-gl, reflection generator 
+
+* C++ with embedded Mono
+	* Issue: exposing types?
+	** WINNER **
+
+Things done in C#:
+* UI components (ManagedComponent)
+	* Garbage collected components
+* Entity wrapper: struct type
+* RenderGraph generation?
+
+
+Things done in C++:
+* Physics
+* Scene rendering 
+	* Terrain generation
+	* Occlusion culling 
+* Render graph compilation
+* Render graph evaluation
+
+
+If using existing C++ libraries is a concern: use C++
+else: go with C#
+
+
+
+Derive from base entity class
+____________________________________
+
+Entity
++ SceneEntity
++ UIWidget
+
+
+Components:
+	- SceneObject
+		+parent, children, transform
+	- HUDWidget
+		+parent, children, recttransform layoutcontroller
+	- Physics
+
+
+MAIN ISSUE:
+- it makes no sense for an entity to have an HUDWidget component outside of a HUD entity
+
+
+SceneEntity:
+	* (FIXED) Physics
+	* (FIXED) Transform
+Scene2DEntity:
+	* (FIXED) Physics 2D
+	* (FIXED) Transform 2D 
+HUDEntity:
+	* (FIXED) Ref to parent entity
+	* (FIXED) Rect transform
+	* (FIXED) (OPTIONAL) Layout script
+
+HUD:
+	* vector of HUDEntities
+
+
+Strong refs VS IDs:
+
+IDs: can invalidate, but needs a fat pointer
+=> strong refs
+
+
+Performance-oriented:
+_________________________________
+
+Components stored in contiguous memory
+Zero data overhead
+Can be reordered: access by ID
+
+=> makes no sense in most of the cases
+	Example: transform components are not updated in a straight loop
+	they can be updated by the physics system, for entities with physics, or follow scripts, or animators, or whatever
+	=> no linear update
+
+Same with HUD: no linear updates?
+
+
+Flexibility:
+_________________________________
+
+Entity -> bag of components
+Fast query by type
+
+
+
+Rendering system:
+_________________________________
+
+Input = scene
+=> update transform hierarchy = non-linear traversal
+
+
+Fat pointer to entity = 
+	ID + pointer to scene (used in scripts)
+	getComponent/addComponent
+
+
+3D scene VS HUD
+_________________________________
+
+HUD base component?
+
+// Scene = group of entities
+class Scene;
+
+Scene world;
+Scene HUD;
+Scene inventoryScreen;
+Scene menuScreen;
+
+
+// Find HUD roots (entity with HUDRootComponent? Canvas?)
+// Create render list
+// Sort by depth
+// Render
+HUD.render(Entity e)
+{
+	// recursively render 
+}
+
+// Find root transforms
+// Update world->view matrices
+// Create render list(s)
+// Do occlusion culling
+renderWorld(Scene& world);
+
+
+Scenes = entity containers
+Bikeshedding: layers?
+
+
+
+Example: menu screen
+
+A global script listens to the ESC key
+ESC key pressed:
+	- option 1: a 2D HUD node is revealed in the main scene, signal event HUD.activated
+		-> HUD children have scripts that respond to this event and animates the HUD elements
+		Q: How should the HUD node know when to render?
+			=> Z-order, or draw buckets?
+	- option 2: different scenes
+		Q: What advantages?
+
+
+HUD render order:
+	- Z-order in root element
+	- Only one root, order children
+
+
+
+FINAL DESIGN:
+- Observation: I don't care about most of the stuff that entity systems can offer
+- But I want a few reusable systems, notably:
+	- Rendering
+	- 2D rendering 
+	- UI widget behaviors
+	- Default UI visuals
+	- Physics, probably
+
+- The only true extensible way is IDs
+- Scene: container of IDs
+	- can be overriden to add some convenience methods
+- Render optimization granularity = scene?
+- Individual systems own components, not entities
+- Systems can manage components across scenes
+
+Deletion: invalidation of IDs, and manual garbage collection over component pools
+Introspection: manual registration of managers
+
+Scene+ID -> entity
+Scene+ID+Component index -> component data
+
+scene.createEntity
+scene.createHUDWidget(ID, ...)
+scene.createRenderable(ID, ...)
+
+Component lookup:
+Old: Entity ptr -> Component table -> Component
+New: ID -> (Dictionary lookup) Component
+
+
+1 .. 100
+
+40 41 42 45 70
+
+Query 80:
+80 > 42
+80 > 45
+80 > 70
+End: not found
+
+Must decouple scene and component maps
+Otherwise: circular dependencies
+
+scene.getComponent<TypeAndSystem>(id)
+VS
+TypeAndSystem::getComponent(scene, id)
+VS
+system.getComponent(id)
+
+Should not have to pass around the component manager
+
+ComponentType::get(scene, id)
+
+Trivial components: just use a default manager?
+
+=> scene plugins
+
+ComponentType::get(scene, id)
+-> Plugin::getComponent(scene, id) (INLINE)
+-> static_cast<Plugin>(scene.getPlugin(Plugin::index))->getComponent(id) (INLINE)
+
+
+-> One plugin instance per scene?
+-> One global plugin instance?
+	+ no need to register components when creating a scene
+	- global component store: must have scene IDs
+
+
+// Option #1
+RectTransform::get(scene, id)
+// Option #2
+scene.getComponent<T>(id)
+// Option #3
+
+
+HUDElement:
+	+Selectable: next, prev
+	+transform
+	+
+
+
+Consider:
+- scripts
+- fast iteration
+
+
+Alternative: parallel scenes
+
+Scene: 
+	hierarchy of transforms
+
+PhysicsScene
+EnemiesScene
+RenderableScene
+
+
+
+Mono:
+
+1. Load ScriptEngine assembly
+2. ScriptEngine assembly scans for updated assemblies in some directory and (re)loads them
+	-> use System.IO.FileSystemWatcher
+3. The ScriptEngine goes through all classes in the loaded assemblies and call startup methods
+Autograph assembly: contains interop structures (generated code?)
+
+In C++: single class ScriptEngine
+Just needs to load one assembly
+
+=========================================
+Build system:
+
+* CMake-generated global config.hpp
+* Reflection generator
+	* Only produce a JSON database
+	* Use T4 macro processor for generating code
+
+* CMake/C#: 
+* Compiling: find correct skia
+	* windows: use bundled
+	* linux: query from package manager
+* CMake reflection generator for C# bindings
+* Hook up a debugger
+* Use MS runtime on windows
+
+=========================================
+Directory structure:
+
+build/				   : Somewhere, contains the executable and the ScriptEngine assembly alongside it
+cmake/                 : cmake modules
+ext/
+include/               : API includes
+include/editor 		   : exported types
+
+src/				   : Source code of editor and required assemblies
+src/editor/
+src/autograph/
+src/support/
+src/ScriptEngine/	   : ScriptEngine and auto-generated bindings (.sln / .csproj)
+		Post-build: copy to data/assemblies
+src/AutographBindings/ : Managed bindings
+		Post-build: copy to data/assemblies
+
+data/				   : Shared data
+data/mono/			   : Mono runtime (optional, but will look here first; otherwise, look in system installation path, probably a bad idea on windows)
+data/assemblies/       : required assemblies (ScriptEngine, Autograph bindings)
+data/glsl/
+data/img/
+
+project/     		   : default project (contains VS/MonoDevelop solution -> references ../data/assemblies/AutographBindings)
+project/scripts/
+project/scripts/assemblies
+
+<root>
+	Managed.sln 	   : VS solution file (refs to src/ScriptEngine/.csproj, src/AutographBindings/.csproj, project/Scripts.csproj) 
+
+=========================================
+Build process:
+
+mkdir build
+cmake ../
+<msbuild>
+cd ../src/ScriptEngine
+<msbuild C#>
+
+=========================================
+Install: 
+	gather program and required DLLs from CMake build file
+	gather data/ folder
+
+
+
+
+=========================================
+
+TODO:
+
+1. Clean up reflection generator: only generate a JSON database file
+	=> OR, ideally: use CppSharp to generate a JSON database?
+	=> OR, ideally if this does not pose more problems: remove 
+		reflection from the C++ side, move reflection/serialization in
+		the C# side
+2. Clean up reflection generator: use another method (possibly managed) to create C++ reflection database
+	=> JSON with T4 templates?
+	=> CppSharp and T4 templates directly?
+3. Clean up reflection: rewrite Meta.cpp.in
+	=> low priority since it's not really used right now
+4. Best short-term solution for C# bindings from C++ is probably CppSharp
+	=> can tailor the binding generator
+	=> uses clang
+	=> DllImport from hosting process
+5. Change directory structure
+6. Managed subscribers for observables
+	Also: efficient native observables?
+
+
+=========================================
+
+Exported API:
+- Vector types
+- Matrix types
+- Standard components
+	- Renderables?
+- Input API (ag::*)
+- RenderGraph API (ag::rendergraph::*)
+- HUD/UI API (ag::ui::*)
+- EntityID type
+- EntityID managers
+- Scene (hierarchy of transforms)
+- Mesh type
+
+autograph/Config.hpp
+	<config macros>
+autograph/Types.hpp
+	<vector types>
+
+autograph/editor/RectTransform.hpp
+autograph/support/
+
+API rules: 
+- no std::experimental 
+	=> remove std::experimental::filesystem
+	=> replace with std::strings
+- use some kind of span type for input arrays
+- remove dependency on glm vector types?
+	=> typedef them at first
+	=> then, replace with lightweight POD types provided with the API
+		(binary-compatible with GLM types)
+- remove native coroutines (at least until the native coroutine TS is implemented in clang)
+	-> replace with async managed scripts
+- no vector types in API -> replace with add/remove functions
+- use string_views / spans
+- Expose some kind of drawing API
+
+
+Summary of setbacks encountered while trying to bind Skia using Mono
+
+- use __Internal in DllImport attribute (easy)
+- for some reason, MSVC decided not to export the skia C API until I used one function (took its address)
+	=> probably an optimization; not robust
+- Strange error (due to lack of exe configuration) when calling Debug.WriteLineIf
+	=> commented out...
+- mono_runtime_invoke: pass **pointers** to arguments, even if they are pointers
+- mono_method_desc_new: System.IntPtr remaps to intptr in signature? WHERE IS THE DOCUMENTATION ABOUT THAT DAMNIT
+- Bindings are ugly (creation of wrapper objects? lookup in dictionary? wtf?)
+
+Actions to take:
+- custom bindings to skia
+- manually register methods to mono instead of relying on dllexport
+- cleanup assembly loading code
+- implement hot-reloading (unload and reload the assembly)
+- implement a GUI in C# with the skia bindings / move it in the C++ side when done
+- Minimal UI drawing code in C++ to C#
+	(parse SVG?)
+
+C++ editor UI / C# UI interop:
+-> buttons, panels, sliders, edit box, text box, automatic layout
+-> automatic layout
+
+C++ editor UI API:
+
+RAII objects with coroutines/lightweight threads:
+- ui::Panel { 
+	ui::Button { "name" }.onClick(callback);
+	ui::Button
+ }
+
+
+
+Goal: 
+1. Editor for rendering pipelines
+2. Scene renderer 
+	- with animations
+3. Scriptable pipeline and UI (C#)
+4. Game?
+
+UI goals:
+1. data-driven
+	-> no need to call setXXX(); variables are read every frame
+	-> events for user input
+2. Separate visual tree
+3. Create UI from C++
+4. RAII widgets (visual lifetime = widget lifetime = scope)
+
+	{
+		std::string s;
+
+		auto button = c.button("OK");
+		auto ui = c.panel( 
+			GridLayout{2,2},
+			TextEdit{s}, button,
+			TextEdit{s2},
+			ColorPicker
+		);
+
+		co_await button.clicked();
+	}
+
+Custom widgets?
+Widget = Visual + Behavior
+	Visual = element in the visual tree
+		   = transform, size, parent, children, layout element
+		   sealed
+    Behavior = behavior and appearence
+    	- preferred size
+    	- cached data
+    	- onPointerDown, onPointerUp, etc.
+    	- render(Visual)
+
+
+    	{
+    		// okButton is orphaned
+    		auto okButton = <button>("OK");
+	    	auto panel = ui.verticalPanel(
+	    		// parent 
+	    		okButton,
+	    		// parent and take ownership (rvalue refs)
+	    		<separator>(),
+	    		<ColorPicker>(),
+	    		<textEdit>(s)
+	    	);
+
+	    	// add and transfer visual lifetime (panel is orphaned when parent is deleted)
+	    	parent.add(panel);
+
+	    	// visual lifetime != object lifetime
+
+	    	// panel is destroyed here: should also destroy its children
+	    	// Destroying means orphaning here
+	    	// button is destroyed, and has no parent: nothing is done
+	    	// if button was destroyed with a parent, it would remove itself from the list of child widgets of the parent
+	    	// 
+	    	// issue: ownership
+	    	// okButton is on the stack: lifetime managed by the user; deletion = orphaning
+	    	// ui.separator() is a temporary: resource is owned by the panel; deletion = free memory
+	    }
+
+
+    	ui.addChild(panel, ui.create<Button>())
+    	ui.create(xxx) => persistent widget
+    	ui::button b{xxx} => scope lifetime
+
+
+    	// 1.
+    	// Create object on stack, orphaned, add to panel, object reference goes out of scope, object removed
+    	// 2.
+    	// Create object, transfer ownership to panel, but retain a reference 
+
+
+    	// 1.
+    	// Create object, pass ref to coroutine or thread:
+    	
+    	{
+    		ui::button b;
+    		co_await b->pressed;
+    		// observer is removed
+
+    		// observable is destroyed: send cancellation
+    		// coroutine ends: control is transferred to the signal() method of the observable that was just destroyed! 
+    	}
+
+    	// Issue: named slots
+    	// 
+
+    	ui.vertical(
+    		ui.horizontal(
+    		),
+    		ui.button(
+    		)
+    	);
+
+
+UI goals:
+
+- #1: support seamless multi-window
+- #2: native dialogs
+- #3: Copy/paste, etc. => clipboard access
+- 
+- #4: Integrable with openGL
+- #5: has a dock panel
+- #6: Stylable
+- #7: Dynamic (pass pointer to data, do not copy data)
+- #8: Native menus and context menus
+- #9: Accessible?
+
+
+Alternatives to render DAGs for pipeline specification:
+
+Goals: interactivity, performance, flexibility
+Use cases:
+
+* Forward rendering:
+	(GEOM) Opaque pass, different shaders 
+	(GEOM) Transparent pass, different shaders
+
+* Deferred rendering:
+ 	(GEOM) G-buffer pass 
+	(SCREEN) Lighting passes
+	(GEOM) Transparent pass
+
+* Postproc:
+	(SCREEN) Depth of field: (color,depth) -> color
+
+* Shadow mapping:
+	(GEOM) Shadow map generation
+	(FRAG) Apply shadow map: snippet included in all fragment shaders
+
+* Temporal AA
+* Motion blur
+* GPU particles
+	(COMPUTE) Update position, velocity -> posBuf, velBuf
+	(GEOM) Rendering (posBuf, velBuf)
+
+Example use case:
+must be able to 
+- add a render target (e.g. emissive component) to all materials, 
+- specify the corresponding texture to be used as the render target
+- add a post-processing pass influencing the final result with this texture
+	=> passes are executed automatically
+=> Without having to touch the C++ code
+
+Kinds of passes:
+GEOM: input=draw calls and uniforms
+SCREEN: input=uniforms, renders a screen quad
+COMPUTE: input=uniforms, optionally compute size
+FRAG: not a pass, but a snippet added to shaders
+
+Resources:
+per-scene,
+	G-buffers, temporaries for compositing, etc.
+per-material,
+	Emissive target (== per-scene)
+per-object
+	Compute buffers for particle rendering => allocated and managed on the C++ side (makes more sense)
+per-pass
+	Uniforms (== inputs and outputs)
+	=> allocated on the C++ side (w/ UpdateBuffers)
+
+global uniforms:
+	-> single values or uniform buffers
+		-> special syntax?
+	-> uniforms affecting only a group of shaders/passes
+	-> specify when creating shaders (depends-on light-list)
+
+In lua:
+
+require 'module'
+	will create all resources specified in the module (pipeline globals)
+
+class Pipeline
+	- context for all resources
+	- owns all resources
+	- load effects into this pipeline
+	- load(effectFile)
+	- get(effect-id)
+
+e.g.
+	pp.load("scene.fxlua");
+
+Allocate G-buffers and other postproc targets (DOF, etc.)
+
+	pp.load("glassmaterial.fxlua");
+
+Adds a material (translucent pass defined in C++)
+
+	pp.load("emissive.fxlua")
+
+Pass variants:
+	-> Dynamically compiled
+
+Adds a material (opaque), allocate a new render texture (emissive), adds postproc passes (bloom)
+Passes can have dependencies -> DAG
+Some passes are self-contained, other must receive data from the C++ side
+-> SCREEN passes are self-contained
+-> Some COMPUTE passes are self-contained
+
+for each opaque object:
+	pass = pp.getGeometryPass(material.name)	// no dependencies (other than global resources)
+	drawPass(vbo, ibo, modelMat, camera, etc...)
+
+for each transparent object:
+	pass = pp.getGeometryPass(material.name)
+	drawPass(...)
+
+final result:
+	pass = pp.getScreenPass('final')
+	runPass()	// will render to screen
+
+
+stateGroups:
+- immutable set of bindings (e.g. Textures, UBOs, SSBO, RT, draw states, programs) 
+	array of (slot,resource) pairs

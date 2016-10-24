@@ -1,13 +1,19 @@
+# zlib (required for skia)
+add_subdirectory(zlib)
+TARGET_INCLUDE_DIRECTORIES(zlibstatic INTERFACE zlib/)
+set_property(TARGET zlibstatic PROPERTY FOLDER "External")
 
 # cppformat
 add_subdirectory(cppformat EXCLUDE_FROM_ALL)
+set_property(TARGET cppformat PROPERTY FOLDER "External")
 
 # mcpp
 add_subdirectory(mcpp EXCLUDE_FROM_ALL)
 target_include_directories(mcpp INTERFACE mcpp/)
+set_property(TARGET mcpp PROPERTY FOLDER "External")
 
 # bustache
-add_subdirectory(bustache EXCLUDE_FROM_ALL)
+#add_subdirectory(bustache EXCLUDE_FROM_ALL)
 
 # assimp
 option(BUILD_SHARED_LIBS "..." OFF)
@@ -58,9 +64,9 @@ option(ASSIMP_BUILD_SMD_IMPORTER "..." OFF)
 option(ASSIMP_BUILD_SIB_IMPORTER "..." OFF)
 option(ASSIMP_BUILD_TERRAGEN_IMPORTER "..." OFF)
 option(ASSIMP_BUILD_X_IMPORTER "..." OFF)
-
 add_subdirectory(assimp EXCLUDE_FROM_ALL)
 target_include_directories(assimp INTERFACE assimp/include)
+set_property(TARGET assimp PROPERTY FOLDER "External")
 
 # stb
 add_library(stb INTERFACE)
@@ -77,10 +83,10 @@ add_subdirectory(glfw EXCLUDE_FROM_ALL)
 target_include_directories(glfw INTERFACE glfw/include)
 
 # imgui
-file(GLOB IMGUI_SOURCES imgui/*.cpp imgui_glfw3/*.cpp)
-add_library(imgui STATIC ${IMGUI_SOURCES})
-target_include_directories(imgui PUBLIC imgui imgui_glfw3)
-target_link_libraries(imgui PRIVATE glloadgen glfw glm)
+#file(GLOB IMGUI_SOURCES imgui/*.cpp imgui_glfw3/*.cpp)
+#add_library(imgui STATIC ${IMGUI_SOURCES})
+#target_include_directories(imgui PUBLIC imgui imgui_glfw3)
+#target_link_libraries(imgui PRIVATE glloadgen glfw glm)
 
 
 # glm
@@ -92,10 +98,10 @@ target_link_libraries(glm INTERFACE glloadgen)
 add_subdirectory(glloadgen EXCLUDE_FROM_ALL)
 
 # nanovg
-file(GLOB NANOVG_SOURCES nanovg/src/*.c)
-add_library(nanovg EXCLUDE_FROM_ALL STATIC ${NANOVG_SOURCES})
-target_include_directories(nanovg INTERFACE nanovg/src)
-target_link_libraries(nanovg PUBLIC stb)
+#file(GLOB NANOVG_SOURCES nanovg/src/*.c)
+#add_library(nanovg EXCLUDE_FROM_ALL STATIC ${NANOVG_SOURCES})
+#target_include_directories(nanovg INTERFACE nanovg/src)
+#target_link_libraries(nanovg PUBLIC stb)
 
 # variant 
 add_library(variant INTERFACE)
@@ -122,13 +128,54 @@ add_library(gsl INTERFACE)
 TARGET_INCLUDE_DIRECTORIES(gsl INTERFACE GSL)
 
 # JNI
-if (JNI_FOUND)
-add_library(jvm INTERFACE)
-target_include_directories(jvm INTERFACE ${JAVA_INCLUDE_PATH} ${JAVA_INCLUDE_PATH2})
-target_link_libraries(jvm INTERFACE ${JAVA_JVM_LIBRARY})
-endif()
+#if (JNI_FOUND)
+#add_library(jvm INTERFACE)
+#target_include_directories(jvm INTERFACE ${JAVA_INCLUDE_PATH} ${JAVA_INCLUDE_PATH2})
+#target_link_libraries(jvm INTERFACE ${JAVA_JVM_LIBRARY})
+#endif()
 
 # msgpack
-add_library(msgpack INTERFACE)
-TARGET_INCLUDE_DIRECTORIES(msgpack INTERFACE msgpack-c/include)
+#add_library(msgpack INTERFACE)
+#TARGET_INCLUDE_DIRECTORIES(msgpack INTERFACE msgpack-c/include)
 
+# Skia
+#add_subdirectory(skia/cmake)
+
+# mono
+add_library(mono INTERFACE)
+target_include_directories(mono INTERFACE ${MONO_INCLUDE_DIR})
+target_link_libraries(mono INTERFACE ${MONO_LIBRARY})
+
+# binary target for skia 
+add_library(skia-bin INTERFACE)
+target_include_directories(skia-bin INTERFACE 
+	skia-bin/include/android
+	skia-bin/include/c
+	skia-bin/include/codec
+	skia-bin/include/core
+	skia-bin/include/effects
+	skia-bin/include/gpu
+	skia-bin/include/gpu/effects
+	skia-bin/include/gpu/gl
+	skia-bin/include/images
+	skia-bin/include/pathops
+	skia-bin/include/ports
+	skia-bin/include/utils
+	skia-bin/include/utils/mac
+	skia-bin/include)
+# TODO do this only for windows
+target_link_libraries(skia-bin INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/skia-bin/skia.lib)
+
+# lua
+#[[find_package(Lua)
+if (LUA_FOUND)
+add_library(lua-bin INTERFACE)
+target_include_directories(lua-bin INTERFACE ${LUA_INCLUDE_DIR})
+target_link_libraries(lua-bin INTERFACE ${LUA_LIBRARIES})
+endif ()]]
+add_subdirectory(lua-5.3.3)
+
+#sol2
+add_library(sol2 INTERFACE)
+target_include_directories(sol2 INTERFACE sol2)
+target_link_libraries(sol2 INTERFACE lua)

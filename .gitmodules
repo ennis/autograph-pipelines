@@ -47,3 +47,9 @@
 [submodule "ext/msgpack-c"]
 	path = ext/msgpack-c
 	url = https://github.com/msgpack/msgpack-c
+[submodule "ext/skia"]
+	path = ext/skia
+	url = https://github.com/google/skia
+[submodule "ext/zlib"]
+	path = ext/zlib
+	url = https://github.com/madler/zlib

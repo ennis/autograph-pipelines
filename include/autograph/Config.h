@@ -1,0 +1,45 @@
+#pragma once
+
+//////////////////////////////////////////////
+#if !defined(AG_IMPLEMENTATION)
+    #define AG_IMPLEMENTATION 1
+#endif
+
+//////////////////////////////////////////////
+#ifdef __REFLECTION_PARSER__
+#define AG_REFLECT [[cxxr::reflect]]
+#else 
+#define AG_REFLECT
+#endif
+
+//////////////////////////////////////////////
+#ifdef __REFLECTION_PARSER__
+#define AG_META(...) [[cxxr::meta(__VA_ARGS__)]]
+#else 
+#define AG_META(...)
+#endif
+
+//////////////////////////////////////////////
+// AG_API
+#if defined(AG_DLL)
+	#if defined(_MSC_VER)
+		#if AG_IMPLEMENTATION
+			#define AG_API2 __declspec(dllexport)
+		#else
+			#define AG_API2 __declspec(dllimport)
+		#endif
+	#else
+		#define AG_API2 __attribute__((visibility("default")))
+	#endif
+#else
+	#define AG_API2
+#endif
+
+#define AG_API AG_API2 AG_REFLECT
+#define AG_NATIVE_API AG_API2
+
+//////////////////////////////////////////////
+namespace ag
+{
+	static constexpr const char projectName[] = "autograph-pipelines";
+}

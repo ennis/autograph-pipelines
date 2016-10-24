@@ -1,19 +1,39 @@
-cmake_minimum_required(VERSION 3.2)
+# Find includes in corresponding build directories
+set(CMAKE_INCLUDE_CURRENT_DIR ON)
+# Instruct CMake to run moc automatically when needed.
+set(CMAKE_AUTOMOC ON)
 
-#====================================================================
-#====================================================================
-# Executable target
-#====================================================================
-#====================================================================
-add_executable(pipelines-main main.cpp)
+# Find the QtWidgets library
+find_package(Qt5Widgets)
+find_package(Qt5OpenGL)
 
-#====================================================================
-#====================================================================
-# libraries
-#====================================================================
-#====================================================================
-target_link_libraries(pipelines-main autograph glm assimp glfw cppformat stb imgui mcpp nanovg variant)
+qt5_add_resources(EDITOR_RES res/style.qrc)
 
-if (WIN32)
-target_link_libraries(pipelines-main XInput)
-endif()
+# node editor sources
+set(NODE_EDITOR_SRC
+        src/node_editor/node.cpp
+        src/node_editor/edge.cpp
+        src/node_editor/graphicsbezieredge.cpp
+        src/node_editor/graphicsnode.cpp
+        src/node_editor/graphicsnodeview.cpp
+        src/node_editor/graphicsnodescene.cpp
+        src/node_editor/graphicsnodesocket.cpp
+        src/node_editor/qobjectnode.cpp
+)
+set(NODE_EDITOR_HEADERS
+        src/node_editor/node.hpp
+        src/node_editor/edge.hpp
+        src/node_editor/graphicsbezieredge.hpp
+        src/node_editor/graphicsnode.hpp
+        src/node_editor/graphicsnodeview.hpp
+        src/node_editor/graphicsnodescene.hpp
+        src/node_editor/graphicsnodesocket.hpp
+        src/node_editor/graphicsnodedefs.hpp
+        src/node_editor/qobjectnode.hpp
+)
+
+add_executable(autograph_main src/main.cpp src/Effect.cpp ${EDITOR_RES})
+#reflection_gen(editor src/meta.hpp src/gen/meta.cpp.in)
+
+# Use the Widgets module from Qt 5.
+target_link_libraries(autograph_main autograph_gl autograph_support lua sol2 Qt5::Widgets Qt5::OpenGL cppformat json glm variant)

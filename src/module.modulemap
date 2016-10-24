@@ -1,0 +1,34 @@
+module autograph {
+	requires cplusplus11
+	umbrella "autograph"
+
+	explicit module * {
+    	export *
+  	}
+
+	
+}
+
+module support {
+	umbrella "support"
+
+	explicit module * {
+    	export *
+  	}
+}
+
+module editor {
+	umbrella "editor"
+
+	explicit module * {
+    	export *
+  	}
+}
+
+module reflection {
+	umbrella "reflection"
+
+	explicit module * {
+    	export *
+  	}
+}
