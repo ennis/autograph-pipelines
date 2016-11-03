@@ -106,7 +106,7 @@ std::string preprocessShaderFile(const char* srcpath,
 
 std::string preprocessShaderFile(const char *srcpath,
                               std::vector<const char *> defs) {
-  auto src = preprocessShaderFilePrivate(srcpath, defs.data(), (int)defs.size());
+  auto src = preprocessShaderFile(srcpath, defs.data(), (int)defs.size());
   return src;
 }
 }

@@ -5,7 +5,7 @@ namespace ag {
 namespace gl {
 // Bind state group to GL pipeline
 void StateGroup::operator()(GLBindContext &bindContext) {
-  if (mask & StateGroupMask::Viewports) {
+  /*if (mask & StateGroupMask::Viewports) {
     for (auto &&vp : viewports) {
       glViewportIndexedf(vp.slot, vp.x, vp.y, vp.width, vp.height);
     }
@@ -100,7 +100,7 @@ void StateGroup::operator()(GLBindContext &bindContext) {
     glBindVertexArray(vao->object());
 
   if (mask & StateGroupMask::Framebuffer)
-    glBindFramebuffer(fbo->object());
+    glBindFramebuffer(fbo->object());*/
 }
 }
 }

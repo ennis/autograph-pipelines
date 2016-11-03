@@ -62,7 +62,7 @@ Texture::Texture(const ImageDesc &desc) : desc_{desc} {
   obj_ = GLHandle<TextureDeleter>{tex_obj};
 }
 
-void Texture::upload(void *src, unsigned mipLevel) {
+void Texture::upload(void *src, int mipLevel) {
   auto gl_fmt = getGLImageFormatInfo(desc_.format);
   switch (desc_.dimensions) {
   case ImageDimensions::Image1D:
@@ -78,7 +78,7 @@ void Texture::upload(void *src, unsigned mipLevel) {
   }
 }
 
-void Texture::get(void *dest, unsigned mipLevel) {
+void Texture::get(void *dest, int mipLevel) {
   auto gl_fmt = getGLImageFormatInfo(desc_.format);
   glGetTextureImage(obj_.get(), mipLevel, gl_fmt.external_fmt, gl_fmt.type,
                     gl_fmt.size * desc_.width * desc_.height * desc_.depth,
@@ -87,22 +87,22 @@ void Texture::get(void *dest, unsigned mipLevel) {
 
 void Texture::generateMipmaps() { glGenerateTextureMipmap(obj_.get()); }
 
-void Texture::getRegion(void *dest, unsigned x, unsigned y, unsigned width,
-                        unsigned height, unsigned mipLevel) {
+void Texture::getRegion(void *dest, int x, int y, int width,
+	int height, int mipLevel) {
   auto gl_fmt = getGLImageFormatInfo(desc_.format);
   glGetTextureSubImage(obj_.get(), mipLevel, x, y, 0, width, height, 1,
                        gl_fmt.external_fmt, gl_fmt.type,
                        gl_fmt.size * width * height, dest);
 }
 
-glm::vec4 Texture::texelFetch(glm::ivec3 coords, unsigned mip_level) {
+glm::vec4 Texture::texelFetch(glm::ivec3 coords, int mip_level) {
   glm::vec4 out;
   glGetTextureSubImage(obj_.get(), mip_level, coords.x, coords.y, coords.z, 1,
                        1, 1, GL_RGBA, GL_FLOAT, 4 * 4, &out);
   return out;
 }
 
-Texture Texture::create1D(unsigned w, ImageFormat fmt, unsigned numMipmaps) {
+Texture Texture::create1D(int w, ImageFormat fmt, int numMipmaps) {
   ImageDesc d;
   d.dimensions = ImageDimensions::Image1D;
   d.format = fmt;
@@ -113,8 +113,8 @@ Texture Texture::create1D(unsigned w, ImageFormat fmt, unsigned numMipmaps) {
   return Texture{d};
 }
 
-Texture Texture::create2D(unsigned w, unsigned h, ImageFormat fmt,
-                          unsigned numMipmaps) {
+Texture Texture::create2D(int w, int h, ImageFormat fmt,
+	int numMipmaps) {
   ImageDesc d;
   d.dimensions = ImageDimensions::Image2D;
   d.format = fmt;

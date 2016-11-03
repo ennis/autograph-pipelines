@@ -15,9 +15,9 @@ enum class ImageDimensions {
 struct ImageDesc {
   ImageDimensions dimensions;
   ImageFormat format;
-  unsigned width;
-  unsigned height;
-  unsigned depth; // or array size, or number of faces
-  unsigned numMipmaps;
+  int width;
+  int height;
+  int depth; // or array size, or number of faces
+  int numMipmaps;
 };
 }

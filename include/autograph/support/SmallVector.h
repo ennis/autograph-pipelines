@@ -24,6 +24,7 @@
 #include <initializer_list>
 #include <iterator>
 #include <memory>
+#include <type_traits>
 
 namespace ag {
 
@@ -305,8 +306,8 @@ public:
 /// This class consists of common code factored out of the SmallVector class to
 /// reduce code duplication based on the SmallVector 'N' template parameter.
 template <typename T>
-class SmallVectorImpl : public SmallVectorTemplateBase<T, isPodLike<T>::value> {
-  typedef SmallVectorTemplateBase<T, isPodLike<T>::value > SuperClass;
+class SmallVectorImpl : public SmallVectorTemplateBase<T, std::is_trivially_copyable<T>::value> {
+  typedef SmallVectorTemplateBase<T, std::is_trivially_copyable<T>::value > SuperClass;
 
   SmallVectorImpl(const SmallVectorImpl&) = delete;
 public:
@@ -846,7 +847,7 @@ public:
   }
 
   template <typename RangeTy>
-  explicit SmallVector(const llvm::iterator_range<RangeTy> R)
+  explicit SmallVector(const ag::iterator_range<RangeTy> R)
       : SmallVectorImpl<T>(N) {
     this->append(R.begin(), R.end());
   }
@@ -913,5 +914,3 @@ namespace std {
     LHS.swap(RHS);
   }
 }
-
-#endif

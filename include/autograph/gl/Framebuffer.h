@@ -27,7 +27,7 @@ public:
   static Framebuffer createDefault(ivec2 size);
 
   void init();
-  auto object() { return obj_.get(); }
+  auto object() const { return obj_.get(); }
   auto width() const { return width_; }
   auto height() const { return height_; }
 

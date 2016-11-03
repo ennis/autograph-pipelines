@@ -30,27 +30,6 @@ enum class StateGroupMask {
 
 ENUM_BIT_FLAGS_OPERATORS(StateGroupMask)
 
-//////////////////////////////////////////////////
-struct StateGroup {
-
-  RasterizerState rasterizerState;
-  DepthStencilState depthStencilState;
-
-  // Blend states
-  struct IndexedBlendState {
-    int slot;
-    BlendState state;
-  };
-  SmallVector<IndexedBlendState> blendStates;
-
-  // viewports
-  struct IndexedViewport {
-    int slot;
-    Viewport v;
-  };
-  SmallVector<IndexedViewport> viewports;
-
-};
 
 //////////////////////////////////////////////////
 struct UniformGroup {
@@ -59,21 +38,21 @@ struct UniformGroup {
     int slot;
     Texture *tex;
   };
-  SmallVector<TextureSlot> textures;
+  SmallVector<TextureSlot,16> textures;
 
   // images
   struct ImageSlot {
     int slot;
     Texture *tex;
   };
-  SmallVector<ImageSlot> images;
+  SmallVector<ImageSlot,16> images;
 
   // samplers
   struct SamplerSlot {
     int slot;
     Sampler *sampler;
   };
-  SmallVector<SamplerSlot> samplers;
+  SmallVector<SamplerSlot,16> samplers;
 };
 
 struct StateGroup {
@@ -83,20 +62,19 @@ struct StateGroup {
   Program *prog;
   BufferSlice ibo;
 
-
   // uniform buffers
   struct UniformBuffer {
     int slot;
     BufferSlice buf;
   };
-  SmallVector<UniformBuffer> ubos;
+  SmallVector<UniformBuffer,16> ubos;
 
   // shader storage buffers
   struct ShaderStorageBuffer {
     int slot;
     BufferSlice buf;
   };
-  SmallVector<ShaderStorageBuffer> ssbos;
+  SmallVector<ShaderStorageBuffer,16> ssbos;
 
   // vbos
   struct VertexBuffer {
@@ -104,7 +82,7 @@ struct StateGroup {
     int stride;
     BufferSlice buf;
   };
-  SmallVector<VertexBuffer> vbos;
+  SmallVector<VertexBuffer,16> vbos;
 
   void operator()(GLBindContext &bindContext);
 };

@@ -5,9 +5,8 @@
 #include "stb_image.h"
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "stb_image_write.h"
-#include "ImageDesc.hpp"
-#include "LoadTexture.hpp"
 
+/*
 namespace ag 
 {
 Texture loadTexture(std::experimental::filesystem::path path,
@@ -44,4 +43,4 @@ void saveTexture(std::experimental::filesystem::path path, Texture &tex) {
   delete[] pixels;
 }
 
-}
+}*/

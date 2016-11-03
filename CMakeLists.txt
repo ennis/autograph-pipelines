@@ -53,6 +53,7 @@ set(Boost_USE_STATIC_LIBS ON)
 find_package(Boost COMPONENTS thread filesystem system context REQUIRED)
 
 add_subdirectory(ext EXCLUDE_FROM_ALL)
+add_subdirectory(src/core)
 add_subdirectory(src/support)
 add_subdirectory(src/gl)
 add_subdirectory(src/editor)

@@ -1,7 +1,13 @@
 #pragma once
-#include <autograph/gl/StateGroup.h>
-#include <autograph/gl/DrawState.h>
+#include <autograph/Types.h>
 #include <autograph/gl/Buffer.h>
+#include <autograph/gl/DrawState.h>
+#include <autograph/gl/StateGroup.h>
+#include <autograph/gl/Texture.h>
+#include <autograph/gl/Sampler.h>
+#include <autograph/gl/Program.h>
+#include <autograph/gl/Framebuffer.h>
+#include <autograph/gl/VertexArray.h>
 #include <gl_core_4_5.h>
 
 namespace ag {
@@ -15,7 +21,7 @@ namespace bind {
 #define UNIFORM_VECN(ty, value_ty, fn)                                         \
   auto uniform_##ty(const char *name, value_ty v) {                            \
     return [=](GLBindContext &ctx) {                                           \
-      int loc = glGetUniformLocation(ctx.program, v);                          \
+      int loc = glGetUniformLocation(ctx.program, name);                       \
       if (loc != -1)                                                           \
         fn(loc, 1, &v[0]);                                                     \
     };                                                                         \
@@ -36,7 +42,7 @@ UNIFORM_VECN(ivec4, ivec4, glUniform4iv)
   auto uniform_mat##nxn(const char *name, const mat##nxn &v,                   \
                         bool transpose = false) {                              \
     return [=](GLBindContext &ctx) {                                           \
-      int loc = glGetUniformLocation(ctx.program, v);                          \
+      int loc = glGetUniformLocation(ctx.program, name);                       \
       if (loc != -1)                                                           \
         glUniformMatrix##nxn##fv(loc, 1, transpose, &v[0][0]);                 \
     };                                                                         \
@@ -47,16 +53,16 @@ UNIFORM_VECN(ivec4, ivec4, glUniform4iv)
     };                                                                         \
   }
 
-UNIFORM_MATRIX_NXN(4x4)
-UNIFORM_MATRIX_NXN(3x3)
-UNIFORM_MATRIX_NXN(2x2)
+UNIFORM_MATRIX_NXN(4)
+UNIFORM_MATRIX_NXN(3)
+UNIFORM_MATRIX_NXN(2)
 UNIFORM_MATRIX_NXN(3x4)
 #undef UNIFORM_MATRIX_NXN
 
-auto texture(int unit, const Texture &tex, const Sampler &sampler) {
-  return [=](GLBindContext &) {
-    glBindTextureUnit(unit, tex.object());
-    glBindSampler(unit, sampler.object());
+auto texture(int unit, const Texture &tex, Sampler &sampler) {
+  return [unit, obj = tex.object(), sobj = sampler.object()](GLBindContext &) {
+    glBindTextureUnit(unit, obj);
+    glBindSampler(unit, sobj);
   };
 }
 
@@ -67,9 +73,8 @@ auto image(int unit, const Texture &tex) {
 }
 
 auto vertexBuffer(int slot, BufferSlice buf, int stride) {
-  return [=](GLBindContext & ctx) { 
-  	glBindVertexBuffer(slot, buf.obj, buf.offset,
-                     static_cast<GLsizei>(stride)); 
+  return [=](GLBindContext &ctx) {
+    glBindVertexBuffer(slot, buf.obj, buf.offset, static_cast<GLsizei>(stride));
   };
 }
 
@@ -78,9 +83,10 @@ auto program(const Program &prog) {
 }
 
 auto framebuffer(const Framebuffer &fbo) {
-  return [obj = fbo.object(), w=fbo.width(), h=fbo.height()](GLBindContext & ctx) {
+  return [ obj = fbo.object(), w = fbo.width(),
+           h = fbo.height() ](GLBindContext & ctx) {
     glBindFramebuffer(GL_DRAW_FRAMEBUFFER, obj);
-  	glViewport(0, 0, w, h);
+    glViewport(0, 0, w, h);
   };
 }
 
@@ -111,7 +117,6 @@ auto blendState(const BlendState &bs) {
       glDisablei(GL_BLEND, 0);
   };
 }
-
 }
 }
 }

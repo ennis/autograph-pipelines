@@ -15,6 +15,6 @@ add_library(autograph_gl STATIC ${LIB_SOURCES})
 # libraries
 #====================================================================
 #====================================================================
-target_link_libraries(autograph_gl glm glfw cppformat stb mcpp variant support)
+target_link_libraries(autograph_gl autograph_support glm glfw cppformat stb mcpp)
 target_include_directories(autograph_gl INTERFACE ../)
 target_include_directories(autograph_gl PUBLIC ${AG_PUBLIC_INCLUDE_DIR})

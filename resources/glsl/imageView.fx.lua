@@ -46,6 +46,9 @@ Pass.new {
 	target = { color = rt_ }
 }
 
+Texture2D('rendertarget', {
+	dim = 
+});
 
 
 

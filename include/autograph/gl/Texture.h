@@ -40,17 +40,17 @@ public:
 
   //====================================
   // Pixel transfer
-  void upload(void *src, unsigned mipLevel = 0);
-  void get(void *dest, unsigned mipLevel = 0);
-  void getRegion(void *dest, unsigned x, unsigned y, unsigned width,
-                 unsigned height, unsigned mipLevel = 0);
-  vec4 texelFetch(ivec3 coords, unsigned mip_level = 0);
+  void upload(void *src, int mipLevel = 0);
+  void get(void *dest, int mipLevel = 0);
+  void getRegion(void *dest, int x, int y, int width,
+	  int height, int mipLevel = 0);
+  vec4 texelFetch(ivec3 coords, int mip_level = 0);
 
   //====================================
   // Constructors
-  static Texture create1D(unsigned w, ImageFormat fmt, unsigned numMipmaps = 1);
-  static Texture create2D(unsigned w, unsigned h, ImageFormat fmt,
-                          unsigned numMipmaps = 1);
+  static Texture create1D(int w, ImageFormat fmt, int numMipmaps = 1);
+  static Texture create2D(int w, int h, ImageFormat fmt,
+	  int numMipmaps = 1);
 
 private:
   GLHandle<TextureDeleter> obj_;

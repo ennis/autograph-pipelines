@@ -1,6 +1,4 @@
 // Qt stuff
-#include <QOpenGLWidget>
-#include <QtWidgets>
 #include <cppformat/format.h>
 #include <iostream>
 #include <unordered_map>
@@ -12,6 +10,8 @@
 #include <autograph/gl/Framebuffer.h>
 #include <autograph/gl/Program.h>
 #include <autograph/support/ProjectRoot.h>
+
+#include <QtWidgets>
 
 using namespace ag;
 
@@ -56,6 +56,11 @@ public:
 		fmt::print(std::cerr, "OpenGL context is not a core profile context.\n");
 	}
 
+	if (ogl_LoadFunctions() != ogl_LOAD_SUCCEEDED) {
+		//fmt::print(std::cerr, "OpenGL init failed (ogl_LoadFunctions).\n");
+		throw std::runtime_error("OpenGL init failed (ogl_LoadFunctions).\n");
+	}
+
 	gl::DeviceConfig devcfg;
 	devcfg.init_fb_width = width();
 	devcfg.init_fb_height = height();
@@ -79,9 +84,9 @@ public:
 
   void paintGL() override {
     fmt::print(std::cerr, "paintGL\n");
-	glClearColor(1.0f, 0.0f, 0.0f, 1.0f);
-	glClearDepth(1.0f);
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	//glClearColor(1.0f, 0.0f, 0.0f, 1.0f);
+	//glClearDepth(1.0f);
+	//glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
   }
 
 private:
