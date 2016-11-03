@@ -53,3 +53,6 @@
 [submodule "ext/zlib"]
 	path = ext/zlib
 	url = https://github.com/madler/zlib
+[submodule "ext/sol2"]
+	path = ext/sol2
+	url = https://github.com/ThePhD/sol2

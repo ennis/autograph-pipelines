@@ -121,7 +121,7 @@ TARGET_INCLUDE_DIRECTORIES(hana INTERFACE hana/include)
 
 # optional
 add_library(optional INTERFACE)
-TARGET_INCLUDE_DIRECTORIES(optional INTERFACE optional)
+TARGET_INCLUDE_DIRECTORIES(optional INTERFACE Optional)
 
 # GSL
 add_library(gsl INTERFACE)

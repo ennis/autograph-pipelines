@@ -28,6 +28,21 @@
 
 namespace ag {
 
+/// NextPowerOf2 - Returns the next power of two (in 64-bits)
+/// that is strictly greater than A.  Returns zero on overflow.
+inline uint64_t NextPowerOf2(uint64_t A) {
+  A |= (A >> 1);
+  A |= (A >> 2);
+  A |= (A >> 4);
+  A |= (A >> 8);
+  A |= (A >> 16);
+  A |= (A >> 32);
+  return A + 1;
+}
+
+template <typename T>
+using isPodLike = std::is_trivially_copyable<T>;
+
 /// This is all the non-templated stuff common to all SmallVectors.
 class SmallVectorBase {
 protected:
@@ -306,8 +321,8 @@ public:
 /// This class consists of common code factored out of the SmallVector class to
 /// reduce code duplication based on the SmallVector 'N' template parameter.
 template <typename T>
-class SmallVectorImpl : public SmallVectorTemplateBase<T, std::is_trivially_copyable<T>::value> {
-  typedef SmallVectorTemplateBase<T, std::is_trivially_copyable<T>::value > SuperClass;
+class SmallVectorImpl : public SmallVectorTemplateBase<T, isPodLike<T>::value> {
+  typedef SmallVectorTemplateBase<T, isPodLike<T>::value > SuperClass;
 
   SmallVectorImpl(const SmallVectorImpl&) = delete;
 public:

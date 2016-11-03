@@ -46,7 +46,7 @@ endif()
 #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fmodules -fmodules-cache-path=${CMAKE_SOURCE_DIR}/cache")
 
 find_package(OpenGL REQUIRED)
-find_package(Mono REQUIRED)
+#find_package(Mono REQUIRED)
 link_directories(${MONO_LIBRARY_DIRS})
 
 set(Boost_USE_STATIC_LIBS ON)

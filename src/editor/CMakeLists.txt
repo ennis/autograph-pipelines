@@ -19,7 +19,6 @@ target_link_libraries(
 		optional   
 		gsl 
 		skia-bin
-		mono
 		zlibstatic
 	PUBLIC
 		# GLM and glloadgen are exported as a part of the public API
@@ -28,6 +27,6 @@ target_link_libraries(
 	)
 
 if(UNIX)
-target_link_libraries(autograph_editor -lstdc++fs)
+	target_link_libraries(autograph_editor PUBLIC -lstdc++fs)
 endif()
 
