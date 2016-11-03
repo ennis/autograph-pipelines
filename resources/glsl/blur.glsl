@@ -1,7 +1,7 @@
-// Adapted from:
-// http://callumhay.blogspot.com/2010/09/gaussian-blur-shader-glsl.html
 #version 450
 #include "utils.glsl"
+// Adapted from:
+// http://callumhay.blogspot.com/2010/09/gaussian-blur-shader-glsl.html
 
 #if FMT_RGBA8
 #define FORMAT rgba8

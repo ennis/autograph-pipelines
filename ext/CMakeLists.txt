@@ -142,9 +142,9 @@ TARGET_INCLUDE_DIRECTORIES(gsl INTERFACE GSL)
 #add_subdirectory(skia/cmake)
 
 # mono
-add_library(mono INTERFACE)
-target_include_directories(mono INTERFACE ${MONO_INCLUDE_DIR})
-target_link_libraries(mono INTERFACE ${MONO_LIBRARY})
+#add_library(mono INTERFACE)
+#target_include_directories(mono INTERFACE ${MONO_INCLUDE_DIR})
+#target_link_libraries(mono INTERFACE ${MONO_LIBRARY})
 
 # binary target for skia 
 add_library(skia-bin INTERFACE)
@@ -173,9 +173,14 @@ add_library(lua-bin INTERFACE)
 target_include_directories(lua-bin INTERFACE ${LUA_INCLUDE_DIR})
 target_link_libraries(lua-bin INTERFACE ${LUA_LIBRARIES})
 endif ()]]
-add_subdirectory(lua-5.3.3)
+#add_subdirectory(lua-5.3.3)
+
+# luajit-bin
+add_library(luajit_bin INTERFACE)
+target_include_directories(luajit_bin INTERFACE luajit_bin/include)
+target_link_libraries(luajit_bin INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/luajit_bin/lib/lua51.lib)
 
 #sol2
 add_library(sol2 INTERFACE)
 target_include_directories(sol2 INTERFACE sol2)
-target_link_libraries(sol2 INTERFACE lua optional)
+target_link_libraries(sol2 INTERFACE luajit_bin optional)

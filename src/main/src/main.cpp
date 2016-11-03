@@ -55,26 +55,25 @@ public:
 	if (f.profile() != QSurfaceFormat::CoreProfile) {
 		fmt::print(std::cerr, "OpenGL context is not a core profile context.\n");
 	}
-
-	if (ogl_LoadFunctions() != ogl_LOAD_SUCCEEDED) {
-		//fmt::print(std::cerr, "OpenGL init failed (ogl_LoadFunctions).\n");
-		throw std::runtime_error("OpenGL init failed (ogl_LoadFunctions).\n");
-	}
-
-	gl::DeviceConfig devcfg;
-	devcfg.init_fb_width = width();
-	devcfg.init_fb_height = height();
-	devcfg.max_frames_in_flight = 3;
-	ag::gl::initialize(devcfg);
-
-	namespace fs = std::experimental::filesystem;
-
-	const auto& rootPath = getProjectRootDirectory();
-	prog = gl::Program::loadFromFile(pathCombine(rootPath, "resources/glsl/blur.glsl").c_str(), gl::ShaderStage::Compute, { {} });
   }
 
   void initializeGL() override { 
 	  fmt::print(std::cerr, "initializeGL\n"); 
+	  if (ogl_LoadFunctions() != ogl_LOAD_SUCCEEDED) {
+		  //fmt::print(std::cerr, "OpenGL init failed (ogl_LoadFunctions).\n");
+		  throw std::runtime_error("OpenGL init failed (ogl_LoadFunctions).\n");
+	  }
+
+	  gl::DeviceConfig devcfg;
+	  devcfg.init_fb_width = width();
+	  devcfg.init_fb_height = height();
+	  devcfg.max_frames_in_flight = 3;
+	  ag::gl::initialize(devcfg);
+
+	  namespace fs = std::experimental::filesystem;
+
+	  const auto& rootPath = getProjectRootDirectory();
+	  prog = gl::Program::loadFromFile(pathCombine(rootPath, "resources/glsl/blur.glsl").c_str(), gl::ShaderStage::Compute, 0, nullptr);
   }
 
   void resizeGL(int w, int h) override {

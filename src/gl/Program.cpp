@@ -156,14 +156,15 @@ Program Program::create(const char *vs_src, const char *fs_src,
   return prog;
 }
 
-auto makeDefineStrings(std::vector<ShaderPPDefine> defines,
+auto makeDefineStrings(int numDefines, ShaderPPDefine* pDefines,
                        std::vector<std::string> &out_str) {
   std::vector<const char *> c_strings;
-  for (auto &&d : defines) {
-    auto str = std::string(d.define);
-    if (strlen(d.value)) {
+  for (int i = 0; i < numDefines; ++i)
+  { 
+	  auto str = std::string{ pDefines[i].define };
+    if (strlen(pDefines[i].value)) {
       str += "=";
-      str += d.value;
+      str += pDefines[i].value;
     }
     out_str.push_back(std::move(str));
   }
@@ -176,11 +177,11 @@ auto makeDefineStrings(std::vector<ShaderPPDefine> defines,
 // helper to create a program object from a single-source shader file
 Program Program::loadFromFile(
     const char* combined_source_file_path,
-    ShaderStage stages, std::initializer_list<ShaderPPDefine> defines) {
+    ShaderStage stages, int numDefines, ShaderPPDefine* pDefines) {
   // std::clog << "Loading graphics pipeline: " << src.source_or_file_path <<
   // "\n";
   std::vector<std::string> def_str;
-  auto def_c_str = makeDefineStrings(defines, def_str);
+  auto def_c_str = makeDefineStrings(numDefines, pDefines, def_str);
 
   std::string vs_src, fs_src, gs_src, tes_src, tcs_src;
 

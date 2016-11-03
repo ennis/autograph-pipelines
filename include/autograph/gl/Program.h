@@ -90,7 +90,7 @@ public:
   // helper to create a program object from a single-source shader file
   static Program loadFromFile(
       const char* combined_source_file_path,
-      ShaderStage stages, std::initializer_list<ShaderPPDefine> defines);
+      ShaderStage stages, int numDefines, ShaderPPDefine* pDefines);
 
 private:
   GLHandle<ProgramDeleter> obj_;

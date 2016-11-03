@@ -141,5 +141,18 @@ private:
 // Set configuration options
 // Get passes: this will trigger the compilation
 // Resetting a configuration option will invalidate the passes
+
 }
+}
+
+// Lua API
+extern "C"
+{
+	using pass_t = ag::fx::Pass;
+	using pipeline_t = ag::fx::Pipeline;
+	using texture_t = ag::gl::Texture*;
+	using image_format_t = ag::ImageFormat;
+
+	texture_t* FXCreateTexture2D(pipeline_t* pPipeline, const char *name, image_format_t imgFmt, int width, int height, int numMips);
+	texture_t* FXCreateTexture3D(pipeline_t* pPipeline, const char *name, image_format_t imgFmt, int width, int height, int depth, int numMips);
 }
