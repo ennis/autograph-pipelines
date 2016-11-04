@@ -27,20 +27,12 @@ Pipeline::Pipeline() {
       ImageDimensions::Image3D, "TextureCubeMap",
       ImageDimensions::ImageCubeMap);
 
-  L["TextureFormat"] = L.create_table_with(
-      "R8G8B8A8_UNORM", ImageFormat::RGBA8_Unorm, "R32G32_SFLOAT",
-      ImageFormat::RG32_Float, "D32_SFLOAT", ImageFormat::Depth32_Float,
-      "R32G32B32A32_SFLOAT", ImageFormat::RGBA32_Float, "R32G32_SFLOAT",
-      ImageFormat::RG32_Float, "R16G16B16A16_SFLOAT", ImageFormat::RGBA16_Float,
-      "B10G11R11_UFLOAT_PACK32", ImageFormat::RGB_11_11_10_Float_Packed);
-
   // expose this class to lua
-  L.new_usertype<Pipeline>("Pipeline", "new", sol::no_constructor, "CreateTexture2D", &Pipeline::createTexture2D);
+  //L.new_usertype<Pipeline>("Pipeline", "new", sol::no_constructor,
+  //                        "CreateTexture2D", &Pipeline::createTexture2D);
 }
 
-Pipeline::~Pipeline()
-{
-}
+Pipeline::~Pipeline() {}
 
 void Pipeline::setConfig(const char *name, int value) { L[name] = value; }
 
@@ -64,8 +56,10 @@ gl::Texture &Pipeline::createTexture2D(const char *name, ImageFormat fmt, int w,
   auto &a = textures[name];
   if (!a) {
     // no texture with this name yet, create one
-    a = std::make_unique<gl::Texture>(gl::Texture::create2D(w, h, fmt, numMips));
-    fmt::print(std::cerr, "createTexture2D {} {}x{} {}, {} mip level(s)", name, w, h, getImageFormatInfo(fmt).name, numMips);
+    a = std::make_unique<gl::Texture>(
+        gl::Texture::create2D(w, h, fmt, numMips));
+    fmt::print(std::cerr, "createTexture2D {} {}x{} {}, {} mip level(s)", name,
+               w, h, getImageFormatInfo(fmt).name, numMips);
   } else {
     // another texture exists by the name name
     fmt::print(std::cerr, "{}: a texture with the same name already exists\n");
@@ -93,5 +87,45 @@ gl::Texture &Pipeline::createTexture3D(const char *name, ImageFormat fmt, int w,
                                        int h, int d, int numMips) {
   throw std::logic_error("Unimplemented");
 }
+
+// Lua API
+AG_LUA_API ag::gl::Texture *FXCreateTexture2D(ag::fx::Pipeline *pPipeline,
+                                              const char *name,
+                                              ag::ImageFormat imgFmt, int width,
+                                              int height, int numMips) {
+  return nullptr;
+}
+
+AG_LUA_API ag::gl::Texture *FXCreateTexture3D(ag::fx::Pipeline *pPipeline,
+                                              const char *name,
+                                              ag::ImageFormat imgFmt, int width,
+                                              int height, int depth,
+                                              int numMips) {
+  return nullptr;
+}
+
+AG_LUA_API ag::fx::Pass *FXCreatePass(ag::fx::Pipeline *pPipeline,
+                                      const char *name,
+                                      ag::fx::PassType pass_type) {
+  return nullptr;
+}
+
+AG_LUA_API ag::gl::Sampler *FXCreateSampler(ag::fx::Pipeline *pPipeline,
+                                            const char *name,
+                                            const ag::gl::SamplerDesc *desc) {
+  return nullptr;
+}
+
+AG_LUA_API void FXPassBindTexture(ag::fx::Pipeline *pPipeline,
+                                  ag::fx::Pass *pass, int slot,
+                                  ag::gl::Texture *tex) {}
+
+AG_LUA_API void FXPassBindTextureImage(ag::fx::Pipeline *pPipeline,
+                                       ag::fx::Pass *pass, int slot,
+                                       ag::gl::Texture *tex) {}
+
+AG_LUA_API void FXPassBindSampler(ag::fx::Pipeline *pPipeline,
+                                  ag::fx::Pass *pass, int slot,
+                                  ag::gl::Sampler *sampler) {}
 }
 }

@@ -4,11 +4,11 @@
 namespace ag {
 namespace gl {
 struct SamplerDesc {
-  GLenum tex_wrap_s;
-  GLenum tex_wrap_t;
-  GLenum tex_wrap_r;
-  GLenum min_filter;
-  GLenum mag_filter;
+  GLenum addrU;
+  GLenum addrV;
+  GLenum addrW;
+  GLenum minFilter;
+  GLenum magFilter;
 };
 
 struct SamplerDeleter {

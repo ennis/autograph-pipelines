@@ -3,6 +3,7 @@
 #include <cppformat/format.h>
 #include <experimental/filesystem>
 #include <iostream>
+#include <string>
 
 namespace ag {
 AG_API const std::string &getProjectRootDirectory() {
@@ -38,4 +39,13 @@ AG_API const std::string &getProjectRootDirectory() {
   }
   return pathstr;
 }
+
+AG_API std::string getActualPath(const char* pathRelativeToProjectRoot) 
+{
+  namespace fs = std::experimental::filesystem;
+  fs::path path {getProjectRootDirectory()};
+  path = path / pathRelativeToProjectRoot;
+  return path.string();
+}
+
 }

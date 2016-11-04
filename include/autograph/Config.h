@@ -39,6 +39,17 @@
 #define AG_NATIVE_API AG_API2
 
 //////////////////////////////////////////////
+#if defined(_MSC_VER)
+	#if AG_IMPLEMENTATION
+		#define AG_LUA_API extern "C" __declspec(dllexport)
+	#else 
+		#define AG_LUA_API extern "C" 
+	#endif
+#else 
+	#define AG_LUA_API extern "C" __attribute__((visibility("default")))
+#endif
+
+//////////////////////////////////////////////
 namespace ag
 {
 	static constexpr const char projectName[] = "autograph-pipelines";

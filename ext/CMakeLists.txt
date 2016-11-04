@@ -1,3 +1,8 @@
+# 
+if (UNIX)
+find_package(PkgConfig REQUIRED)
+endif()
+
 # zlib (required for skia)
 add_subdirectory(zlib)
 TARGET_INCLUDE_DIRECTORIES(zlibstatic INTERFACE zlib/)
@@ -127,13 +132,6 @@ TARGET_INCLUDE_DIRECTORIES(optional INTERFACE Optional)
 add_library(gsl INTERFACE)
 TARGET_INCLUDE_DIRECTORIES(gsl INTERFACE GSL)
 
-# JNI
-#if (JNI_FOUND)
-#add_library(jvm INTERFACE)
-#target_include_directories(jvm INTERFACE ${JAVA_INCLUDE_PATH} ${JAVA_INCLUDE_PATH2})
-#target_link_libraries(jvm INTERFACE ${JAVA_JVM_LIBRARY})
-#endif()
-
 # msgpack
 #add_library(msgpack INTERFACE)
 #TARGET_INCLUDE_DIRECTORIES(msgpack INTERFACE msgpack-c/include)
@@ -177,8 +175,16 @@ endif ()]]
 
 # luajit-bin
 add_library(luajit_bin INTERFACE)
+find_package(LuaJIT)
+if (LUAJIT_FOUND)
+target_include_directories(luajit_bin INTERFACE ${LUAJIT_INCLUDE_DIR})
+target_link_libraries(luajit_bin INTERFACE ${LUAJIT_LIBRARY})
+message("LuaJIT include: ${LUAJIT_INCLUDE_DIR}")
+message("LuaJIT lib: ${LUAJIT_LIBRARY}")
+else() # Use bundled binaries for windows
 target_include_directories(luajit_bin INTERFACE luajit_bin/include)
 target_link_libraries(luajit_bin INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/luajit_bin/lib/lua51.lib)
+endif()
 
 #sol2
 add_library(sol2 INTERFACE)

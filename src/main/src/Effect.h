@@ -2,6 +2,7 @@
 #include <autograph/gl/Buffer.h>
 #include <autograph/gl/DrawState.h>
 #include <autograph/gl/Framebuffer.h>
+#include <autograph/gl/Sampler.h>
 #include <autograph/gl/Texture.h>
 #include <autograph/support/Optional.h>
 #include <autograph/support/SmallVector.h>
@@ -12,6 +13,8 @@ struct lua_State;
 
 namespace ag {
 namespace fx {
+
+enum class PassType { Compute = 0, Screen, Geometry };
 
 struct DrawStates {
   gl::RasterizerState rasterizerState;
@@ -130,29 +133,23 @@ private:
   // loaded passes
 };
 
-//
-// drawScreenQuad(
-//    pass,
-//    vertexBuffer(...),
-//    indexBuffer(...),
-//    texture(id, resource))
-
-// User loads file
-// Set configuration options
-// Get passes: this will trigger the compilation
-// Resetting a configuration option will invalidate the passes
-
-}
-}
 
 // Lua API
-extern "C"
-{
-	using pass_t = ag::fx::Pass;
-	using pipeline_t = ag::fx::Pipeline;
-	using texture_t = ag::gl::Texture*;
-	using image_format_t = ag::ImageFormat;
+AG_LUA_API ag::gl::Texture *FXCreateTexture2D(ag::fx::Pipeline *pPipeline, const char *name,
+                             ag::ImageFormat imgFmt, int width, int height,
+                             int numMips);
+AG_LUA_API ag::gl::Texture *FXCreateTexture3D(ag::fx::Pipeline *pPipeline, const char *name,
+                             ag::ImageFormat imgFmt, int width, int height,
+                             int depth, int numMips);
+AG_LUA_API ag::fx::Pass *FXCreatePass(ag::fx::Pipeline *pPipeline, const char *name,
+                     ag::fx::PassType pass_type);
+AG_LUA_API ag::gl::Sampler *FXCreateSampler(ag::fx::Pipeline *pPipeline, const char *name,
+                           const ag::gl::SamplerDesc *desc);
+AG_LUA_API void FXPassBindTexture(ag::fx::Pipeline *pPipeline, ag::fx::Pass *pass, int slot,
+                       ag::gl::Texture *tex);
+AG_LUA_API void FXPassBindTextureImage(ag::fx::Pipeline* pPipeline, ag::fx::Pass* pass, int slot, ag::gl::Texture* tex);
+AG_LUA_API void FXPassBindSampler(ag::fx::Pipeline* pPipeline, ag::fx::Pass* pass, int slot, ag::gl::Sampler* sampler);
+AG_LUA_API int FXGenerateTextureID();
 
-	texture_t* FXCreateTexture2D(pipeline_t* pPipeline, const char *name, image_format_t imgFmt, int width, int height, int numMips);
-	texture_t* FXCreateTexture3D(pipeline_t* pPipeline, const char *name, image_format_t imgFmt, int width, int height, int depth, int numMips);
+}
 }
