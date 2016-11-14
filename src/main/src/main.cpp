@@ -1,6 +1,6 @@
 // Qt stuff
-#include <cppformat/format.h>
 #include <experimental/filesystem>
+#include <fmt/format.h>
 #include <iostream>
 #include <memory>
 #include <string>
@@ -10,9 +10,11 @@
 #include <autograph/gl/Framebuffer.h>
 #include <autograph/gl/Program.h>
 #include <autograph/gl/Texture.h>
+#include <autograph/support/Debug.h>
 #include <autograph/support/ProjectRoot.h>
 
 #include "Effect.h"
+#include "Script.h"
 
 #include <QtWidgets>
 
@@ -24,10 +26,12 @@ std::string pathCombine(std::string a, std::string b) {
   return p.string();
 }
 
+sol::state* gLuaState = nullptr;
+
 class OpenGLWidget : public QOpenGLWidget {
 public:
   OpenGLWidget() : QOpenGLWidget{nullptr, Qt::Window} {
-    fmt::print(std::cerr, "ctor OpenGLWidget\n");
+    AG_DEBUG("ctor OpenGLWidget");
     QSurfaceFormat fmt;
     fmt.setVersion(4, 5);
     fmt.setProfile(QSurfaceFormat::CoreProfile);
@@ -35,45 +39,61 @@ public:
     setFormat(fmt);
     // check for a 4.5 core profile context
     auto f = format();
-    fmt::print(std::cerr, "OpenGL context version: {}.{}\n", f.version().first,
-               f.version().second);
+    AG_DEBUG("OpenGL context version: {}.{}", f.version().first,
+             f.version().second);
     if (f.profile() != QSurfaceFormat::CoreProfile) {
-      fmt::print(std::cerr, "OpenGL context is not a core profile context.\n");
+      AG_DEBUG("OpenGL context is not a core profile context.");
     }
   }
 
   void initializeGL() override {
-    fmt::print(std::cerr, "initializeGL\n");
+    AG_DEBUG("initializeGL");
     if (ogl_LoadFunctions() != ogl_LOAD_SUCCEEDED) {
-      // fmt::print(std::cerr, "OpenGL init failed (ogl_LoadFunctions).\n");
-      throw std::runtime_error("OpenGL init failed (ogl_LoadFunctions).\n");
+      ag::failWith("OpenGL init failed(ogl_LoadFunctions).");
     }
 
     gl::DeviceConfig devcfg;
     devcfg.init_fb_width = width();
     devcfg.init_fb_height = height();
     devcfg.max_frames_in_flight = 3;
-    ag::gl::initialize(devcfg);
+    gl::initialize(devcfg);
 
-    prog = gl::Program::loadFromFile(
-        getActualPath("resources/glsl/blur.glsl").c_str(),
-        gl::ShaderStage::Compute, 0, nullptr);
+	reloadPipeline();
+  }
+
+  void reloadPipeline() {
+    AG_DEBUG("==============================================");
+    AG_DEBUG("Reloading pipelines");
+
+	pipeline.reset();
+	(*gLuaState)["mainPipeline"] = sol::light<Pipeline>(pipeline);
+
+	auto smtex = pipeline.createTexture2D("shadowMap", ImageFormat::R32_Float, 1024, 1024, 1);
+	auto smdepthtex = pipeline.createTexture2D("shadowMapDepth", ImageFormat::Depth32_Float, 1024, 1024, 1);
+
+	DrawPassBuilder drawPassBuilder;
+	drawPassBuilder.bindColorBuffer(0, smtex->object());
+	drawPassBuilder.bindDepthBuffer(smdepthtex->object());
+	drawPassBuilder.viewport(0) = gl::Viewport{ 0, 0, 1024, 1024 };
+
+	testpass = drawPassBuilder.makeDrawPass();
   }
 
   void resizeGL(int w, int h) override {
-    fmt::print(std::cerr, "resizeGL {} {}\n", w, h);
+    AG_DEBUG("resizeGL {} {}", w, h);
     gl::resizeDefaultFramebuffer(ivec2{w, h});
   }
 
   void paintGL() override {
-    fmt::print(std::cerr, "paintGL\n");
+    AG_DEBUG("paintGL");
     // glClearColor(1.0f, 0.0f, 0.0f, 1.0f);
     // glClearDepth(1.0f);
     // glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
   }
 
 private:
-  gl::Program prog;
+  Pipeline pipeline;
+  std::unique_ptr<DrawPass> testpass;
 };
 
 class MainWindow : public QMainWindow {
@@ -83,18 +103,43 @@ public:
     setDockNestingEnabled(true);
     // setDockOptions(QMainWindow::DockOption::)
 
+    sceneView = new OpenGLWidget();
+
     auto entityViewDock = new QDockWidget(tr("Scene"));
     entityViewDock->setWidget(new QWidget());
     addDockWidget(Qt::LeftDockWidgetArea, entityViewDock);
 
     auto openglViewDock = new QDockWidget(tr("Scene View"));
-    openglViewDock->setWidget(new OpenGLWidget());
+    openglViewDock->setWidget(sceneView);
     addDockWidget(Qt::RightDockWidgetArea, openglViewDock);
     // auto glw = new OpenGLWidget();
     // glw->show();
+    sceneView->setContextMenuPolicy(Qt::CustomContextMenu);
+    connect(sceneView, &QWidget::customContextMenuRequested,
+            [this](const QPoint &pos) { this->showSceneViewContextMenu(pos); });
 
     createMenus();
     createActions();
+  }
+
+  void showSceneViewContextMenu(const QPoint &pos) // this is a slot
+  {
+    // for most widgets
+    QPoint globalPos = sceneView->mapToGlobal(pos);
+    // for QAbstractScrollArea and derived classes you would use:
+    // QPoint globalPos = myWidget->viewport()->mapToGlobal(pos);
+
+    QMenu myMenu;
+    QAction *act = new QAction("Menu Item 1", nullptr);
+    myMenu.addAction(act);
+
+    QAction *selectedItem = myMenu.exec(globalPos);
+    if (selectedItem == act) {
+      AG_DEBUG("Do something!");
+      // something was chosen, do stuff
+    } else {
+      // nothing was chosen
+    }
   }
 
 private slots:
@@ -113,12 +158,17 @@ private:
     openAction->setShortcut(QKeySequence::New);
     closeAction = new QAction(tr("Close project"), this);
     closeAction->setShortcut(tr("Ctrl+F4"));
+    reloadShadersAction = new QAction(tr("Reload shaders"), this);
+    reloadShadersAction->setShortcut(tr("Ctrl+F5"));
     connect(openAction, &QAction::triggered, this,
-            [this]() { fmt::print(std::cerr, "Open project\n"); });
+            [this]() { AG_DEBUG("Open project"); });
     connect(closeAction, &QAction::triggered, this,
-            [this]() { fmt::print(std::cerr, "Close project\n"); });
+            [this]() { AG_DEBUG("Close project"); });
+    connect(reloadShadersAction, &QAction::triggered, this,
+            [this]() { this->sceneView->reloadPipeline(); });
     projectMenu->addAction(openAction);
     projectMenu->addAction(closeAction);
+    projectMenu->addAction(reloadShadersAction);
 
     // Edit menu
     undoAction = new QAction(tr("Undo"), this);
@@ -134,16 +184,18 @@ private:
     addTransformComponentAction = new QAction(tr("Transform"), this);
     addComponentAction = new QAction(tr("Component..."), this);
     connect(createEntityAction, &QAction::triggered,
-            [this]() { fmt::print(std::cerr, "Create entity\n"); });
+            [this]() { AG_DEBUG("Create entity"); });
     connect(addTransformComponentAction, &QAction::triggered,
-            [this]() { fmt::print(std::cerr, "Add transform component\n"); });
+            [this]() { AG_DEBUG("Add transform component"); });
     connect(addComponentAction, &QAction::triggered,
-            [this]() { fmt::print(std::cerr, "Add component\n"); });
+            [this]() { AG_DEBUG("Add component"); });
     createMenu->addAction(createEntityAction);
     createComponentMenu->addAction(addComponentAction);
     createComponentMenu->addSeparator();
     createComponentMenu->addAction(addTransformComponentAction);
   }
+
+  OpenGLWidget *sceneView = nullptr;
 
   QMenu *projectMenu = nullptr;
   QMenu *editMenu = nullptr;
@@ -154,6 +206,7 @@ private:
   QAction *redoAction = nullptr;
   QAction *openAction = nullptr;
   QAction *closeAction = nullptr;
+  QAction *reloadShadersAction = nullptr;
   QAction *createEntityAction = nullptr;
   QAction *addTransformComponentAction = nullptr;
   QAction *addComponentAction = nullptr;
@@ -167,10 +220,16 @@ int main(int argc, char *argv[]) {
   fmt.setOption(QSurfaceFormat::DebugContext);
   QSurfaceFormat::setDefaultFormat(fmt);
   QApplication app(argc, argv);
+  // initialize Lua VM
+  sol::state luaState;
+  luaState.open_libraries(sol::lib::base, sol::lib::package, sol::lib::ffi,
+	  sol::lib::jit, sol::lib::string, sol::lib::io,
+	  sol::lib::math);
+  gLuaState = &luaState;
 
   QFile styleSheetFile(":qdarkstyle/style.qss");
   if (!styleSheetFile.exists())
-    fmt::print("Unable to set stylesheet, file not found\n");
+    ag::warningMessage("Unable to set stylesheet, file not found");
   else {
     styleSheetFile.open(QFile::ReadOnly | QFile::Text);
     QTextStream ts(&styleSheetFile);
@@ -178,7 +237,7 @@ int main(int argc, char *argv[]) {
   }
 
   for (auto &&s : app.libraryPaths())
-    fmt::print(std::cerr, "Qt library path: {}\n", s.toStdString().c_str());
+    AG_DEBUG("Qt library path: {}", s.toStdString().c_str());
   MainWindow w;
   w.show();
   return app.exec();

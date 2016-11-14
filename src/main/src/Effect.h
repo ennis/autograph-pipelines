@@ -2,154 +2,195 @@
 #include <autograph/gl/Buffer.h>
 #include <autograph/gl/DrawState.h>
 #include <autograph/gl/Framebuffer.h>
+#include <autograph/gl/Program.h>
 #include <autograph/gl/Sampler.h>
 #include <autograph/gl/Texture.h>
+#include <autograph/gl/VertexArray.h>
 #include <autograph/support/Optional.h>
 #include <autograph/support/SmallVector.h>
+#include <autograph/support/Variant.h>
+#include <memory>
 #include <sol/state.hpp>
 #include <vector>
 
 struct lua_State;
 
 namespace ag {
-namespace fx {
 
 enum class PassType { Compute = 0, Screen, Geometry };
 
-struct DrawStates {
-  gl::RasterizerState rasterizerState;
-  gl::DepthStencilState depthStencilState;
+static constexpr int kMaxTextureUnits = 16;
+static constexpr int kMaxImageUnits = 8;
+static constexpr int kMaxVertexBufferSlots = 8;
+static constexpr int kMaxUniformBufferSlots = 8;
+static constexpr int kMaxShaderStorageBufferSlots = 8;
 
-  // Blend states
-  struct IndexedBlendState {
-    int slot;
-    gl::BlendState state;
-  };
-  SmallVector<IndexedBlendState, 8> blendStates;
+using UniformValue = variant<float, vec2, vec3, vec4, int, ivec2, ivec3, ivec4,
+                             mat2, mat3, mat4, mat3x4>;
 
-  // viewports
-  struct IndexedViewport {
-    int slot;
-    gl::Viewport v;
-  };
-  SmallVector<IndexedViewport, 8> viewports;
+struct NamedUniform {
+  std::string name;
+  int location;
+  UniformValue value;
 };
 
+struct ShaderResources {
+  std::array<GLuint, kMaxTextureUnits> textures;
+  std::array<GLuint, kMaxTextureUnits> samplers;
+  std::array<GLuint, kMaxImageUnits> images;
+  std::array<GLuint, kMaxUniformBufferSlots> uniformBuffers;
+  std::array<GLsizeiptr, kMaxUniformBufferSlots> uniformBufferSizes;
+  std::array<GLintptr, kMaxUniformBufferSlots> uniformBufferOffsets;
+  std::array<GLuint, kMaxShaderStorageBufferSlots> shaderStorageBuffers;
+  std::array<GLsizeiptr, kMaxShaderStorageBufferSlots> shaderStorageBufferSizes;
+  std::array<GLintptr, kMaxShaderStorageBufferSlots> shaderStorageBufferOffsets;
+  std::vector<NamedUniform> namedUniforms;
+};
+
+struct ShaderDrawResources {
+  GLuint vao;
+  std::array<GLuint, kMaxVertexBufferSlots> vertexBuffers;
+  std::array<GLintptr, kMaxVertexBufferSlots> vertexBufferOffsets;
+  std::array<GLsizei, kMaxVertexBufferSlots> vertexBufferStrides;
+  GLuint indexBuffer;
+  GLenum indexBufferType;
+};
+
+using Parameter =
+    variant<float, vec2, vec3, vec4, int, ivec2, ivec3, ivec4, mat2, mat3, mat4,
+            mat3x4, gl::Texture *, gl::BufferSlice, gl::Sampler *>;
+
+////////////////////////////////////////////////////////
 class Pass {
 public:
-private:
+  friend class PassBuilder;
+
+protected:
+  void compile();
   // Dependencies
-  SmallVector<Pass *, 4> dependencies;
+  SmallVector<Pass *, 8> dependencies_;
+  // gl program object
+  gl::Program prog_;
+  ShaderResources resources_;
 };
 
-class GeometryPass : public Pass {
+////////////////////////////////////////////////////////
+class DrawPass : public Pass {
 public:
+  friend class DrawPassBuilder;
+
 private:
+  void compile();
+  std::string VS_;
+  std::string FS_;
+  gl::RasterizerState rasterizerState_;
+  gl::DepthStencilState depthStencilState_;
+  std::array<gl::BlendState, 8> blendStates_;
+  std::array<gl::Viewport, 8> viewports_;
+  std::array<GLuint, 8> colorBuffers_;
+  GLuint depthBuffer_;
+  // empty -> Framebuffer is specified in the draw call
+  optional<gl::Framebuffer> fbo_;
+  ShaderDrawResources drawResources_;
 };
 
+class PassBuilder {
+public:
+  void bindTexture(int slot, GLuint texobj);
+  void bindTextureImage(int slot, GLuint texobj);
+  void bindSampler(int slot, GLuint samplerobj);
+  void bindUniformBuffer(int slot, const ag::gl::BufferSlice &slice);
+  void bindShaderStorageBuffer(int slot, const ag::gl::BufferSlice &slice);
+
+protected:
+  std::unique_ptr<Pass> pass_;
+};
+
+class DrawPassBuilder : public PassBuilder {
+public:
+  void bindVertexArray(GLuint vao);
+  void bindColorBuffer(int index, GLuint texobj);
+  void bindDepthBuffer(GLuint texobj);
+  void bindVertexBuffer(int slot, const ag::gl::BufferSlice &slice, int stride);
+  void addDependency(ag::Pass *dependency);
+
+  void setVertexShader(std::string vs);
+  void setFragmentShader(std::string fs);
+  void addShaderKeyword(std::string kw);
+  void addShaderDef(std::string kw, std::string def);
+
+  auto makeDrawPass() -> std::unique_ptr<DrawPass>;
+
+  auto blendState(int index) -> gl::BlendState & {
+    return getPassPtr()->blendStates_[index];
+  }
+  auto viewport(int index) -> gl::Viewport & {
+    return getPassPtr()->viewports_[index];
+  }
+  auto rasterizerState() -> gl::RasterizerState & {
+    return getPassPtr()->rasterizerState_;
+  }
+  auto depthStencilState() -> gl::DepthStencilState & {
+    return getPassPtr()->depthStencilState_;
+  }
+
+private:
+  DrawPass *getPassPtr() { return static_cast<DrawPass *>(pass_.get()); }
+};
+
+////////////////////////////////////////////////////////
 class ScreenPass : public Pass {
 public:
 private:
 };
 
-/*class ComputePass : public Pass
-{
+////////////////////////////////////////////////////////
+class ComputePass : public Pass {
 public:
 private:
   optional<int> group_size_x;
   optional<int> group_size_y;
   optional<int> group_size_z;
-};*/
+};
 
+////////////////////////////////////////////////////////
+// Owns pipeline resources
+// (from Lua: in namespace pipelines.<pipeline-name>.*)
+// Owns shader caches
 class Pipeline {
 public:
   Pipeline();
   ~Pipeline();
 
-  // set configuration options
-  void setConfig(const char *name, int value);
-  void setConfig(const char *name, float value);
-  void setConfig(const char *name, bool value = true);
+  void reset();
 
-  // note that the same script won't be executed twice
-  void loadScript(const char *path);
-  Pass *getPass(const char *name);
-  gl::Texture *getTexture(const char *name);
-  // gl::Buffer* getBuffer(const char* name);
-
-  // resource creation
-  // gl::Texture& createTexture(
-
-  gl::Texture &createTexture2D(const char *name, ImageFormat fmt, int w, int h,
-                               int numMips);
-  gl::Texture &createTexture3D(const char *name, ImageFormat fmt, int w, int h,
-                               int d, int numMips);
+  auto createTexture(const ImageDesc &desc) -> gl::Texture *;
+  auto createTexture2D(ImageFormat fmt, int w, int h, int numMips)
+      -> gl::Texture *;
+  auto createTexture3D(ImageFormat fmt, int w, int h, int d, int numMips)
+      -> gl::Texture *;
+  auto createSampler(const gl::SamplerDesc &desc) -> gl::Sampler *;
 
 private:
-  //
-  // allocated resources
-  std::unordered_map<std::string, std::unique_ptr<gl::Texture>> textures;
-  std::unordered_map<std::string, std::unique_ptr<gl::Buffer>> buffers;
-  std::unordered_map<std::string, std::unique_ptr<Pass>> passes;
-  // lua state for executing the scripts
-  sol::state L;
-};
+  void initialize();
 
-class Effect {
-public:
-  class Pass {
-  public:
-    Pass(Effect &refEffect_, const char *name_)
-        : effect{refEffect_}, name{name_} {}
-
-  private:
-    Effect &effect;
-    std::string name;
-    // state to set: opengl programs, render states, textures
+  struct TextureResource {
+    std::unique_ptr<gl::Texture> tex;
   };
 
-  // Create an empty effect with no passes
-  Effect() = default;
-  // set a configuration option
-  void setConfig(const char *name, int value);
-  void setConfig(const char *name, float value);
-  void setConfig(const char *name, bool value = true);
-  // load an effect file from a path
-  void loadFromFile(const char *path);
-  // this will execute the lua script and generate the passes
-  void compile();
-  // find a pass by name
-  Pass *findPass(const char *name);
+  struct BufferResource {
+    std::unique_ptr<gl::Buffer> buf;
+  };
 
-private:
-  // source path
-  std::string path;
-  // lua script source
-  std::string scriptSource;
-  // allocated textures
-  std::vector<gl::Texture> textures;
-  // framebuffers
-  std::vector<gl::Framebuffer> framebuffers;
-  // loaded passes
+  struct SamplerResource {
+    std::unique_ptr<gl::Sampler> sampler;
+  };
+
+  using Resource = variant<TextureResource, BufferResource, SamplerResource>;
+
+  // owned resources
+  std::vector<Resource> resources;
+  // owned passes
+  std::vector<std::unique_ptr<Pass>> passes;
 };
-
-
-// Lua API
-AG_LUA_API ag::gl::Texture *FXCreateTexture2D(ag::fx::Pipeline *pPipeline, const char *name,
-                             ag::ImageFormat imgFmt, int width, int height,
-                             int numMips);
-AG_LUA_API ag::gl::Texture *FXCreateTexture3D(ag::fx::Pipeline *pPipeline, const char *name,
-                             ag::ImageFormat imgFmt, int width, int height,
-                             int depth, int numMips);
-AG_LUA_API ag::fx::Pass *FXCreatePass(ag::fx::Pipeline *pPipeline, const char *name,
-                     ag::fx::PassType pass_type);
-AG_LUA_API ag::gl::Sampler *FXCreateSampler(ag::fx::Pipeline *pPipeline, const char *name,
-                           const ag::gl::SamplerDesc *desc);
-AG_LUA_API void FXPassBindTexture(ag::fx::Pipeline *pPipeline, ag::fx::Pass *pass, int slot,
-                       ag::gl::Texture *tex);
-AG_LUA_API void FXPassBindTextureImage(ag::fx::Pipeline* pPipeline, ag::fx::Pass* pass, int slot, ag::gl::Texture* tex);
-AG_LUA_API void FXPassBindSampler(ag::fx::Pipeline* pPipeline, ag::fx::Pass* pass, int slot, ag::gl::Sampler* sampler);
-AG_LUA_API int FXGenerateTextureID();
-
-}
 }

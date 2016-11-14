@@ -58,22 +58,30 @@ Autograph extensions:
  ☐ Shader cache @low
  ☐ Texture / render target cache @low
  ☐ Readback for video capture @low
+ ☐ Effect/pipeline system
 
 Resource management:
  ☐ ???
  
 Effect/pipeline system:
- ☐ Create textures from script @high 
+ ✔ Create textures from script @high  @done (16-11-05 16:44)
  ☐ Create compute passes @high 
+ ☐ Move into submodule @high
  ☐ Specify draw states @high 
  ☐ Create draw passes @high 
- ☐ Run passes @high @minimal_subset
- ☐ Specify and run dependencies of passes
+ ☐ Create screen passes
+ ☐ Run screen passes @high @minimal_subset
+ ☐ Run compute passes
+ ☐ Run draw passes
+ ☐ Specify and run dependencies of passes 
  ☐ Specify uniforms in script
+ ☐ Named uniforms
  ☐ Pass tags (arbitrary values)
  ☐ Pass variants: name + parameters
- ☐ Cache passes and compiled shaders
+ ☐ Cache passes and compiled shaders (shader cache)
+ ☐ Decide if we keep the C API or go with manual registration of functions
  ☐ Create passes, textures in C++ (mirror functionality exposed in scripts)
+ ☐ Techniques
 
 Scenes:
  ☐ Load mesh with assimp
@@ -102,7 +110,7 @@ Animation:
 
 Scripting:
  ✔ LuaJIT @low @done (16-11-04 11:06)
- ☐ LuaJIT CMake
+ ✔ LuaJIT CMake @done (16-11-05 16:43)
 
 Live GUI:
  ☐ Panels

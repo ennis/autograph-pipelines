@@ -60,6 +60,15 @@ struct RasterizerState {
   constexpr RasterizerState() = default;
   constexpr RasterizerState(GLenum fillMode_) : fillMode{fillMode_} {}
   GLenum fillMode = GL_FILL;
+  GLenum cullMode = GL_NONE;
+
+};
+
+struct ScissorRect {
+  int x;
+  int y;
+  int width;
+  int height;
 };
 
 struct Viewport 

@@ -1,6 +1,10 @@
 #pragma once
 
 //////////////////////////////////////////////
+#define AG_DEBUG_OUTPUT
+#define AG_TRACE_OUTPUT
+
+//////////////////////////////////////////////
 #if !defined(AG_IMPLEMENTATION)
     #define AG_IMPLEMENTATION 1
 #endif

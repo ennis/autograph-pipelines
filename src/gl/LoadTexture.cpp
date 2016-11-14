@@ -1,5 +1,5 @@
 #include <stdexcept>
-#include <cppformat/format.h>
+#include <fmt/format.h>
 #include <iostream>
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"

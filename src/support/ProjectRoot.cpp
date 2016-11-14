@@ -1,8 +1,8 @@
 #include <autograph/Config.h>
 #include <autograph/support/ProjectRoot.h>
-#include <cppformat/format.h>
+#include <autograph/support/Debug.h>
+#include <fmt/format.h>
 #include <experimental/filesystem>
-#include <iostream>
 #include <string>
 
 namespace ag {
@@ -23,9 +23,7 @@ AG_API const std::string &getProjectRootDirectory() {
             if (!fs::is_directory(path / ag::projectName)) {
               path = path.parent_path();
               if (!fs::is_directory(path / ag::projectName)) {
-                fmt::print(std::cerr, "Project root directory not found: {}\n",
-                           ag::projectName);
-                throw std::runtime_error("Project root directory not found");
+				  ag::failWith(fmt::format("Project root directory not found: {}", ag::projectName));
               }
             }
           }
@@ -35,7 +33,7 @@ AG_API const std::string &getProjectRootDirectory() {
     found = true;
     path = path / ag::projectName;
     pathstr = path.string();
-    fmt::print(std::clog, "Project root directory: {}\n", pathstr);
+    AG_DEBUG("Project root directory: {}", pathstr);
   }
   return pathstr;
 }

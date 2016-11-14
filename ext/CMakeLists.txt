@@ -10,7 +10,7 @@ set_property(TARGET zlibstatic PROPERTY FOLDER "External")
 
 # cppformat
 add_subdirectory(cppformat EXCLUDE_FROM_ALL)
-set_property(TARGET cppformat PROPERTY FOLDER "External")
+set_property(TARGET fmt PROPERTY FOLDER "External")
 
 # mcpp
 add_subdirectory(mcpp EXCLUDE_FROM_ALL)

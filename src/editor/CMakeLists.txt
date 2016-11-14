@@ -13,7 +13,7 @@ target_link_libraries(
 		autograph_support
 		##### external
 		glfw
-		cppformat 
+		fmt 
 		json 
 		variant 
 		optional   

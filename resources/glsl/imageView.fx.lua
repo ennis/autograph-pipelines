@@ -50,7 +50,10 @@ Texture2D('rendertarget', {
 	dim = 
 });
 
-
+GBuffers = [[
+layout(binding=0) uniform sampler2D gbufNormals;
+layout(binding=1) uniform sampler2D gbufWorldPos;
+]]
 
 -- Shaders
 VS = [[

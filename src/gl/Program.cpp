@@ -1,5 +1,6 @@
 #include <autograph/gl/Program.h>
 #include <autograph/gl/ShaderPreprocessor.h>
+#include <autograph/support/Debug.h>
 #include <cstring>
 #include <iostream>
 #include <ostream>
@@ -8,31 +9,30 @@
 namespace ag {
 namespace gl {
 
-void dumpCompileLog(Shader &sh, GLenum stage, std::ostream &out) {
+void dumpCompileLog(Shader &sh, GLenum stage, std::ostream &out, const char* fileHint = "<unknown>") {
   auto status = sh.getCompileStatus();
   auto log = sh.getCompileLog();
   if (!status) {
-    out << "===============================================================\n";
-    out << "Shader compilation error (stage:" << getShaderStageName(stage)
-        << ")\n";
-    out << "Compilation log follows:\n\n" << log << "\n\n";
+	  errorMessage("===============================================================");
+	  errorMessage("Shader compilation error (file: {}, stage: {})", fileHint, getShaderStageName(stage));
+	  errorMessage("Compilation log follows:\n\n{}\n\n", log);
 
   } else if (!log.empty()) {
-    out << "Shader compilation messages: (stage:" << getShaderStageName(stage)
-        << "):\n\n"
-        << log << "\n\n";
+	  warningMessage("Shader compilation messages (file: {}, stage: {})", fileHint, getShaderStageName(stage));
+	  warningMessage("{}", log);
   }
 }
 
-void dump_link_log(Program &prog, std::ostream &out) {
+void dumpLinkLog(Program &prog, std::ostream &out, const char* fileHint = "<unknown>") {
   auto status = prog.getLinkStatus();
   auto log = prog.getLinkLog();
   if (!status) {
-    out << "===============================================================\n";
-    out << "Program link error\n";
-    out << "Link log follows:\n\n" << log << "\n\n";
+	  errorMessage("===============================================================");
+	  errorMessage("Program link error");
+	  errorMessage("Link log follows:\n\n{}\n\n", log);
   } else if (!log.empty()) {
-    out << "Program link messages:\n\n" << log << "\n\n";
+	  warningMessage("Program link messages:");
+	  warningMessage("{}", log);
   }
 }
 
@@ -119,7 +119,7 @@ Program Program::createCompute(const char *cs_src) {
   Program p;
   p.attach(s);
   p.link();
-  dump_link_log(p, std::cerr);
+  dumpLinkLog(p, std::cerr);
   return p;
 }
 
@@ -152,7 +152,7 @@ Program Program::create(const char *vs_src, const char *fs_src,
   }
 
   prog.link();
-  dump_link_log(prog, std::cerr);
+  dumpLinkLog(prog, std::cerr);
   return prog;
 }
 

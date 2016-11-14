@@ -83,17 +83,6 @@ i.e. when an event is signalled, but we do not want to run the coroutine immedia
 DONE with schedules
 
 
-Animation system:
-schedule animations
-
-
-Image pipelines:
-
--> finish immediate draw/compute
--> GLSL 'library' for common patterns (fullscreen FS, default vertex shader, default 2D VS, etc.)
--> common patterns for compute (filter image, etc.)
--> automatic mip-maps? image pyramids?
-
 Framebuffer:
 -> a collection of draw attachements and optionally one depth attachement
 -> groups together a set of render targets
@@ -110,8 +99,6 @@ draw_utils.hpp
 - draw_2d_quad(framebuffer&, vec4 p1, vec4 p2, texcoords, ...)
 - draw_line(...)
 - draw_3d_mesh(framebuffer&, vertex_buffer<T>, mat4 object, mat4 viewproj, ...)
-
-
 
 
 vis_utils.hpp
@@ -415,10 +402,6 @@ Can register external libraries and #include them in CPU shaders
 
 
 
-
-
-
-
 Editor UI? 
 ______________________________
 
@@ -594,7 +577,7 @@ ${/decls}$
 Choosing a scripting language:
 ____________________________________
 
-1.** Statically typed
+1. Statically typed
 	with good generics
 	not javascript
 2. Compiles or JITs to native code
@@ -1238,6 +1221,7 @@ UI goals:
 - #8: Native menus and context menus
 - #9: Accessible?
 
+____________________________________________________
 
 Alternatives to render DAGs for pipeline specification:
 
@@ -1308,6 +1292,7 @@ class Pipeline
 	- load effects into this pipeline
 	- load(effectFile)
 	- get(effect-id)
+	- global parameters => uniforms
 
 e.g.
 	pp.load("scene.fxlua");
@@ -1342,6 +1327,23 @@ final result:
 	runPass()	// will render to screen
 
 
+
+using a technique:
+	tech = pp.createTechniqueInstance('....')
+	tech->setXXX(...)
+	pass = tech->getPass('name')
+	=> pass points back to tech
+
+
+Technique state
+	shared between a set of passes
+Pass state
+	state for one shader variant
+Dynamic state
+	state for one invocation of the shader
+
+
+
 stateGroups:
 - immutable set of bindings (e.g. Textures, UBOs, SSBO, RT, draw states, programs) 
 	array of (slot,resource) pairs
@@ -1349,6 +1351,8 @@ stateGroups:
 
 Hot-reload:
 - pass pointers should still be valid across reloads
+
+- no 'effect files', but hot-reloadable lua scripts that exist in one single Lua VMwwwww<w
 
 
 ____________________________________________________
@@ -1378,3 +1382,77 @@ Object:
 	associated to a visual node with a mesh
 	contains data for rendering 
 	=> texture maps
+
+
+
+____________________________________________________
+
+1. Pouvoir facilement utiliser des editeurs externes
+	-> ShaderFX, ou n'importe quoi qui produit du GLSL/HLSL
+2. Pouvoir facilement lier des variables en tant qu'uniforms
+	-> depuis Lua ou C++
+3. Pouvoir recharger individuellement des shaders / passes
+4. Spécifier les render states dans Lua
+
+Proposition:
+- Brique de base = Pass
+	-> GLSL program, bindings 
+	-> complété par des resources fournies au moment des draw calls
+- Shader reload
+	-> chaque passe est une ressource
+	-> utiliser une référence par nom ou par ID
+	-> quand un module lua est rechargé, les passes définies par le fichier sont écrasées, 
+		et les entrées correspondantes dans la table des ressources est mise à jour
+	-> les modules qui en dépendent sont aussi rechargés
+
+Resource registry = lua table
+
+exemple: sous-dossier resources/img/terrain/grass_0 
+	sera accessible dans les scripts avec resources.img.terrain.grass_0
+	light userdata: ImageResource
+	utilisable en tant que texture: l'objet texture opengl est mis en cache 
+		dans ImageResource
+	ImageResource:
+		- file path
+
+Hot-reloading shaders:
+	call 'require' again
+	all objects in current namespace are replaced
+	C++ references to resources are invalidated?
+	-> need 'References by name'
+
+texture dynamique: creation d'une texture dans un script
+	tex = Texture2D.new { ... }
+	temps de vie: garbage collection
+	referencement depuis C++: 
+	auto tex = state["tex"]
+	OR
+	auto tex = getResource<gl::Texture>("resources.tex");
+
+creation d'une texture en C++:
+	non-enregistrée: auto tex = gl::Texture (...)
+	-> tex est invisible dans les scripts
+	-> ownership: C++
+	-> temps de vie: scope (short-lived)
+
+	visible dans les scripts (en tant que "name"): state["name"] = std::unique_ptr(...) 
+	-> ownership: lua state
+	-> temps de vie: garbage-collection (long-lived)
+
+	visible dans les scripts (en tant que "name"): state["name"] = &texture;
+	-> ownership: C++
+	-> temps de vie: scope
+	-> state["name"] devient invalide (dangling pointer) quand la texture est détruite
+
+	(TODO) safe scoped script-visible objects:
+	-> ownership: C++
+	-> lifetime: scope
+	-> state["name"] est mis à nil quand l'objet est détruit
+	auto tex = makeScopedObject<gl::Texture>(state, name, args...)
+
+Script variable types:
+	ag::vecN types (as userdata)
+
+Proposition: 
+typedef pour std::unique_ptr
+=> ag::uptr, ag::unique
