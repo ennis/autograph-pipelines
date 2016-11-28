@@ -102,7 +102,7 @@ glm::vec4 Texture::texelFetch(glm::ivec3 coords, int mip_level) {
   return out;
 }
 
-Texture Texture::create1D(int w, ImageFormat fmt, int numMipmaps) {
+Texture Texture::create1D(ImageFormat fmt, int w, int numMipmaps) {
   ImageDesc d;
   d.dimensions = ImageDimensions::Image1D;
   d.format = fmt;
@@ -113,7 +113,7 @@ Texture Texture::create1D(int w, ImageFormat fmt, int numMipmaps) {
   return Texture{d};
 }
 
-Texture Texture::create2D(int w, int h, ImageFormat fmt,
+Texture Texture::create2D(ImageFormat fmt, int w, int h,
 	int numMipmaps) {
   ImageDesc d;
   d.dimensions = ImageDimensions::Image2D;

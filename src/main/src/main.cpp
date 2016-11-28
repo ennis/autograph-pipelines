@@ -14,7 +14,6 @@
 #include <autograph/support/ProjectRoot.h>
 
 #include "Effect.h"
-#include "Script.h"
 
 #include <QtWidgets>
 
@@ -64,19 +63,9 @@ public:
   void reloadPipeline() {
     AG_DEBUG("==============================================");
     AG_DEBUG("Reloading pipelines");
-
-	pipeline.reset();
-	(*gLuaState)["mainPipeline"] = sol::light<Pipeline>(pipeline);
-
-	auto smtex = pipeline.createTexture2D("shadowMap", ImageFormat::R32_Float, 1024, 1024, 1);
-	auto smdepthtex = pipeline.createTexture2D("shadowMapDepth", ImageFormat::Depth32_Float, 1024, 1024, 1);
-
-	DrawPassBuilder drawPassBuilder;
-	drawPassBuilder.bindColorBuffer(0, smtex->object());
-	drawPassBuilder.bindDepthBuffer(smdepthtex->object());
-	drawPassBuilder.viewport(0) = gl::Viewport{ 0, 0, 1024, 1024 };
-
-	testpass = drawPassBuilder.makeDrawPass();
+    auto& lua = *gLuaState;
+    lua.require("gl", sol::c_call<decltype(&openLuaModule_GL), &openLuaModule_GL>);
+    lua.script_file(getActualPath("resources/scripts/init.lua"));
   }
 
   void resizeGL(int w, int h) override {
@@ -92,7 +81,6 @@ public:
   }
 
 private:
-  Pipeline pipeline;
   std::unique_ptr<DrawPass> testpass;
 };
 

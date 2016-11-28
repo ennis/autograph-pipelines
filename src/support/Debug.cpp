@@ -1,4 +1,6 @@
+#ifdef AG_WINDOWS
 #include <Windows.h>
+#endif
 #include <autograph/support/Debug.h>
 #include <exception>
 #include <iostream>

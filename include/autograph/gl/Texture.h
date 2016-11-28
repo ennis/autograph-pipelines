@@ -48,8 +48,8 @@ public:
 
   //====================================
   // Constructors
-  static Texture create1D(int w, ImageFormat fmt, int numMipmaps = 1);
-  static Texture create2D(int w, int h, ImageFormat fmt,
+  static Texture create1D(ImageFormat fmt, int w, int numMipmaps = 1);
+  static Texture create2D(ImageFormat fmt, int w, int h,
 	  int numMipmaps = 1);
 
 private:

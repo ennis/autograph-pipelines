@@ -18,7 +18,6 @@ target_link_libraries(
 		variant 
 		optional   
 		gsl 
-		skia-bin
 		zlibstatic
 	PUBLIC
 		# GLM and glloadgen are exported as a part of the public API

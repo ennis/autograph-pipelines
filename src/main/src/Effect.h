@@ -17,6 +17,8 @@ struct lua_State;
 
 namespace ag {
 
+sol::table openLuaModule_GL(sol::this_state s);
+
 enum class PassType { Compute = 0, Screen, Geometry };
 
 static constexpr int kMaxTextureUnits = 16;
@@ -101,18 +103,19 @@ public:
   void bindSampler(int slot, GLuint samplerobj);
   void bindUniformBuffer(int slot, const ag::gl::BufferSlice &slice);
   void bindShaderStorageBuffer(int slot, const ag::gl::BufferSlice &slice);
+  void addDependency(ag::Pass *dependency);
 
 protected:
   std::unique_ptr<Pass> pass_;
 };
 
-class DrawPassBuilder : public PassBuilder {
+class DrawPassBuilder : public PassBuilder
+{
 public:
   void bindVertexArray(GLuint vao);
   void bindColorBuffer(int index, GLuint texobj);
   void bindDepthBuffer(GLuint texobj);
   void bindVertexBuffer(int slot, const ag::gl::BufferSlice &slice, int stride);
-  void addDependency(ag::Pass *dependency);
 
   void setVertexShader(std::string vs);
   void setFragmentShader(std::string fs);
@@ -135,6 +138,8 @@ public:
   }
 
 private:
+  std::string VS_;
+  std::string FS_;
   DrawPass *getPassPtr() { return static_cast<DrawPass *>(pass_.get()); }
 };
 
@@ -153,44 +158,4 @@ private:
   optional<int> group_size_z;
 };
 
-////////////////////////////////////////////////////////
-// Owns pipeline resources
-// (from Lua: in namespace pipelines.<pipeline-name>.*)
-// Owns shader caches
-class Pipeline {
-public:
-  Pipeline();
-  ~Pipeline();
-
-  void reset();
-
-  auto createTexture(const ImageDesc &desc) -> gl::Texture *;
-  auto createTexture2D(ImageFormat fmt, int w, int h, int numMips)
-      -> gl::Texture *;
-  auto createTexture3D(ImageFormat fmt, int w, int h, int d, int numMips)
-      -> gl::Texture *;
-  auto createSampler(const gl::SamplerDesc &desc) -> gl::Sampler *;
-
-private:
-  void initialize();
-
-  struct TextureResource {
-    std::unique_ptr<gl::Texture> tex;
-  };
-
-  struct BufferResource {
-    std::unique_ptr<gl::Buffer> buf;
-  };
-
-  struct SamplerResource {
-    std::unique_ptr<gl::Sampler> sampler;
-  };
-
-  using Resource = variant<TextureResource, BufferResource, SamplerResource>;
-
-  // owned resources
-  std::vector<Resource> resources;
-  // owned passes
-  std::vector<std::unique_ptr<Pass>> passes;
-};
 }
