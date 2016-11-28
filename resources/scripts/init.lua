@@ -17,3 +17,7 @@ function init()
 	tex = ag.Texture.create2D(ImageFormat.R8G8B8A8_UNORM, 1024, 1024, 1)
 	tex:reset()
 end
+
+function onRender()
+	print(string.format('onRender (%ix%i)', screen_width, screen_height))
+end

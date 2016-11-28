@@ -66,8 +66,8 @@ public:
     auto& lua = *gLuaState;
     lua.require("gl", sol::c_call<decltype(&openLuaModule_GL), &openLuaModule_GL>);
     try {
-    lua.script_file(getActualPath("resources/scripts/init.lua"));
-    lua.script("init()");
+		lua.script_file(getActualPath("resources/scripts/init.lua"));
+		lua.script("init()");
     }
     catch (sol::error& e) {
         errorMessage("Error loading init script:\n\t{}", e.what());
@@ -77,6 +77,9 @@ public:
   void resizeGL(int w, int h) override {
     AG_DEBUG("resizeGL {} {}", w, h);
     gl::resizeDefaultFramebuffer(ivec2{w, h});
+	auto& lua = *gLuaState;
+	lua["screen_width"] = w;
+	lua["screen_height"] = h;
   }
 
   void paintGL() override {
@@ -84,6 +87,8 @@ public:
     // glClearColor(1.0f, 0.0f, 0.0f, 1.0f);
     // glClearDepth(1.0f);
     // glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	auto& lua = *gLuaState;
+	lua.script("onRender()");
   }
 
 private:
