@@ -23,6 +23,9 @@ class AG_API Texture {
 public:
   Texture() = default;
   Texture(const ImageDesc &desc);
+  Texture(Texture&& rhs) = default;
+  Texture& operator=(Texture&& rhs) = default;
+  ~Texture();
 
   //====================================
   // Texture properties
@@ -37,6 +40,7 @@ public:
   const auto &desc() const { return desc_; }
   GLuint object() const { return obj_.get(); }
   explicit operator bool() const { return obj_.get() != 0; }
+  void reset();
 
   //====================================
   // Pixel transfer

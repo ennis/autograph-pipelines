@@ -1,4 +1,5 @@
 #include <autograph/gl/Texture.h>
+#include <autograph/support/Debug.h>
 #include <cassert>
 #include <stdexcept>
 
@@ -32,7 +33,8 @@ const GLFormatInfo &getGLImageFormatInfo(ImageFormat fmt) {
   }
 }
 
-Texture::Texture(const ImageDesc &desc) : desc_{desc} {
+Texture::Texture(const ImageDesc &desc) : desc_{desc}
+{
   assert(desc.numMipmaps > 0);
   GLuint tex_obj;
   const auto &glfmt = getGLImageFormatInfo(desc.format);
@@ -60,6 +62,11 @@ Texture::Texture(const ImageDesc &desc) : desc_{desc} {
   glTextureParameteri(tex_obj, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
   glTextureParameteri(tex_obj, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
   obj_ = GLHandle<TextureDeleter>{tex_obj};
+}
+
+Texture::~Texture()
+{
+    AG_DEBUG("Deleting texture {}, object={} ({},{}x{}x{})", (const void*)this, object(), getImageFormatInfo(format()).name, width(), height(), depth());
 }
 
 void Texture::upload(void *src, int mipLevel) {
@@ -124,5 +131,11 @@ Texture Texture::create2D(ImageFormat fmt, int w, int h,
   d.numMipmaps = numMipmaps;
   return Texture{d};
 }
+
+void Texture::reset()
+{
+    obj_ = nullptr;
+}
+
 }
 }

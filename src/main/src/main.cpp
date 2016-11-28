@@ -65,7 +65,13 @@ public:
     AG_DEBUG("Reloading pipelines");
     auto& lua = *gLuaState;
     lua.require("gl", sol::c_call<decltype(&openLuaModule_GL), &openLuaModule_GL>);
+    try {
     lua.script_file(getActualPath("resources/scripts/init.lua"));
+    lua.script("init()");
+    }
+    catch (sol::error& e) {
+        errorMessage("Error loading init script:\n\t{}", e.what());
+    }
   }
 
   void resizeGL(int w, int h) override {
