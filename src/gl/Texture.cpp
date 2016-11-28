@@ -14,6 +14,10 @@ static GLFormatInfo glfmt_rgba32_float{GL_RGBA32F, GL_RGBA, GL_FLOAT, 4, 16};
 static GLFormatInfo glfmt_depth32_float{GL_DEPTH_COMPONENT32F,
                                         GL_DEPTH_COMPONENT, GL_FLOAT, 1, 4};
 
+void TextureDeleter::operator()(GLuint tex_obj) { 
+	glDeleteTextures(1, &tex_obj); 
+}
+
 const GLFormatInfo &getGLImageFormatInfo(ImageFormat fmt) {
   switch (fmt) {
   case ImageFormat::RGBA8_Unorm:
@@ -66,7 +70,8 @@ Texture::Texture(const ImageDesc &desc) : desc_{desc}
 
 Texture::~Texture()
 {
-    AG_DEBUG("Deleting texture {}, object={} ({},{}x{}x{})", (const void*)this, object(), getImageFormatInfo(format()).name, width(), height(), depth());
+	if (obj_.get() != 0)
+		AG_DEBUG("Deleting texture {}, object={} ({},{}x{}x{})", (const void*)this, obj_.get(), getImageFormatInfo(format()).name, width(), height(), depth());
 }
 
 void Texture::upload(void *src, int mipLevel) {
@@ -134,6 +139,8 @@ Texture Texture::create2D(ImageFormat fmt, int w, int h,
 
 void Texture::reset()
 {
+	if (obj_.get() != 0)
+		AG_DEBUG("Deleting texture {}, object={} ({},{}x{}x{})", (const void*)this, obj_.get(), getImageFormatInfo(format()).name, width(), height(), depth());
     obj_ = nullptr;
 }
 

@@ -22,9 +22,12 @@ AG_API const std::string &getProjectRootDirectory() {
             path = path.parent_path();
             if (!fs::is_directory(path / ag::projectName)) {
               path = path.parent_path();
-              if (!fs::is_directory(path / ag::projectName)) {
-				  ag::failWith(fmt::format("Project root directory not found: {}", ag::projectName));
-              }
+			  if (!fs::is_directory(path / ag::projectName)) {
+				  path = path.parent_path();
+				  if (!fs::is_directory(path / ag::projectName)) {
+					  ag::failWith(fmt::format("Project root directory not found: {}, working directory: {}", ag::projectName, fs::current_path().string()));
+				  }
+			  }
             }
           }
         }

@@ -38,7 +38,7 @@ set(CLANG_LIBRARIES
 	clangIndex)
 
 # Link against LLVM libraries
-target_link_libraries(cxx-reflect ${LLVM_LIBRARIES} ${CLANG_LIBRARIES} bustache cppformat json)
+target_link_libraries(cxx-reflect ${LLVM_LIBRARIES} ${CLANG_LIBRARIES} fmt json)
 
 #====================================================================
 #====================================================================

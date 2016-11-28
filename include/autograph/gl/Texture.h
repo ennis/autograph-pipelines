@@ -8,7 +8,7 @@ namespace ag {
 namespace gl {
 
 struct TextureDeleter {
-  void operator()(GLuint tex_obj) { glDeleteTextures(1, &tex_obj); }
+	void operator()(GLuint tex_obj);
 };
 
 enum class TextureDimension {

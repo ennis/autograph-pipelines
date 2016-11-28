@@ -19,7 +19,8 @@
 #include <clang/Sema/Sema.h>
 #include <clang/Tooling/CommonOptionsParser.h>
 #include <clang/Tooling/Tooling.h>
-#include <cppformat/format.h>
+#include <fmt/format.h>
+#include <fmt/ostream.h>
 #include <json.hpp>
 #include <llvm/Support/FileSystem.h>
 #include <llvm/Support/Path.h>

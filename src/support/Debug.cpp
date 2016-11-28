@@ -27,7 +27,7 @@ AG_API void rawLogMessage(LogLevel c, const char *message) {
     setConsoleColor(7);
   } else if (c == LogLevel::Fatal) {
     setConsoleColor(12);
-    std::cerr << "\n\n[FATAL] ";
+    std::cerr << "\n[FATAL] ";
   }
   std::cerr << message << "\n";
   setConsoleColor(7);
