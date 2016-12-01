@@ -14,21 +14,58 @@
 #include <autograph/support/ProjectRoot.h>
 
 #include "Effect.h"
+#include "Mesh.h"
 
 #include <QtWidgets>
 
 using namespace ag;
 
+/////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////
 std::string pathCombine(std::string a, std::string b) {
   std::experimental::filesystem::path p{std::move(a)};
   p /= std::move(b);
   return p.string();
 }
 
-sol::state* gLuaState = nullptr;
+sol::state *gLuaState = nullptr;
 
+/////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////
+sol::table openLuaModule_Core(sol::this_state s) {
+  sol::state_view lua{s};
+  sol::table module = lua.create_table();
+
+  module["getActualPath"] = &ag::getActualPath;
+  // module["get"]
+
+  module.new_usertype<AABB>(
+      "AABB", "xmin", &AABB::xmin, "xmax", &AABB::xmax, "ymin", &AABB::ymin,
+      "ymax", &AABB::ymax, "zmin", &AABB::zmin, "zmax", &AABB::zmax, "width",
+      &AABB::width, "height", &AABB::height, "depth", &AABB::depth);
+
+  module.new_usertype<Mesh>("Mesh", "loadFromFile",
+                            sol::factories(&Mesh::loadFromFile),
+                            "AABB", sol::property(&Mesh::getAABB));
+
+  module.new_usertype<gl::Texture>(
+      "Texture", "create1D", sol::factories(&gl::Texture::create1D), "create2D",
+      sol::factories(&gl::Texture::create2D), "width",
+      sol::property(&gl::Texture::width), "height",
+      sol::property(&gl::Texture::height), "format",
+      sol::property(&gl::Texture::format), "object",
+      sol::property(&gl::Texture::object), "reset", &gl::Texture::reset);
+
+  return module;
+}
+
+/////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////
 class OpenGLWidget : public QOpenGLWidget {
 public:
+  ///////////////////////////////////
+  ///////////////////////////////////
+  ///////////////////////////////////
   OpenGLWidget() : QOpenGLWidget{nullptr, Qt::Window} {
     AG_DEBUG("ctor OpenGLWidget");
     QSurfaceFormat fmt;
@@ -45,6 +82,9 @@ public:
     }
   }
 
+  ///////////////////////////////////
+  ///////////////////////////////////
+  ///////////////////////////////////
   void initializeGL() override {
     AG_DEBUG("initializeGL");
     if (ogl_LoadFunctions() != ogl_LOAD_SUCCEEDED) {
@@ -57,44 +97,58 @@ public:
     devcfg.max_frames_in_flight = 3;
     gl::initialize(devcfg);
 
-	reloadPipeline();
+    reloadPipeline();
   }
 
+  ///////////////////////////////////
+  ///////////////////////////////////
+  ///////////////////////////////////
   void reloadPipeline() {
     AG_DEBUG("==============================================");
     AG_DEBUG("Reloading pipelines");
-    auto& lua = *gLuaState;
-    lua.require("gl", sol::c_call<decltype(&openLuaModule_GL), &openLuaModule_GL>);
+    auto &lua = *gLuaState;
+    lua.require("gl",
+                sol::c_call<decltype(&openLuaModule_GL), &openLuaModule_GL>);
+    lua.require(
+        "core", sol::c_call<decltype(&openLuaModule_Core), &openLuaModule_Core>);
+
     try {
-		lua.script_file(getActualPath("resources/scripts/init.lua"));
-		lua.script("init()");
-    }
-    catch (sol::error& e) {
-        errorMessage("Error loading init script:\n\t{}", e.what());
+      lua.script_file(getActualPath("resources/scripts/init.lua"));
+      lua.script("init()");
+    } catch (sol::error &e) {
+      errorMessage("Error loading init script:\n\t{}", e.what());
     }
   }
 
+  ///////////////////////////////////
+  ///////////////////////////////////
+  ///////////////////////////////////
   void resizeGL(int w, int h) override {
     AG_DEBUG("resizeGL {} {}", w, h);
     gl::resizeDefaultFramebuffer(ivec2{w, h});
-	auto& lua = *gLuaState;
-	lua["screen_width"] = w;
-	lua["screen_height"] = h;
+    auto &lua = *gLuaState;
+    lua["screen_width"] = w;
+    lua["screen_height"] = h;
   }
 
+  ///////////////////////////////////
+  ///////////////////////////////////
+  ///////////////////////////////////
   void paintGL() override {
     AG_DEBUG("paintGL");
     // glClearColor(1.0f, 0.0f, 0.0f, 1.0f);
     // glClearDepth(1.0f);
     // glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	auto& lua = *gLuaState;
-	lua.script("onRender()");
+    auto &lua = *gLuaState;
+    lua.script("onRender()");
   }
 
 private:
   std::unique_ptr<DrawPass> testpass;
 };
 
+/////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////
 class MainWindow : public QMainWindow {
   Q_OBJECT
 public:
@@ -211,6 +265,8 @@ private:
   QAction *addComponentAction = nullptr;
 };
 
+/////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////
 int main(int argc, char *argv[]) {
   // Q_INIT_RESOURCE(textfinder);
   QSurfaceFormat fmt;
@@ -222,8 +278,8 @@ int main(int argc, char *argv[]) {
   // initialize Lua VM
   sol::state luaState;
   luaState.open_libraries(sol::lib::base, sol::lib::package, sol::lib::ffi,
-	  sol::lib::jit, sol::lib::string, sol::lib::io,
-	  sol::lib::math);
+                          sol::lib::jit, sol::lib::string, sol::lib::io,
+                          sol::lib::math);
   gLuaState = &luaState;
 
   QFile styleSheetFile(":qdarkstyle/style.qss");

@@ -1,4 +1,5 @@
-ag = require 'gl'
+gl = require 'gl'
+core = require 'core'
 
 local ImageFormat = {
   R32G32B32A32_SFLOAT = 0,
@@ -12,9 +13,19 @@ local ImageFormat = {
   D32_SFLOAT = 8
 }
 
+function loadMesh(id)
+	local fullpath = core.getActualPath(id)
+	local mesh = core.Mesh.loadFromFile(fullpath)
+	print(string.format('loading mesh %s (full path %s)', id, fullpath))
+	return mesh
+end 
+
+local tex2 = gl.Texture.create2D(ImageFormat.R32G32_SFLOAT, 1024, 1024, 1)
+local mesh = loadMesh('resources/meshes/hogarth.obj')
+
 function init() 
 	print('init!')
-	tex = ag.Texture.create2D(ImageFormat.R8G8B8A8_UNORM, 1024, 1024, 1)
+	local tex = gl.Texture.create2D(ImageFormat.R8G8B8A8_UNORM, 1024, 1024, 1)
 	tex:reset()
 end
 

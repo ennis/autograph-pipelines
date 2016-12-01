@@ -32,8 +32,12 @@ set(NODE_EDITOR_HEADERS
         src/node_editor/qobjectnode.hpp
 )
 
-add_executable(autograph_main src/main.cpp src/Effect.cpp ${EDITOR_RES})
+add_executable(autograph_main 
+        src/main.cpp 
+        src/Effect.cpp 
+        src/Mesh.cpp 
+        ${EDITOR_RES})
 #reflection_gen(editor src/meta.hpp src/gen/meta.cpp.in)
 
 # Use the Widgets module from Qt 5.
-target_link_libraries(autograph_main autograph_core autograph_gl autograph_support luajit_bin sol2 Qt5::Widgets Qt5::OpenGL fmt json glm variant)
+target_link_libraries(autograph_main autograph_core autograph_gl autograph_support assimp luajit_bin sol2 Qt5::Widgets Qt5::OpenGL fmt json glm variant)
