@@ -20,6 +20,8 @@
 
 using namespace ag;
 
+
+
 /////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////
 std::string pathCombine(std::string a, std::string b) {
@@ -32,11 +34,29 @@ sol::state *gLuaState = nullptr;
 
 /////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////
+void drawMesh(Mesh& mesh, DrawPass* drawPass, sol::table args)
+{
+  AG_DEBUG("drawMesh: mesh={}, drawPass={}", (void*)&mesh, (void*)drawPass);
+  args.for_each([](sol::object key, sol::object value){AG_DEBUG("key={}, value={}", key.as<std::string>(), value.as<std::string>());});
+}
+
+/////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////
+void addPackagePath(sol::state& state, const char *path) {
+  std::string package_path = state["package"]["path"];
+  state["package"]["path"] =
+      package_path + (!package_path.empty() ? ";" : "") + path;
+}
+
+/////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////
 sol::table openLuaModule_Core(sol::this_state s) {
   sol::state_view lua{s};
   sol::table module = lua.create_table();
 
   module["getActualPath"] = &ag::getActualPath;
+  module["getProjectRootDirectory"] = &ag::getProjectRootDirectory;
+  module["drawMesh"] = &drawMesh;
   // module["get"]
 
   module.new_usertype<AABB>(
@@ -54,10 +74,12 @@ sol::table openLuaModule_Core(sol::this_state s) {
       sol::property(&gl::Texture::width), "height",
       sol::property(&gl::Texture::height), "format",
       sol::property(&gl::Texture::format), "object",
-      sol::property(&gl::Texture::object), "reset", &gl::Texture::reset);
+      sol::property(&gl::Texture::object), "reset", 
+      &gl::Texture::reset);
 
   return module;
 }
+
 
 /////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////
@@ -281,6 +303,7 @@ int main(int argc, char *argv[]) {
                           sol::lib::jit, sol::lib::string, sol::lib::io,
                           sol::lib::math);
   gLuaState = &luaState;
+  addPackagePath(luaState, getActualPath("resources/scripts/?.lua").c_str());
 
   QFile styleSheetFile(":qdarkstyle/style.qss");
   if (!styleSheetFile.exists())
