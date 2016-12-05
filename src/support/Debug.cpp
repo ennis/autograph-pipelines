@@ -7,31 +7,38 @@
 
 namespace ag {
 
-static void setConsoleColor(int attrib) {
+static void setConsoleColor(std::ostream& os, int attrib) {
 #ifdef AG_WINDOWS
   HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
   SetConsoleTextAttribute(hConsole, attrib);
+#else
+    switch (attrib) {
+    case 8: os << "\033[30m"; break;
+    case 7: os << "\033[37m"; break;
+    case 14: os << "\033[33m"; break;
+    case 12: os << "\033[31m"; break;
+    }
 #endif
 }
 
 AG_API void rawLogMessage(LogLevel c, const char *message) {
   if (c == LogLevel::Debug) {
-	setConsoleColor(8);
+    setConsoleColor(std::cerr, 8);
     std::cerr << "[DEBUG] ";
   } else if (c == LogLevel::Warning) {
-    setConsoleColor(14);
+    setConsoleColor(std::cerr, 14);
     std::cerr << "[WARN ] ";
-    setConsoleColor(7);
+    setConsoleColor(std::cerr, 7);
   } else if (c == LogLevel::Error) {
-    setConsoleColor(12);
+    setConsoleColor(std::cerr, 12);
     std::cerr << "[ERROR] ";
-    setConsoleColor(7);
+    setConsoleColor(std::cerr, 7);
   } else if (c == LogLevel::Fatal) {
-    setConsoleColor(12);
+    setConsoleColor(std::cerr, 12);
     std::cerr << "\n[FATAL] ";
   }
   std::cerr << message << "\n";
-  setConsoleColor(7);
+  setConsoleColor(std::cerr, 7);
 }
 
 [[noreturn]] void failWith(const char *message) {
