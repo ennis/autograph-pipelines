@@ -71,6 +71,7 @@ sol::table openLuaBindings(sol::this_state s) {
   // base types
   // issue: vec2.new will bounce back to the c++ side to call a trivial constructor
   // solution: define the constructors on the Lua side
+  // XXX: same for every vector component access
   module.new_usertype<vec2>("vec2", sol::call_constructor, sol::constructors<sol::types<float, float>>{}, "x", &vec2::x, "y", &vec2::y);
   module.new_usertype<vec3>("vec3", sol::call_constructor, sol::constructors<sol::types<float, float, float>>{}, "x", &vec3::x, "y", &vec3::y, "z", &vec3::z);
   module.new_usertype<vec4>("vec4", sol::call_constructor, sol::constructors<sol::types<float, float, float, float>>{}, "x", &vec4::x, "y", &vec4::y, "z", &vec4::z, "w", &vec4::w);
