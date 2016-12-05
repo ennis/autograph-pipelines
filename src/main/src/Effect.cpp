@@ -97,9 +97,6 @@ sol::table openLuaModule_GL(sol::this_state s) {
       sol::property(&gl::Texture::object),
               "reset", &gl::Texture::reset);
 
-  module.new_usertype<gl::Buffer>("Buffer", "create",
-                                  sol::factories(&gl::Buffer::create));
-
   /*module["ImageFormat"] = lua.create_table_with(
       "RGBA32_Float", ImageFormat::RGBA32_Float,
       "RGBA16_Float", ImageFormat::RGBA16_Float,

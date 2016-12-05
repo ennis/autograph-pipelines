@@ -16,9 +16,6 @@
 struct lua_State;
 
 namespace ag {
-
-sol::table openLuaModule_GL(sol::this_state s);
-
 enum class PassType { Compute = 0, Screen, Geometry };
 
 static constexpr int kMaxTextureUnits = 16;

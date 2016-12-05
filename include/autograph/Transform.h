@@ -4,8 +4,8 @@
 namespace ag {
 
 struct Transform {
-  vec3 scaling = glm::vec3(1.f);
-  vec3 position = glm::vec3(0.f);
+  vec3 scaling {1.0f, 1.0f, 1.0f};
+  vec3 position {0.0f, 0.0f, 0.0f};
   quat rotation;
 
   //  

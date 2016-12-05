@@ -16,6 +16,7 @@ static void setConsoleColor(int attrib) {
 
 AG_API void rawLogMessage(LogLevel c, const char *message) {
   if (c == LogLevel::Debug) {
+	setConsoleColor(8);
     std::cerr << "[DEBUG] ";
   } else if (c == LogLevel::Warning) {
     setConsoleColor(14);

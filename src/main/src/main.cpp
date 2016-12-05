@@ -15,12 +15,13 @@
 
 #include "Effect.h"
 #include "Mesh.h"
+#include "Scene.h"
+#include "Bindings.h"
+#include "SceneRenderer.h"
 
 #include <QtWidgets>
 
 using namespace ag;
-
-
 
 /////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////
@@ -34,52 +35,21 @@ sol::state *gLuaState = nullptr;
 
 /////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////
-void drawMesh(Mesh& mesh, DrawPass* drawPass, sol::table args)
-{
-  AG_DEBUG("drawMesh: mesh={}, drawPass={}", (void*)&mesh, (void*)drawPass);
-  args.for_each([](sol::object key, sol::object value){AG_DEBUG("key={}, value={}", key.as<std::string>(), value.as<std::string>());});
+void drawMesh(Mesh &mesh, DrawPass *drawPass, sol::table args) {
+  AG_DEBUG("drawMesh: mesh={}, drawPass={}", (void *)&mesh, (void *)drawPass);
+  args.for_each([](sol::object key, sol::object value) {
+    AG_DEBUG("key={}, value={}", key.as<std::string>(),
+             value.as<std::string>());
+  });
 }
 
 /////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////
-void addPackagePath(sol::state& state, const char *path) {
+void addPackagePath(sol::state &state, const char *path) {
   std::string package_path = state["package"]["path"];
   state["package"]["path"] =
       package_path + (!package_path.empty() ? ";" : "") + path;
 }
-
-/////////////////////////////////////////////////////////////
-/////////////////////////////////////////////////////////////
-sol::table openLuaModule_Core(sol::this_state s) {
-  sol::state_view lua{s};
-  sol::table module = lua.create_table();
-
-  module["getActualPath"] = &ag::getActualPath;
-  module["getProjectRootDirectory"] = &ag::getProjectRootDirectory;
-  module["drawMesh"] = &drawMesh;
-  // module["get"]
-
-  module.new_usertype<AABB>(
-      "AABB", "xmin", &AABB::xmin, "xmax", &AABB::xmax, "ymin", &AABB::ymin,
-      "ymax", &AABB::ymax, "zmin", &AABB::zmin, "zmax", &AABB::zmax, "width",
-      &AABB::width, "height", &AABB::height, "depth", &AABB::depth);
-
-  module.new_usertype<Mesh>("Mesh", "loadFromFile",
-                            sol::factories(&Mesh::loadFromFile),
-                            "AABB", sol::property(&Mesh::getAABB));
-
-  module.new_usertype<gl::Texture>(
-      "Texture", "create1D", sol::factories(&gl::Texture::create1D), "create2D",
-      sol::factories(&gl::Texture::create2D), "width",
-      sol::property(&gl::Texture::width), "height",
-      sol::property(&gl::Texture::height), "format",
-      sol::property(&gl::Texture::format), "object",
-      sol::property(&gl::Texture::object), "reset", 
-      &gl::Texture::reset);
-
-  return module;
-}
-
 
 /////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////
@@ -128,11 +98,13 @@ public:
   void reloadPipeline() {
     AG_DEBUG("==============================================");
     AG_DEBUG("Reloading pipelines");
+    scene = std::make_unique<Scene>();
+    sceneRenderer = std::make_unique<SceneRenderer>();
+
     auto &lua = *gLuaState;
-    lua.require("gl",
-                sol::c_call<decltype(&openLuaModule_GL), &openLuaModule_GL>);
     lua.require(
-        "core", sol::c_call<decltype(&openLuaModule_Core), &openLuaModule_Core>);
+        "core",
+        sol::c_call<decltype(&openLuaBindings), &openLuaBindings>);
 
     try {
       lua.script_file(getActualPath("resources/scripts/init.lua"));
@@ -167,6 +139,8 @@ public:
 
 private:
   std::unique_ptr<DrawPass> testpass;
+  std::unique_ptr<Scene> scene;
+  std::unique_ptr<SceneRenderer> sceneRenderer;
 };
 
 /////////////////////////////////////////////////////////////
