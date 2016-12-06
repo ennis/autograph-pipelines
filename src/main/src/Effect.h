@@ -135,8 +135,6 @@ public:
   }
 
 private:
-  std::string VS_;
-  std::string FS_;
   DrawPass *getPassPtr() { return static_cast<DrawPass *>(pass_.get()); }
 };
 

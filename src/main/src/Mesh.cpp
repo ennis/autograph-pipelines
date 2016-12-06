@@ -9,6 +9,8 @@ namespace ag {
 Mesh Mesh::loadFromFile(const char *path) {
   Assimp::Importer importer;
 
+  AG_DEBUG("Mesh::loadFromFile {}", path);
+
   const aiScene *scene = importer.ReadFile(
       path, aiProcess_OptimizeMeshes | aiProcess_OptimizeGraph |
                            aiProcess_Triangulate |
@@ -74,6 +76,9 @@ Mesh Mesh::loadFromFile(const char *path) {
 
   auto vbo = gl::Buffer::create(vertices.size() * sizeof(Vertex3D), gl::BufferUsage::Default, vertices.data());
   auto ibo = gl::Buffer::create(indices.size() * sizeof(unsigned int), gl::BufferUsage::Default, indices.data());
+
+
+  AG_DEBUG("Mesh::loadFromFile {} vertices:{} indices:{}", path, vertices.size(), indices.size());
 
   Mesh m;
   m.vbo_ = std::move(vbo);

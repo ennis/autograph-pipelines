@@ -17,12 +17,16 @@ namespace ag
 	{
 	public:
 		void clear();
-		SceneObject& createSceneObject(Mesh& mesh);
-		auto& getSceneObjects() {
+
+		SceneObject& addMesh(Mesh& mesh);
+		SceneObject& loadMesh(std::string path);
+
+		auto& getObjects() {
 			return sceneObjects_;
 		}
 
 	private:
 		std::vector<std::unique_ptr<SceneObject>> sceneObjects_;
+		std::vector<std::unique_ptr<Mesh>> ownedMeshes_;
 	};
 }

@@ -5,6 +5,7 @@
 namespace ag 
 {
 	auto deferredShadingVertexShader = R"(
+#version 450
 layout(std140, binding = 0) uniform U0 {
   mat4 modelMatrix;
   mat4 viewMatrix;
@@ -31,6 +32,7 @@ void main() {
 	)";
 
 	auto deferredShadingFragmentShader = R"(
+#version 450
 in vec3 Nw0;
 in vec3 Pv;
 in vec3 Tv0;
@@ -59,7 +61,7 @@ void main() {
 
 	void SceneRenderer::renderScene(gl::Framebuffer& target, Scene& scene, Camera& camera)
 	{
-		auto& objects = scene.getSceneObjects();
+		auto& objects = scene.getObjects();
 		for (auto&& obj : objects) 
 		{
 			AG_DEBUG("TODO: renderScene, object ID {} mesh {}", obj->id, (void*)obj->mesh);

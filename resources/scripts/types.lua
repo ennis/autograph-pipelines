@@ -1,5 +1,5 @@
 local ffi = require 'ffi'
-local core = {}
+local types = {}
 
 ffi.cdef [[
 	typedef struct {
@@ -38,71 +38,99 @@ ffi.cdef [[
 		int w;
 	} ivec4;
 
-	typedef enum {
-	  R32G32B32A32_SFLOAT = 0,
-	  R16G16B16A16_SFLOAT = 1,
-	  R32G32_SFLOAT = 2,
-	  R32_SFLOAT = 3,
-	  R8_UNORM = 4,
-	  R8G8B8A8_UNORM = 5,
-	  R8G8B8A8_SNORM = 6,
-	  B10G11R11_UFLOAT_PACK32 = 7,
-	  D32_SFLOAT = 8
-	} ImageFormat;
+    // core.AABB
+    typedef struct {
+      float xmin;
+      float ymin;
+      float zmin;
+      float xmax;
+      float ymax;
+      float zmax;
+    } AABB;
 
-	// core.Texture
-	typedef struct Texture;
-
-	// core.Mesh
-	typedef struct Mesh;
-
-	// core.Vertex
-	typedef struct {
- 		vec3 position;
-  		vec3 normal;
-  		vec3 tangent;
-  		vec2 texcoords;
-	} Vertex;
-
+    // core.Vertex
+    typedef struct {
+        vec3 position;
+        vec3 normal;
+        vec3 tangent;
+        vec2 texcoords;
+    } Vertex;
 ]]
 
 -- metatable for vec2
-local mt = {
-  __add = function(a, b) return vec2(a.x+b.x, a.y+b.y) end,
-  __mul = function(a, b) return 
-  				if type(a) == "number" then 
-  						vec2(a*b.x, a*b.y)
-  					else if type(b) == "number" then 
-  						vec2(a.x*b, a.y*b)
-  					else 
-  						vec2(a.x*b.x, a.y*b.y) 
-  					end
-  			 end,
-  __div = function(a, b) return 
-  				if type(a) == "number" then 
-  						vec2(a/b.x, a/b.y)
-  					else if type(b) == "number" then 
-  						vec2(a.x/b, a.y/b)
-  					else 
-  						vec2(a.x/b.x, a.y/b.y) 
-  					end
-  			 end,
+-- local mt.vec2 = {
+--   __add = function(a, b) return vec2(a.x+b.x, a.y+b.y) end,
+--   __mul = function(a, b) return if type(a) == "number" then vec2(a*b.x, a*b.y) else if type(b) == "number" then vec2(a.x*b, a.y*b) else vec2(a.x*b.x, a.y*b.y) end end,
+--   __div = function(a, b) return if type(a) == "number" then vec2(a/b.x, a/b.y) else if type(b) == "number" then vec2(a.x/b, a.y/b) else vec2(a.x/b.x, a.y/b.y) end end,
+--   __index = {
+--     normalize = function(a) return a / a:length() end,
+--     length = function(a) return math.sqrt(a:lengthSq()) end,
+--     lengthSq = function(a) return a.x*a.x + a.y*a.y end,
+--   },
+-- }
 
-  __index = {
-    normalize = function(a) return a / math.sqrt(a.x*a.x + a.y*a.y) end,
-  },
-}
+-- local mt.vec3 = {
+--   __add = function(a, b) return vec3(a.x+b.x, a.y+b.y, a.z+b.z) end,
+--   __mul = function(a, b) return if type(a) == "number" then vec3(a*b.x, a*b.y, a*b.z) else if type(b) == "number" then vec3(a.x*b, a.y*b, a.z*b) else vec3(a.x*b.x, a.y*b.y, a.z*b.z) end end,
+--   __div = function(a, b) return if type(a) == "number" then vec3(a/b.x, a/b.y, a/b.z) else if type(b) == "number" then vec3(a.x/b, a.y/b, a.z/b) else vec3(a.x/b.x, a.y/b.y, a.z/b.z) end end,
+--   __index = {
+--     normalize = function(a) return a / a:length() end,
+--     length = function(a) return math.sqrt(a:lengthSq()) end,
+--     lengthSq = function(a) return a.x*a.x + a.y*a.y + a.z*a.z end,
+--   },
+-- }
 
-core.dot = function (a, b) 
-	return 
-end 
+-- local mt.vec4 = {
+--   __add = function(a, b) return vec4(a.x+b.x, a.y+b.y, a.z+b.z, a.w+b.w) end,
+--   __mul = function(a, b) return if type(a) == "number" then vec3(a*b.x, a*b.y, a*b.z, a*b.w) else if type(b) == "number" then vec3(a.x*b, a.y*b, a.z*b, a.w*b) else vec3(a.x*b.x, a.y*b.y, a.z*b.z, a.w*b.w) end end,
+--   __div = function(a, b) return if type(a) == "number" then vec3(a/b.x, a/b.y, a/b.z, a/b.w) else if type(b) == "number" then vec3(a.x/b, a.y/b, a.z/b, a.w*b) else vec3(a.x/b.x, a.y/b.y, a.z/b.z, a.w/b.w) end end,
+--   __index = {
+--     normalize = function(a) return a / a:length() end,
+--     length = function(a) return math.sqrt(a:lengthSq()) end,
+--     lengthSq = function(a) return a.x*a.x + a.y*a.y + a.z*a.z + a.w*a.w end,
+--   },
+-- }
 
-core.vec2 = ffi.typeof('vec2')
-core.vec3 = ffi.typeof('vec3')
-core.vec4 = ffi.typeof('vec4')
-core.ivec2 = ffi.typeof('ivec2')
-core.ivec3 = ffi.typeof('ivec3')
-core.ivec4 = ffi.typeof('ivec4')
-core.ImageFormat = ffi.typeof('ImageFormat')
+types.ivec2 = ffi.typeof('ivec2')
+types.ivec3 = ffi.typeof('ivec3')
+types.ivec4 = ffi.typeof('ivec4')
+types.vec2 = ffi.typeof('vec2')
+types.vec3 = ffi.typeof('vec3')
+types.vec4 = ffi.typeof('vec4')
 
-return core
+-- types.dot = function (a, b) 
+-- 	if ffi.ctype(a, core.vec2) and ffi.ctype(b, core.vec2) then
+-- 		return a.x*b.x + a.y*b.y
+-- 	else if ffi.ctype(a, core.vec3) and ffi.ctype(b, core.vec3) then
+-- 		return a.x*b.x + a.y*b.y + a.z*b.z
+-- 	else if ffi.ctype(a, core.vec4) and ffi.ctype(b, core.vec4) then
+-- 		return a.x*b.x + a.y*b.y + a.z*b.z + a.w*b.w
+--     else
+--         error("incompatible types for types.dot") 
+--     end
+-- end 
+
+-- C++: C wrapper fn
+-- lua: ffi struct def
+-- lua: ffi wrapper fn
+-- lua: metatable
+-- lua: metatype
+
+-- VS: (usertype binding)
+-- C++: bind type with sol2
+
+-- solution: 
+-- base types (values?) with FFI, all functions in Lua (no FFI call)
+-- complex types (references?) with C++-side usertypes 
+-- => essentially two APIs
+
+-- issue: returning a ctype from a usertype method call (these calls do not go through the FFI)
+-- these calls push an userdata on the stack: must convert this userdata to the corresponding ctype: usertype -> ctype
+-- same when passing parameters: ctype -> usertype
+-- usertype -> ctype will cast to void*
+
+-- other solution:
+-- do not use ctypes OR usertypes in bindings (except reference types)
+-- provide two C++ versions: one with vectors, another with primitive types (floats) 
+
+return types

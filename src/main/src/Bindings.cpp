@@ -14,6 +14,7 @@
 #include "Mesh.h"
 #include "Scene.h"
 #include "SceneRenderer.h"
+#include "Effect.h"
 
 namespace ag {
 sol::table openLuaBindings(sol::this_state s) {
@@ -43,19 +44,24 @@ sol::table openLuaBindings(sol::this_state s) {
 
 
   // Transform
-  module.new_usertype<Transform>("Transform", "scaling", &Transform::scaling, "position",
-                                 &Transform::position, "rotation",
-                                 &Transform::rotation,
-                                 "getMatrix", &Transform::getMatrix,
-                                 "transformPoint", &Transform::transformPoint,
-                                 "transformVec", &Transform::transformVec,
-                                 "transformNormal", &Transform::transformNormal);
+  module.new_usertype<Transform>("Transform", 
+    "setPosition", [](Transform& t, float x, float y, float z) {
+      t.position.x = x;
+      t.position.y = y;
+      t.position.z = z;
+    }, 
+    "position", &Transform::position
+   );
 
   // Scene
   module.new_usertype<AABB>(
-      "AABB", "xmin", &AABB::xmin, "xmax", &AABB::xmax, "ymin", &AABB::ymin,
-      "ymax", &AABB::ymax, "zmin", &AABB::zmin, "zmax", &AABB::zmax, "width",
-      &AABB::width, "height", &AABB::height, "depth", &AABB::depth);
+      "AABB", 
+      sol::call_constructor, [](float xmin, float xmax, float ymin, float ymax, float zmin, float zmax) {
+        return AABB{xmin, xmax, ymin, ymax, zmin, zmax};
+      },
+      "xmin", &AABB::xmin, "xmax", &AABB::xmax, "ymin", &AABB::ymin,
+      "ymax", &AABB::ymax, "zmin", &AABB::zmin, "zmax", &AABB::zmax, 
+      "width", &AABB::width, "height", &AABB::height, "depth", &AABB::depth);
 
   module.new_usertype<Mesh>("Mesh", "loadFromFile",
                             sol::factories(&Mesh::loadFromFile), "AABB",
@@ -65,13 +71,13 @@ sol::table openLuaBindings(sol::this_state s) {
       "SceneObject", "id", sol::property(&SceneObject::id), "mesh",
       &SceneObject::mesh, "transform", &SceneObject::transform);
 
-  module.new_usertype<Scene>("Scene", "createSceneObject",
-                             &Scene::createSceneObject);
+  module.new_usertype<Scene>("Scene", sol::call_constructor, sol::constructors<sol::types<>>{}, 
+                            "addMesh", &Scene::addMesh,
+                            "loadMesh", &Scene::loadMesh);
 
   // base types
   // issue: vec2.new will bounce back to the c++ side to call a trivial constructor
   // solution: define the constructors on the Lua side
-  // XXX: same for every vector component access
   module.new_usertype<vec2>("vec2", sol::call_constructor, sol::constructors<sol::types<float, float>>{}, "x", &vec2::x, "y", &vec2::y);
   module.new_usertype<vec3>("vec3", sol::call_constructor, sol::constructors<sol::types<float, float, float>>{}, "x", &vec3::x, "y", &vec3::y, "z", &vec3::z);
   module.new_usertype<vec4>("vec4", sol::call_constructor, sol::constructors<sol::types<float, float, float, float>>{}, "x", &vec4::x, "y", &vec4::y, "z", &vec4::z, "w", &vec4::w);
@@ -79,6 +85,24 @@ sol::table openLuaBindings(sol::this_state s) {
   module.new_usertype<ivec3>("ivec3", sol::call_constructor, sol::constructors<sol::types<int, int, int>>{}, "x", &ivec3::x, "y", &ivec3::y, "z", &ivec3::z);
   module.new_usertype<ivec4>("ivec4", sol::call_constructor, sol::constructors<sol::types<int, int, int, int>>{}, "x", &ivec4::x, "y", &ivec4::y, "z", &ivec4::z, "w", &ivec4::w);
   
+  // Effect system
+  module.new_usertype<DrawPassBuilder>("DrawPassBuilder", sol::call_constructor, sol::constructors<sol::types<>>{},
+    "bindColorBuffer", [](DrawPassBuilder& dp, int index, gl::Texture& tex) { dp.bindColorBuffer(index, tex.object()); },
+    "bindDepthBuffer", [](DrawPassBuilder& dp, gl::Texture* tex) { 
+      if (tex) 
+        dp.bindColorBuffer(index, tex->object());
+      else
+        dp.bindDepthBuffer(0); 
+    },
+    "setVertexShader", &DrawPassBuilder::setVertexShader,
+    "setFragmentShader", &DrawPassBuilder::setFragmentShader,
+    "setBlendState", [](DrawPassBuilder& dp, sol::table bs) {
+      int index = bs["index"];
+      // TODO
+    },
+    "makeDrawPass", &DrawPassBuilder::makeDrawPass,
+  );
+
   return module;
 }
 }

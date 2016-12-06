@@ -82,34 +82,6 @@ void DrawPass::compile() {
   // TODO do some checking here
 }
 
-// TODO: autogen
-sol::table openLuaModule_GL(sol::this_state s) {
-  sol::state_view lua{s};
-
-  sol::table module = lua.create_table();
-
-  module.new_usertype<gl::Texture>(
-      "Texture", "create1D", sol::factories(&gl::Texture::create1D), "create2D",
-      sol::factories(&gl::Texture::create2D), "width",
-      sol::property(&gl::Texture::width), "height",
-      sol::property(&gl::Texture::height), "format",
-      sol::property(&gl::Texture::format), "object",
-      sol::property(&gl::Texture::object),
-              "reset", &gl::Texture::reset);
-
-  /*module["ImageFormat"] = lua.create_table_with(
-      "RGBA32_Float", ImageFormat::RGBA32_Float,
-      "RGBA16_Float", ImageFormat::RGBA16_Float,
-      "RG32_Float", ImageFormat::RG32_Float,
-      "R32_Float", ImageFormat::R32_Float,
-      "R8_Unorm", ImageFormat::R8_Unorm,
-      "RGBA8_Unorm", ImageFormat::RGBA8_Unorm,
-      "RGBA8_Snorm", ImageFormat::RGBA8_Snorm,
-      "RGB_11_11_10_Float_Packed", ImageFormat::RGB_11_11_10_Float_Packed,
-      "Depth32_Float", ImageFormat::Depth32_Float);*/
-
-  return module;
-}
 
 /*void registerLuaUsertypes(sol::state& lua)
 {

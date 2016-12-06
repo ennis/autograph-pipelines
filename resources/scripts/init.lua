@@ -20,26 +20,28 @@ function loadMesh(id)
 	return mesh
 end 
 
-local tex2 = core.Texture.create2D(ImageFormat.R32G32_SFLOAT, 1024, 1024, 1)
-local mesh = loadMesh('resources/meshes/hogarth.obj')
+local scene = core.Scene()
+local obj = scene:loadMesh(core.getActualPath('resources/meshes/hogarth.obj'))
+--local renderer = core.SceneRenderer()
+
 
 function init() 
-	print('init!')
-	collectgarbage()
-	local tex = core.Texture.create2D(ImageFormat.R8G8B8A8_UNORM, 1024, 1024, 1)
-	tex:reset()
-	print(string.format('mesh AABB %f, %f, %f, %f, %f, %f', 
-		mesh.AABB.xmin, mesh.AABB.xmax,
-		mesh.AABB.ymin, mesh.AABB.ymax,
-		mesh.AABB.zmin, mesh.AABB.zmax ))
-	local tr = core.Transform.new()
-	tr.position = core.vec3(1.0, 0.0, 1.0)
-	print(string.format('tr.position = %f,%f,%f', tr.position.x, tr.position.y, tr.position.z))
+	obj.transform:setPosition(0.0, 1.0, 0.0)
+	print(string.format('tr.position = %f,%f,%f', obj.transform.position.x, obj.transform.position.y, obj.transform.position.z))
 end
 
 function onRender()
 	print(string.format('onRender (%ix%i)', screen_width, screen_height))
+	-- sceneRenderer.render()
+
 	--core.drawMesh(mesh, pipeline, { uniforms = {
 	--	screen_size = types.vec2(screen_width, screen_height)
 	--	} })
 end
+
+-- issue: holding a reference to a mesh that is created in lua and referenced in a scene
+-- once the reference is given to the scene (c++ side), the object on the Lua side can be garbage-collected, but it shouldn't
+-- => use shared_ptr? 
+
+-- hot-reloading of scripts?
+-- invalidates all refs to meshes, textures, etc.
