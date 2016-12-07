@@ -103,7 +103,7 @@ public:
 
     auto &lua = *gLuaState;
     lua.require(
-        "core",
+        "__bindings",
         sol::c_call<decltype(&openLuaBindings), &openLuaBindings>);
 
     try {

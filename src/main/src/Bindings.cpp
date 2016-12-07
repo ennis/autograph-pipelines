@@ -1,6 +1,7 @@
 #include "Bindings.h"
 
 #include <autograph/support/ProjectRoot.h>
+#include <autograph/support/Debug.h>
 // core
 #include <autograph/Camera.h>
 #include <autograph/Transform.h>
@@ -85,7 +86,7 @@ sol::table openLuaBindings(sol::this_state s) {
   module.new_usertype<ivec3>("ivec3", sol::call_constructor, sol::constructors<sol::types<int, int, int>>{}, "x", &ivec3::x, "y", &ivec3::y, "z", &ivec3::z);
   module.new_usertype<ivec4>("ivec4", sol::call_constructor, sol::constructors<sol::types<int, int, int, int>>{}, "x", &ivec4::x, "y", &ivec4::y, "z", &ivec4::z, "w", &ivec4::w);
   
-  // Effect system
+  // DrawPass
   module.new_usertype<DrawPassBuilder>("DrawPassBuilder", sol::call_constructor, sol::constructors<sol::types<>>{},
     "bindTexture", [](DrawPassBuilder& dp, int index, gl::Texture& tex) {  dp.bindTexture(index, tex.object()); },
     "bindTextureImage", [](DrawPassBuilder& dp, int index, gl::Texture& tex) { dp.bindTextureImage(index, tex.object()); },
@@ -142,6 +143,11 @@ sol::table openLuaBindings(sol::this_state s) {
   );
 
   module.new_usertype<DrawPass>("DrawPass");
+
+  // stuff
+  module["debugMessage"] = [](const char* str) { rawLogMessage(LogLevel::Debug, str); };
+  module["warningMessage"] = [](const char* str) { rawLogMessage(LogLevel::Warning, str); };
+  module["errorMessage"] = [](const char* str) { rawLogMessage(LogLevel::Error, str); };
 
   return module;
 }
