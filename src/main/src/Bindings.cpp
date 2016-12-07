@@ -87,21 +87,61 @@ sol::table openLuaBindings(sol::this_state s) {
   
   // Effect system
   module.new_usertype<DrawPassBuilder>("DrawPassBuilder", sol::call_constructor, sol::constructors<sol::types<>>{},
-    "bindColorBuffer", [](DrawPassBuilder& dp, int index, gl::Texture& tex) { dp.bindColorBuffer(index, tex.object()); },
-    "bindDepthBuffer", [](DrawPassBuilder& dp, gl::Texture* tex) { 
+    "bindTexture", [](DrawPassBuilder& dp, int index, gl::Texture& tex) {  dp.bindTexture(index, tex.object()); },
+    "bindTextureImage", [](DrawPassBuilder& dp, int index, gl::Texture& tex) { dp.bindTextureImage(index, tex.object()); },
+    "bindSampler", [](DrawPassBuilder& dp, int index, gl::Sampler& sampler) { dp.bindSampler(index, sampler.object()); },
+    //"bindUniformBuffer", [](DrawPassBuilder& dp, int index, gl::Sampler& sampler) { dp.bindSampler(index, sampler.object()); },
+    //"bindShaderStorageBuffer", &DrawPassBuilder::bindShaderStorageBuffer,
+    "setColorBuffer", [](DrawPassBuilder& dp, int index, gl::Texture& tex) { dp.bindColorBuffer(index, tex.object()); },
+    "setDepthBuffer", [](DrawPassBuilder& dp, gl::Texture* tex) { 
       if (tex) 
-        dp.bindColorBuffer(index, tex->object());
+        dp.bindDepthBuffer(tex->object());
       else
         dp.bindDepthBuffer(0); 
     },
     "setVertexShader", &DrawPassBuilder::setVertexShader,
     "setFragmentShader", &DrawPassBuilder::setFragmentShader,
-    "setBlendState", [](DrawPassBuilder& dp, sol::table bs) {
-      int index = bs["index"];
-      // TODO
+    "setBlendState", [](DrawPassBuilder& dp, int index, sol::table table) {
+      gl::BlendState bs;
+      bs.enabled = table.get_or("enabled", false);
+      bs.modeRGB = table.get_or("modeRGB", GL_FUNC_ADD);
+      bs.modeAlpha = table.get_or("modeAlpha", GL_FUNC_ADD);
+      bs.funcSrcRGB = table.get_or("funcSrcRGB", GL_SRC_ALPHA);
+      bs.funcDstRGB = table.get_or("funcDstRGB", GL_ONE_MINUS_SRC_ALPHA);
+      bs.funcSrcAlpha = table.get_or("funcSrcAlpha", GL_ONE);
+      bs.funcDstAlpha = table.get_or("funcDstAlpha", GL_ZERO);
+      dp.setBlendState(index, bs);
     },
-    "makeDrawPass", &DrawPassBuilder::makeDrawPass,
+    "setRasterizerState",[](DrawPassBuilder& dp, sol::table table) {
+      gl::RasterizerState rs;
+      rs.fillMode = table.get_or("fillMode", GL_FILL);
+      rs.cullMode = table.get_or("cullMode", GL_NONE);
+      rs.frontFace = table.get_or("frontFace", GL_CCW);
+      rs.depthBias = table.get_or("depthBias", 1.0f);
+      rs.slopeScaledDepthBias = table.get_or("slopeScaledDepthBias", 1.0f);
+      rs.depthClipEnable = table.get_or("depthClipEnable", false);
+      rs.scissorEnable = table.get_or("scissorEnable", false);
+      dp.setRasterizerState(rs);
+    },
+    "setDepthStencilState",[](DrawPassBuilder& dp, sol::table table) {
+      gl::DepthStencilState dss;
+      dss.depthTestEnable = table.get_or("depthTestEnable", false);
+      dss.depthWriteEnable = table.get_or("depthWriteEnable", false);
+      dss.stencilEnable = table.get_or("stencilEnable", false);
+      dss.stencilFace = table.get_or("stencilFace", GL_FRONT_AND_BACK);
+      dss.stencilFunc = table.get_or("stencilFunc", 0);
+      dss.stencilRef = table.get_or("stencilRef", 0);
+      dss.stencilMask = table.get_or("stencilMask", 0xFFFFFFFF);
+      dss.stencilOpSfail = table.get_or("stencilOpSfail", 0);
+      dss.stencilOpDPFail = table.get_or("stencilOpDPFail", 0);
+      dss.stencilOpDPPass = table.get_or("stencilOpDPPass", 0);
+      dp.setDepthStencilState(dss);
+    },
+    "setViewport", &DrawPassBuilder::setViewport,
+    "makeDrawPass", &DrawPassBuilder::makeDrawPass
   );
+
+  module.new_usertype<DrawPass>("DrawPass");
 
   return module;
 }

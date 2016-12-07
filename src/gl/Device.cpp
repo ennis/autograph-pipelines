@@ -2,6 +2,7 @@
 #include <autograph/gl/Fence.h>
 #include <autograph/gl/Framebuffer.h>
 #include <autograph/gl/UploadBuffer.h>
+#include <autograph/support/Debug.h>
 #include <cstring>
 #include <iostream>
 #include <memory>
@@ -17,7 +18,7 @@ void APIENTRY debugCallback(GLenum source, GLenum type, GLuint id,
                             void *data) {
   if (severity != GL_DEBUG_SEVERITY_LOW &&
       severity != GL_DEBUG_SEVERITY_NOTIFICATION)
-    std::clog << "(GL) " << msg << std::endl;
+      AG_DEBUG("GL: {}", msg);
 }
 
 void setDebugCallback() {

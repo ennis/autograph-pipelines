@@ -94,48 +94,41 @@ private:
 };
 
 class PassBuilder {
-public:
-  void bindTexture(int slot, GLuint texobj);
-  void bindTextureImage(int slot, GLuint texobj);
-  void bindSampler(int slot, GLuint samplerobj);
-  void bindUniformBuffer(int slot, const ag::gl::BufferSlice &slice);
-  void bindShaderStorageBuffer(int slot, const ag::gl::BufferSlice &slice);
-  void addDependency(ag::Pass *dependency);
-
 protected:
-  std::unique_ptr<Pass> pass_;
+  void bindTextureInternal(Pass& pass, int slot, GLuint texobj);
+  void bindTextureImageInternal(Pass& pass, int slot, GLuint texobj);
+  void bindSamplerInternal(Pass& pass, int slot, GLuint samplerobj);
+  void bindUniformBufferInternal(Pass& pass, int slot, const ag::gl::BufferSlice &slice);
+  void bindShaderStorageBufferInternal(Pass& pass, int slot, const ag::gl::BufferSlice &slice);
+  void addDependencyInternal(Pass& pass, Pass &dependency);
 };
 
 class DrawPassBuilder : public PassBuilder
 {
 public:
+  DrawPassBuilder();
+  void bindTexture(int slot, GLuint texobj) { bindTextureInternal(drawPass_, slot, texobj); }
+  void bindTextureImage(int slot, GLuint texobj) { bindTextureImageInternal(drawPass_, slot, texobj); }
+  void bindSampler(int slot, GLuint samplerobj) { bindSamplerInternal(drawPass_, slot, samplerobj); }
+  void bindUniformBuffer(int slot, const ag::gl::BufferSlice &slice) { bindUniformBufferInternal(drawPass_, slot, slice); }
+  void bindShaderStorageBuffer(int slot, const ag::gl::BufferSlice &slice) { bindShaderStorageBufferInternal(drawPass_, slot, slice); }
+  void addDependency(Pass &dependency) { addDependencyInternal(drawPass_, dependency); }
   void bindVertexArray(GLuint vao);
   void bindColorBuffer(int index, GLuint texobj);
   void bindDepthBuffer(GLuint texobj);
   void bindVertexBuffer(int slot, const ag::gl::BufferSlice &slice, int stride);
-
   void setVertexShader(std::string vs);
   void setFragmentShader(std::string fs);
   void addShaderKeyword(std::string kw);
   void addShaderDef(std::string kw, std::string def);
-
+  void setViewport(int index, float x, float y, float width, float height);
+  void setBlendState(int index, const gl::BlendState& blendState);
+  void setRasterizerState(const gl::RasterizerState& rs);
+  void setDepthStencilState(const gl::DepthStencilState& ds);
   auto makeDrawPass() -> std::unique_ptr<DrawPass>;
 
-  auto blendState(int index) -> gl::BlendState & {
-    return getPassPtr()->blendStates_[index];
-  }
-  auto viewport(int index) -> gl::Viewport & {
-    return getPassPtr()->viewports_[index];
-  }
-  auto rasterizerState() -> gl::RasterizerState & {
-    return getPassPtr()->rasterizerState_;
-  }
-  auto depthStencilState() -> gl::DepthStencilState & {
-    return getPassPtr()->depthStencilState_;
-  }
-
 private:
-  DrawPass *getPassPtr() { return static_cast<DrawPass *>(pass_.get()); }
+  DrawPass drawPass_;
 };
 
 ////////////////////////////////////////////////////////

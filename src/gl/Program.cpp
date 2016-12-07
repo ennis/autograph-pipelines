@@ -68,7 +68,7 @@ std::string Shader::getCompileLog() {
 
 bool Program::getLinkStatus() {
   GLint status = GL_TRUE;
-  glGetShaderiv(obj_.get(), GL_LINK_STATUS, &status);
+  glGetProgramiv(obj_.get(), GL_LINK_STATUS, &status);
   return status == GL_TRUE;
 }
 

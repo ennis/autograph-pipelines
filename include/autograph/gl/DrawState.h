@@ -61,7 +61,11 @@ struct RasterizerState {
   constexpr RasterizerState(GLenum fillMode_) : fillMode{fillMode_} {}
   GLenum fillMode = GL_FILL;
   GLenum cullMode = GL_NONE;
-
+  GLenum frontFace = GL_CCW;
+  float depthBias = 1.0f;
+  float slopeScaledDepthBias = 1.0f;
+  bool depthClipEnable = false;
+  bool scissorEnable = false;
 };
 
 struct ScissorRect {
