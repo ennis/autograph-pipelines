@@ -2,7 +2,7 @@
 #include <cstdint>
 #include <array>
 #include <autograph/Types.h>
-#include <autograph/editor/Observable.h>
+#include <autograph/engine/Observable.h>
 
 namespace ag 
 {

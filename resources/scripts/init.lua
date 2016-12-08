@@ -79,6 +79,20 @@ local defaultEffect = {
 	fragmentShader = deferredFS	
 }
 
+function loadMeshAction(path) end 
+
+--local mainui.curvatureScaling = ui.slider { label = 'Curvature Scaling', min = 0.01, max = 100 }
+
+--ui.addChild(ui.dock { ui.vbox { mainui.curvatureScaling, mainui.loadMesh, mainui.saveMesh }})
+
+-- local loadFileDock = ui.dock {
+-- 	ui.vbox {
+-- 		label = 'File',
+-- 		ui.button { label = 'Load Mesh', action = loadMeshAction },
+-- 		ui.slider { label = 'Curvature scaling', target = 'curvatureScaling', min = 0.01, max = 100 }
+-- 	}
+-- }
+-- ui.addChild(loadFileDock)
 
 local scene = core.Scene()
 local obj = scene:loadMesh(core.getActualPath('resources/meshes/hogarth.obj'))

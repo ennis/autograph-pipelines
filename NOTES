@@ -451,6 +451,21 @@ Table view?
 
 
 
+UI goals:
+- can overlay on a 3D scene
+- Good OS integration (e.g. Ctrl-C/Ctrl-V support, screen reader compatibility)
+- easy custom rendering
+
+UI alternatives:
+
+ImGui:
+- good with OpenGL
+- poor OS inte
+
+Qt:
+- OpenGL support
+- cannot overlay?
+
 
 
 Entity system:

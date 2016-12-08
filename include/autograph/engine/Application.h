@@ -1,11 +1,11 @@
 #pragma once
 #include <autograph/Types.h>
-#include <autograph/editor/Observable.h>
-#include <autograph/editor/Input.h>
+#include <autograph/engine/Observable.h>
+#include <autograph/engine/Input.h>
 
 struct GLFWwindow;
-class GrContext;
-class SkSurface;
+//class GrContext;
+//class SkSurface;
 
 namespace ag 
 {
@@ -13,24 +13,24 @@ namespace ag
 class AG_API Application
 {
 public:
-	Application(uvec2 initSize);
+	Application(ivec2 initSize);
 	~Application();
 
 	virtual void resize();
 	virtual void render();
 	virtual void onInputEvent(InputEvent& ev);
-	uvec2 getFramebufferSize();
-	uvec2 getWindowSize();
+	ivec2 getFramebufferSize();
+	ivec2 getWindowSize();
 	GLFWwindow* getWindow() const;
-	SkSurface* getSkSurface();
+	//SkSurface* getSkSurface();
 	Subscription& getSubscription();
 	void run();
 
 private:
-	void initialize(uvec2 initSize);
+	void initialize(ivec2 initSize);
 	void terminate();
-	void handleWindowSizeChanged(uvec2 newSize);
-	void createSkiaSurface(uvec2 size);
+	void handleWindowSizeChanged(ivec2 newSize);
+	//void createSkiaSurface(uvec2 size);
 	struct Impl;
 	std::unique_ptr<Impl> impl; 
 

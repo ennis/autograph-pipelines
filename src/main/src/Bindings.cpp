@@ -17,7 +17,41 @@
 #include "SceneRenderer.h"
 #include "Effect.h"
 
+// Qt GUI bindings
+#include <QtWidgets>
+
+
 namespace ag {
+
+QWidget* createDock(const char* name, QWidget* child) 
+{
+    auto dock = new QDockWidget(tr(name));
+    auto widget = new QWidget();
+    auto layout = new QVBoxLayout();
+    layout->addWidget(new QPushButton("Text"));
+    layout->addWidget(new QTextEdit());
+    layout->addWidget(new QSlider());
+    widget->setLayout(layout);
+    dock->setWidget(widget);
+    return dock;
+}
+
+void addToDock(QDockWidget* dock, QWidget* child)
+{
+    dock->widget()->layout()->addWidget(child);
+}
+
+QWidget* createButton(const char* label)
+{
+    return new QPushButton();
+}
+
+QWidget* createSlider()
+{
+
+}
+
+
 sol::table openLuaBindings(sol::this_state s) {
   sol::state_view lua{s};
   sol::table module = lua.create_table();

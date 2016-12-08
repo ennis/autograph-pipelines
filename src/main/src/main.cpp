@@ -155,7 +155,13 @@ public:
     sceneView = new OpenGLWidget();
 
     auto entityViewDock = new QDockWidget(tr("Scene"));
-    entityViewDock->setWidget(new QWidget());
+    auto widget = new QWidget();
+    auto layout = new QVBoxLayout();
+    layout->addWidget(new QPushButton("Text"));
+    layout->addWidget(new QTextEdit());
+    layout->addWidget(new QSlider());
+    widget->setLayout(layout);
+    entityViewDock->setWidget(widget);
     addDockWidget(Qt::LeftDockWidgetArea, entityViewDock);
 
     auto openglViewDock = new QDockWidget(tr("Scene View"));
@@ -171,7 +177,7 @@ public:
     createActions();
   }
 
-  void showSceneViewContextMenu(const QPoint &pos) // this is a slot
+  void showSceneViewContextMenu(const QPoint &pos)
   {
     // for most widgets
     QPoint globalPos = sceneView->mapToGlobal(pos);
