@@ -23,9 +23,11 @@
 
 namespace ag {
 
+namespace ui
+{
 QWidget* createDock(const char* name, QWidget* child) 
 {
-    auto dock = new QDockWidget(tr(name));
+    auto dock = new QDockWidget(name);
     auto widget = new QWidget();
     auto layout = new QVBoxLayout();
     layout->addWidget(new QPushButton("Text"));
@@ -46,8 +48,12 @@ QWidget* createButton(const char* label)
     return new QPushButton();
 }
 
-QWidget* createSlider()
+QWidget* createSlider(const char* label, float min, float max)
 {
+    auto slider = new QSlider();
+    slider->setOrientation(Qt::Horizontal);
+    return slider;
+}
 
 }
 

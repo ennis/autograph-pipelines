@@ -177,6 +177,12 @@ public:
     createActions();
   }
 
+  void addDock(QDockWidget* dw)
+  {
+      dw->setFloating(true);
+      addDockWidget(Qt::NoDockWidgetArea, dw);
+  }
+
   void showSceneViewContextMenu(const QPoint &pos)
   {
     // for most widgets

@@ -81,7 +81,23 @@ local defaultEffect = {
 
 function loadMeshAction(path) end 
 
---local mainui.curvatureScaling = ui.slider { label = 'Curvature Scaling', min = 0.01, max = 100 }
+ui.dock {
+	-- if value != nil, then will create a variable holding the value
+	-- access the value with ui.var.curvatureScaling
+	ui.slider { label = 'Curvature Scaling', id = 'curvatureScaling', min = 0.01, max = 1000 }
+	ui.button { label = 'Load Mesh', action = 'loadMeshAction' }
+	ui.button { label = 'Save Mesh', action = 'saveMeshAction' }
+	ui.checkbox { label = 'Bypass stuff', id = 'bypassStuff' }
+}
+
+ui.menu {
+	label = '&File',
+	ui.menuItem { label = 'Close', action = 'closeAction' },
+	ui.menu { label = 'New' ,
+		
+	}
+}
+
 
 --ui.addChild(ui.dock { ui.vbox { mainui.curvatureScaling, mainui.loadMesh, mainui.saveMesh }})
 
