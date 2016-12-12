@@ -11,6 +11,8 @@ target_link_libraries(
 	PRIVATE
 		##### internal
 		autograph_support
+		autograph_core
+		autograph_engine
 		##### external
 		glfw
 		fmt 
@@ -19,6 +21,7 @@ target_link_libraries(
 		optional   
 		gsl 
 		zlibstatic
+		skia-bin
 	PUBLIC
 		# GLM and glloadgen are exported as a part of the public API
 		glm 

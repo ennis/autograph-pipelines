@@ -88,11 +88,10 @@ add_subdirectory(glfw EXCLUDE_FROM_ALL)
 target_include_directories(glfw INTERFACE glfw/include)
 
 # imgui
-#file(GLOB IMGUI_SOURCES imgui/*.cpp imgui_glfw3/*.cpp)
-#add_library(imgui STATIC ${IMGUI_SOURCES})
-#target_include_directories(imgui PUBLIC imgui imgui_glfw3)
-#target_link_libraries(imgui PRIVATE glloadgen glfw glm)
-
+file(GLOB IMGUI_SOURCES imgui/*.cpp imgui_glfw3/*.cpp)
+add_library(imgui STATIC ${IMGUI_SOURCES})
+target_include_directories(imgui PUBLIC imgui imgui_glfw3)
+target_link_libraries(imgui PRIVATE glloadgen glfw glm)
 
 # glm
 add_library(glm INTERFACE)

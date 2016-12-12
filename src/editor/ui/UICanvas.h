@@ -52,6 +52,22 @@ protected:
 };
 
 /**
+ *
+ */
+class Slider : public Widget
+{
+public:
+	virtual void render(SkCanvas& canvas) override {
+
+	}
+
+	Observable<float> value;
+
+private:
+	float value_;
+};
+
+/**
 *
 */
 class Text : public Widget {

@@ -1,6 +1,8 @@
 #pragma once
 #include <cstdint>
 #include <array>
+#define GLFW_INCLUDE_NONE
+#include <GLFW/glfw3.h>
 #include <autograph/Types.h>
 #include <autograph/engine/Observable.h>
 

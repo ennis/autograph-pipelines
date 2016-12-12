@@ -6,13 +6,12 @@
 
 #include <gl_core_4_5.h>
 #include <GLFW/glfw3.h>
-#include <cppformat/format.h>
 // core engine stuff
-#include "ScriptEngine.h"
 #include <autograph/RectTransform.h>
-#include <autograph/editor/Application.h>
-#include <autograph/editor/Input.h>
-#include <autograph/editor/Observable.h>
+#include <autograph/engine/Application.h>
+#include <autograph/engine/Input.h>
+#include <autograph/engine/Observable.h>
+#include <autograph/support/Debug.h>
 
 #include <SkCanvas.h>
 #include <SkPaint.h>
@@ -29,24 +28,18 @@ constexpr float twopi_f = 6.28318530718f;
 
 class EditorApplication : public ag::Application {
 public:
-  EditorApplication() : ag::Application{ag::uvec2{640, 480}} { setupUi(); }
+  EditorApplication() : ag::Application{ag::ivec2{640, 480}} { setupUi(); }
 
-  void onInputEvent(ag::InputEvent &ev) override {
+  void onInputEvent(ag::InputEvent &ev) override 
+  {
     ui.onInput(mainPanel, ev);
-    // ui::HUDHandleInput(s, rootPanel, ev);
-    if (auto keyEvent = ev.as<ag::KeyEvent>()) {
-      if (keyEvent->code == GLFW_KEY_F5 &&
-          keyEvent->state == ag::KeyState::Pressed) {
-        fmt::print(std::clog, "Reloading assemblies...\n");
-      }
-    }
   }
 
   void setupUi() {
     using namespace ag::ui::builder;
     auto &sub = getSubscription();
 
-    auto clickedAButton = []() { fmt::print("You clicked a button\n"); };
+    auto clickedAButton = []() { AG_DEBUG("You clicked a button\n"); };
 
     mainPanel.addMany(panel(
         verticalLayout(spacing(3.0f)),
@@ -83,10 +76,9 @@ public:
     canvas->flush();
   }
 
-  void resize() override {}
+  void resize(ag::ivec2 size) override {}
 
 private:
-  ag::ScriptEngine scriptEngine;
   ag::ui::UICanvas ui;
   ag::ui::Panel mainPanel;
 };

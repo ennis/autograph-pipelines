@@ -2,6 +2,7 @@ fx = require 'autograph/fx'
 core = require 'autograph/core'
 gl = require 'autograph/gl'
 glapi = require 'autograph/glapi'
+ui = require 'autograph/ui'
 
 local deferredVS = [[
 #version 450
@@ -81,22 +82,21 @@ local defaultEffect = {
 
 function loadMeshAction(path) end 
 
-ui.dock {
-	-- if value != nil, then will create a variable holding the value
-	-- access the value with ui.var.curvatureScaling
-	ui.slider { label = 'Curvature Scaling', id = 'curvatureScaling', min = 0.01, max = 1000 }
-	ui.button { label = 'Load Mesh', action = 'loadMeshAction' }
-	ui.button { label = 'Save Mesh', action = 'saveMeshAction' }
-	ui.checkbox { label = 'Bypass stuff', id = 'bypassStuff' }
-}
+-- ui.dock {
+-- 	-- if value != nil, then will create a variable holding the value
+-- 	-- access the value with ui.var.curvatureScaling
+-- 	ui.slider { label = 'Curvature Scaling', id = 'curvatureScaling', min = 0.01, max = 1000 }
+-- 	ui.button { label = 'Load Mesh', action = 'loadMeshAction' }
+-- 	ui.button { label = 'Save Mesh', action = 'saveMeshAction' }
+-- 	ui.checkbox { label = 'Bypass stuff', id = 'bypassStuff' }
+-- }
 
-ui.menu {
-	label = '&File',
-	ui.menuItem { label = 'Close', action = 'closeAction' },
-	ui.menu { label = 'New' ,
-		
-	}
-}
+-- ui.menu {
+-- 	label = '&File',
+-- 	ui.menuItem { label = 'Close', action = 'closeAction' },
+-- 	ui.menu { label = 'New' ,
+-- 	}
+-- }
 
 
 --ui.addChild(ui.dock { ui.vbox { mainui.curvatureScaling, mainui.loadMesh, mainui.saveMesh }})
@@ -110,8 +110,9 @@ ui.menu {
 -- }
 -- ui.addChild(loadFileDock)
 
+
 local scene = core.Scene()
-local obj = scene:loadMesh(core.getActualPath('resources/meshes/hogarth.obj'))
+local obj = scene:loadMesh(core.getActualPath('resources/mesh/youmu/youmu.fbx'))
 local defaultPass = fx.createDrawPass(defaultEffect)
 
 function init() 
@@ -119,8 +120,25 @@ function init()
 	core.debug('tr.position = %f,%f,%f', obj.transform.position.x, obj.transform.position.y, obj.transform.position.z)
 end
 
+local value0 = 0.0
+local value1 = 0.0
+
 function onRender()
-	core.debug('onRender (%ix%i)', screen_width, screen_height)
+	imgui.BeginMainMenuBar()
+	if imgui.BeginMenu('File', true) then
+		if imgui.MenuItem('New...', 'Ctrl+N', false, true) then
+			core.debug('New!')
+		end
+		if imgui.MenuItem('Open...', 'Ctrl+O', false, true) then
+			core.debug('Open')
+		end
+		imgui.EndMenu()
+	end
+	imgui.EndMainMenuBar()
+
+	_, value0 = imgui.SliderFloat('value', value0, 0.0, 1.0, '%.3f', 1.0)
+
+	core.debug('onRender (%ix%i), value=%f', framebufferWidth, framebufferHeight, value0)
 	--sceneRenderer:render()
 	--core.drawMesh(mesh, pipeline, { uniforms = {
 	--	screen_size = types.vec2(screen_width, screen_height)

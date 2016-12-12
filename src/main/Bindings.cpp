@@ -16,47 +16,10 @@
 #include "Scene.h"
 #include "SceneRenderer.h"
 #include "Effect.h"
-
-// Qt GUI bindings
-#include <QtWidgets>
-
+// imgui
+#include "imgui.h"
 
 namespace ag {
-
-namespace ui
-{
-QWidget* createDock(const char* name, QWidget* child) 
-{
-    auto dock = new QDockWidget(name);
-    auto widget = new QWidget();
-    auto layout = new QVBoxLayout();
-    layout->addWidget(new QPushButton("Text"));
-    layout->addWidget(new QTextEdit());
-    layout->addWidget(new QSlider());
-    widget->setLayout(layout);
-    dock->setWidget(widget);
-    return dock;
-}
-
-void addToDock(QDockWidget* dock, QWidget* child)
-{
-    dock->widget()->layout()->addWidget(child);
-}
-
-QWidget* createButton(const char* label)
-{
-    return new QPushButton();
-}
-
-QWidget* createSlider(const char* label, float min, float max)
-{
-    auto slider = new QSlider();
-    slider->setOrientation(Qt::Horizontal);
-    return slider;
-}
-
-}
-
 
 sol::table openLuaBindings(sol::this_state s) {
   sol::state_view lua{s};
@@ -188,6 +151,15 @@ sol::table openLuaBindings(sol::this_state s) {
   module["debugMessage"] = [](const char* str) { rawLogMessage(LogLevel::Debug, str); };
   module["warningMessage"] = [](const char* str) { rawLogMessage(LogLevel::Warning, str); };
   module["errorMessage"] = [](const char* str) { rawLogMessage(LogLevel::Error, str); };
+
+  // imgui bindings
+ /* module["imgui_BeginMainMenuBar"] = &ImGui::BeginMainMenuBar;
+  module["imgui_BeginMenu"] = &ImGui::BeginMenu;
+  module["imgui_MenuItem"] = static_cast<bool(*)(const char*, const char*, bool, bool)>(&ImGui::MenuItem);
+  module["imgui_EndMenu"] = &ImGui::EndMenu;
+  module["imgui_EndMainMenuBar"] = &ImGui::EndMainMenuBar;
+  module["imgui_BeginDock"] = [](const char* label) { return ImGui::BeginDock(label); };
+  module["imgui_EndDock"] = &ImGui::EndDock;*/
 
   return module;
 }

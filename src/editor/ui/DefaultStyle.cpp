@@ -15,6 +15,9 @@ namespace ag {
 		static const SkColor secondaryTextColor = 0xFF757575;
 		static const SkColor dividerColor = 0xFFBDBDBD;
 
+		static const SkColor sliderBackgroundColor = darkPrimaryColor;
+		static const SkColor sliderKnobColor = defaultPrimaryColor;
+
 		static const SkColor panelBgColor = defaultPrimaryColor;
 		static const SkColor labelColor = SkColorSetRGB(255, 255, 255);
 		// Button released
@@ -36,6 +39,65 @@ namespace ag {
 			return paint;
 		}
 
+		//===========================================
+		// Sliders
+		
+
+		// Determine slider knob width and position
+		void getSliderKnobRect(
+			ivec2 size, float value, float minVal, 
+			float maxVal, int nbDivs, 
+			Rect2D& knobRect, float& knobSnapWidth)
+		{
+			constexpr float minSliderKnobSize = 10.0f;
+			const float fx = (float)size.x;
+			const float range = maxVal - minVal;
+			const float knobWidth = (nbDivs != 0) ? std::max(minSliderKnobSize, fx / nbDivs) : minSliderKnobSize;
+			knobSnapWidth = (nbDivs != 0) ? knobWidth : 1.0f;
+			knobRect.position.x = value * ((fx - knobWidth) / range);
+			knobRect.size.x = knobWidth;
+			knobRect.position.y = 0.0f;
+			knobRect.size.y = (float)size.y;
+		}
+
+		bool hitTestSlider(vec2 pos, Rect2D rect, float value, float minVal,
+			float maxVal, int nbDivs, float& newVal)
+		{
+			Rect2D knob;
+			float knobSnapWidth;
+			getSliderKnobRect(rect.size, value, minVal, maxVal, nbDivs, knob, knobSnapWidth);
+			knob.position += rect.position;
+			if (knob.inside(pos)) {
+				return 2;	// clicked knob
+			}
+			if (rect.inside(pos)) {
+
+			}
+		}
+
+	
+		void drawSlider(
+			SkCanvas& cv, 
+			Widget::VisualState state, 
+			ivec2 size, float value, float minVal,
+			float maxVal, int nbDivs)
+		{
+			cv.save();
+			SkRect rect = SkRect::MakeLTRB(0.0f, 0.0f, size.x, size.y);
+			float halfKnobSize = 0.5f * knobSize;
+			SkRect knobRect = SkRect::MakeLTRB(
+				glm::clamp(knobPos - halfKnobSize, 0.0f, (float)size.x), 0.0f, knobSize, size.y);
+			SkPaint paint = getDefaultPaint();
+			paint.setStyle(SkPaint::kFill_Style);
+			// draw slider background
+			paint.setColor(sliderBackgroundColor);
+			cv.drawRect(rect, paint);
+			paint.setColor(sliderKnobColor);
+			cv.restore();
+		}
+
+		//===========================================
+		// Buttons
 		void drawButton(SkCanvas &cv, Widget::VisualState state, ivec2 size) {
 			cv.save();
 			SkRect rect = SkRect::MakeLTRB(0.0f, 0.0f, size.x, size.y);
