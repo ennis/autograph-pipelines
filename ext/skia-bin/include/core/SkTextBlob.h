@@ -106,10 +106,6 @@ public:
      */
     sk_sp<SkTextBlob> make();
 
-    const SkTextBlob* build() {
-        return this->make().release();
-    }
-
     /**
      *  Glyph and position buffers associated with a run.
      *

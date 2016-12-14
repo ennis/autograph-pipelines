@@ -8,10 +8,11 @@
 #ifndef SkPaint_DEFINED
 #define SkPaint_DEFINED
 
+#include "SkBlendMode.h"
 #include "SkColor.h"
 #include "SkFilterQuality.h"
 #include "SkMatrix.h"
-#include "SkXfermode.h"
+#include "SkRefCnt.h"
 
 class SkAutoDescriptor;
 class SkAutoGlyphCache;
@@ -500,12 +501,8 @@ public:
      *  If a previous shader exists, its reference count is decremented.
      *  If shader is not NULL, its reference count is incremented.
      *  @param shader   May be NULL. The shader to be installed in the paint
-     *  @return         shader
      */
     void setShader(sk_sp<SkShader>);
-#ifdef SK_SUPPORT_LEGACY_CREATESHADER_PTR
-    SkShader* setShader(SkShader* shader);
-#endif
 
     /** Get the paint's colorfilter. If there is a colorfilter, its reference
         count is not changed.
@@ -513,45 +510,17 @@ public:
     */
     SkColorFilter* getColorFilter() const { return fColorFilter.get(); }
 
-    /** Set or clear the paint's colorfilter, returning the parameter.
+    /** Set or clear the paint's colorfilter.
         <p />
         If the paint already has a filter, its reference count is decremented.
         If filter is not NULL, its reference count is incremented.
         @param filter   May be NULL. The filter to be installed in the paint
-        @return         filter
     */
-#ifdef SK_SUPPORT_LEGACY_COLORFILTER_PTR
-    SkColorFilter* setColorFilter(SkColorFilter* filter);
-#endif
     void setColorFilter(sk_sp<SkColorFilter>);
 
-    /** Get the paint's xfermode object.
-        <p />
-      The xfermode's reference count is not affected.
-        @return the paint's xfermode (or NULL)
-    */
-    SkXfermode* getXfermode() const { return fXfermode.get(); }
-
-    /** Set or clear the xfermode object.
-        <p />
-        Pass NULL to clear any previous xfermode.
-        As a convenience, the parameter passed is also returned.
-        If a previous xfermode exists, its reference count is decremented.
-        If xfermode is not NULL, its reference count is incremented.
-        @param xfermode May be NULL. The new xfermode to be installed in the
-                        paint
-        @return         xfermode
-    */
-    void setXfermode(sk_sp<SkXfermode>);
-#ifdef SK_SUPPORT_LEGACY_XFERMODE_PTR
-    SkXfermode* setXfermode(SkXfermode* xfermode);
-#endif
-
-    /** Create an xfermode based on the specified Mode, and assign it into the
-        paint, returning the mode that was set. If the Mode is SrcOver, then
-        the paint's xfermode is set to null.
-     */
-    SkXfermode* setXfermodeMode(SkXfermode::Mode);
+    SkBlendMode getBlendMode() const { return (SkBlendMode)fBlendMode; }
+    bool isSrcOver() const { return (SkBlendMode)fBlendMode == SkBlendMode::kSrcOver; }
+    void setBlendMode(SkBlendMode mode) { fBlendMode = (unsigned)mode; }
 
     /** Get the paint's patheffect object.
         <p />
@@ -571,9 +540,6 @@ public:
         @return         effect
     */
     void setPathEffect(sk_sp<SkPathEffect>);
-#ifdef SK_SUPPORT_LEGACY_PATHEFFECT_PTR
-    SkPathEffect* setPathEffect(SkPathEffect* effect);
-#endif
 
     /** Get the paint's maskfilter object.
         <p />
@@ -592,9 +558,6 @@ public:
                             the paint
         @return             maskfilter
     */
-#ifdef SK_SUPPORT_LEGACY_MASKFILTER_PTR
-    SkMaskFilter* setMaskFilter(SkMaskFilter* maskfilter);
-#endif
     void setMaskFilter(sk_sp<SkMaskFilter>);
 
     // These attributes are for text/fonts
@@ -618,9 +581,6 @@ public:
         @return         typeface
     */
     void setTypeface(sk_sp<SkTypeface>);
-#ifdef SK_SUPPORT_LEGACY_TYPEFACE_PTR
-    SkTypeface* setTypeface(SkTypeface* typeface);
-#endif
 
     /** Get the paint's rasterizer (or NULL).
         <p />
@@ -640,35 +600,28 @@ public:
                           the paint.
         @return           rasterizer
     */
-#ifdef SK_SUPPORT_LEGACY_MINOR_EFFECT_PTR
-    SkRasterizer* setRasterizer(SkRasterizer* rasterizer);
-#endif
     void setRasterizer(sk_sp<SkRasterizer>);
 
     SkImageFilter* getImageFilter() const { return fImageFilter.get(); }
-    SkImageFilter* setImageFilter(SkImageFilter*);
     void setImageFilter(sk_sp<SkImageFilter>);
 
     /**
      *  Return the paint's SkDrawLooper (if any). Does not affect the looper's
      *  reference count.
      */
-    SkDrawLooper* getLooper() const { return fLooper.get(); }
-
+    SkDrawLooper* getDrawLooper() const { return fDrawLooper.get(); }
+    SkDrawLooper* getLooper() const { return fDrawLooper.get(); }
     /**
      *  Set or clear the looper object.
      *  <p />
      *  Pass NULL to clear any previous looper.
-     *  As a convenience, the parameter passed is also returned.
      *  If a previous looper exists in the paint, its reference count is
      *  decremented. If looper is not NULL, its reference count is
      *  incremented.
      *  @param looper May be NULL. The new looper to be installed in the paint.
-     *  @return looper
      */
-#ifdef SK_SUPPORT_LEGACY_MINOR_EFFECT_PTR
-    SkDrawLooper* setLooper(SkDrawLooper* looper);
-#endif
+    void setDrawLooper(sk_sp<SkDrawLooper>);
+
     void setLooper(sk_sp<SkDrawLooper>);
 
     enum Align {
@@ -1091,11 +1044,10 @@ private:
     sk_sp<SkTypeface>     fTypeface;
     sk_sp<SkPathEffect>   fPathEffect;
     sk_sp<SkShader>       fShader;
-    sk_sp<SkXfermode>     fXfermode;
     sk_sp<SkMaskFilter>   fMaskFilter;
     sk_sp<SkColorFilter>  fColorFilter;
     sk_sp<SkRasterizer>   fRasterizer;
-    sk_sp<SkDrawLooper>   fLooper;
+    sk_sp<SkDrawLooper>   fDrawLooper;
     sk_sp<SkImageFilter>  fImageFilter;
 
     SkScalar        fTextSize;
@@ -1104,6 +1056,7 @@ private:
     SkColor         fColor;
     SkScalar        fWidth;
     SkScalar        fMiterLimit;
+    uint32_t        fBlendMode; // just need 5-6 bits
     union {
         struct {
             // all of these bitfields should add up to 32

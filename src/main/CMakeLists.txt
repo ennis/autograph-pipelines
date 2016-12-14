@@ -15,7 +15,7 @@ target_link_libraries(
 	autograph_support 
 	autograph_engine 
 	assimp 
-	luajit_bin 
+	lua53_bin 
 	sol2 
 	fmt 
 	glm 
