@@ -136,6 +136,13 @@ namespace ag {
 				return text;
 			}
 
+			template <typename... Args>
+			std::unique_ptr<Slider> slider(Args&&... args) {
+				auto slider = std::make_unique<Slider>();
+				parseBuilderArgs(*slider, std::forward<Args>(args)...);
+				return slider;
+			}
+
 			std::unique_ptr<Dummy> dummy() {
 				return std::make_unique<Dummy>();
 			}

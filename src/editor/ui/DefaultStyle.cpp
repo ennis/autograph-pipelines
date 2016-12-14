@@ -60,21 +60,22 @@ namespace ag {
 			knobRect.size.y = (float)size.y;
 		}
 
-		bool hitTestSlider(vec2 pos, Rect2D rect, float value, float minVal,
+		int hitTestSlider(vec2 locPos, ivec2 size, float value, float minVal,
 			float maxVal, int nbDivs, float& newVal)
 		{
+			Rect2D rect{ {0.0f, 0.0f}, {(float)size.x, (float)size.y} };
 			Rect2D knob;
 			float knobSnapWidth;
-			getSliderKnobRect(rect.size, value, minVal, maxVal, nbDivs, knob, knobSnapWidth);
-			knob.position += rect.position;
-			if (knob.inside(pos)) {
-				return 2;	// clicked knob
+			getSliderKnobRect(size, value, minVal, maxVal, nbDivs, knob, knobSnapWidth);
+			if (knob.inside(locPos)) {
+				return 2;	// clicked knob 
 			}
-			if (rect.inside(pos)) {
-
+			if (rect.inside(locPos)) {
+				return 1;	// clicked rect
 			}
+			// clicked nothing
+			return 0;
 		}
-
 	
 		void drawSlider(
 			SkCanvas& cv, 
@@ -83,16 +84,18 @@ namespace ag {
 			float maxVal, int nbDivs)
 		{
 			cv.save();
+			Rect2D knob;
+			float knobSnapWidth;
+			getSliderKnobRect(size, value, minVal, maxVal, nbDivs, knob, knobSnapWidth);
 			SkRect rect = SkRect::MakeLTRB(0.0f, 0.0f, size.x, size.y);
-			float halfKnobSize = 0.5f * knobSize;
-			SkRect knobRect = SkRect::MakeLTRB(
-				glm::clamp(knobPos - halfKnobSize, 0.0f, (float)size.x), 0.0f, knobSize, size.y);
+			SkRect knobRect = SkRect::MakeLTRB(knob.position.x, knob.position.y, knob.size.x, knob.size.y);
 			SkPaint paint = getDefaultPaint();
 			paint.setStyle(SkPaint::kFill_Style);
 			// draw slider background
 			paint.setColor(sliderBackgroundColor);
 			cv.drawRect(rect, paint);
 			paint.setColor(sliderKnobColor);
+			cv.drawRect(knobRect, paint);
 			cv.restore();
 		}
 

@@ -4,6 +4,8 @@
 #include <SkPaint.h>
 #include <SkCanvas.h>
 
+#include <autograph/support/Debug.h>
+
 namespace ag {
 namespace ui {
 
@@ -30,41 +32,25 @@ public:
 	  drawButton(canvas, visualState, calculatedTransform.size);
   }
   
-  virtual bool onPointerUp() override  {
-	  Widget::onPointerUp();
+  virtual bool onPointerUp(vec2 pos) override  {
+	  Widget::onPointerUp(pos);
 	  onClick();
 	  return true;
   }
 
-  virtual bool onPointerEnter() override {
-	  Widget::onPointerEnter();
+  virtual bool onPointerEnter(vec2 pos) override {
+	  Widget::onPointerEnter(pos);
 	  return true;
   }
 
-  virtual bool onPointerExit() override {
-	  Widget::onPointerExit();
+  virtual bool onPointerExit(vec2 pos) override {
+	  Widget::onPointerExit(pos);
 	  return true;
   }
 
   Observable<> onClick;
 
 protected:
-};
-
-/**
- *
- */
-class Slider : public Widget
-{
-public:
-	virtual void render(SkCanvas& canvas) override {
-
-	}
-
-	Observable<float> value;
-
-private:
-	float value_;
 };
 
 /**
@@ -89,6 +75,47 @@ public:
   std::string text;
   float textSize{ 12.0f };
   bool autoFit{ false };
+};
+
+/**
+*
+*/
+class Slider : public Widget
+{
+public:
+	Slider() : label_{"dummy"} 
+	{
+		//label_.
+	}
+
+	virtual void render(SkCanvas& canvas) override {
+		drawSlider(canvas, visualState, calculatedTransform.size, value_, minVal_, maxVal_, 0);
+		label_.text = std::to_string(value_);
+		label_.render(canvas);
+	}
+
+	virtual bool onPointerDown(vec2 pos) override {
+		auto locPos = calculatedTransform.worldToLocal(pos);
+		float newVal;
+		int hitTestResult = hitTestSlider(locPos, calculatedTransform.size, value_, minVal_, maxVal_, 0, newVal);
+		AG_DEBUG("Slider::onPointerDown pos {},{} locPos {},{} hitTest {}", pos.x, pos.y, locPos.x, locPos.y, hitTestResult);
+		return true;
+	}
+
+	void setMinValue(float minVal) {
+		minVal_ = minVal;
+	}
+	void setMaxValue(float maxVal) {
+		maxVal_ = maxVal;
+	}
+
+	Observable<float> value;
+
+private:
+	float minVal_{ 0.0f };
+	float maxVal_{ 1.0f };
+	float value_{ 0.0f };
+	Text label_;
 };
 
 class Dummy : public Widget {

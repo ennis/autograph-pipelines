@@ -27,15 +27,15 @@ RectTransform::Calculated RectTransform::calculateTransform(const mat3 &parentTr
   c.transform = glm::translate(c.transform, pos + piv_trans);
   c.transform = glm::rotate(c.transform, rotation.x);
   c.transform = glm::translate(c.transform, -piv_trans);
+  c.inverseTransform = glm::inverse(c.transform);
   return c;
 }
 
-bool RectTransform::isPointInside(vec2 point, const mat3& calculatedTransform, vec2 calculatedSize) {
+bool RectTransform::Calculated::isPointInside(vec2 point) {
   // world-to-local transform
-  auto w2l = glm::inverse(calculatedTransform);
-  auto invp = w2l * vec3{point, 1.0f};
-  if (invp.x >= 0.0f && invp.x <= calculatedSize.x && invp.y >= 0.0f &&
-      invp.y <= calculatedSize.y)
+  auto invp = inverseTransform * vec3{point, 1.0f};
+  if (invp.x >= 0.0f && invp.x <= size.x && invp.y >= 0.0f &&
+      invp.y <= size.y)
     return true;
   return false;
 }

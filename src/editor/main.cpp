@@ -60,6 +60,7 @@ public:
               button("7", onClick(sub, clickedAButton)),
               button("8", onClick(sub, clickedAButton)),
               button("9", onClick(sub, clickedAButton)), dummy(),
+			slider(), slider(),
               button("0", onClick(sub, clickedAButton)), dummy())));
   }
 

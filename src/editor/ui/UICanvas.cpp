@@ -62,9 +62,7 @@ void UICanvas::recursiveRender(Widget& w, SkCanvas &canvas)
 }
 
 bool UICanvas::recursiveHitTest(Widget& w, InputEvent &ev, vec2 pos) {
-  bool isInside =
-      RectTransform::isPointInside(pos, w.calculatedTransform.transform,
-                                   w.calculatedTransform.size);
+	bool isInside = w.calculatedTransform.isPointInside(pos);
   bool handled = false;
   // always hit-test children?
   for (auto &&c : w.children)
@@ -78,9 +76,9 @@ bool UICanvas::recursiveHitTest(Widget& w, InputEvent &ev, vec2 pos) {
         auto mbev = ev.as<MouseButtonEvent>();
         if (mbev->button == 0) {
           if (mbev->state == ButtonState::Pressed) {
-            handled |= w.onPointerDown();
+            handled |= w.onPointerDown(pos);
           } else {
-            handled |= w.onPointerUp();
+            handled |= w.onPointerUp(pos);
           }
         }
       }
@@ -90,10 +88,10 @@ bool UICanvas::recursiveHitTest(Widget& w, InputEvent &ev, vec2 pos) {
       auto cursorev = ev.as<CursorEvent>();
       if (!isInside && w.visualState == Widget::VisualState::Focused) {
         w.visualState = Widget::VisualState::Default;
-        w.onPointerExit();
+        w.onPointerExit(pos);
       } else if (isInside && w.visualState == Widget::VisualState::Default) {
         w.visualState = Widget::VisualState::Focused;
-        w.onPointerEnter();
+        w.onPointerEnter(pos);
       }
     } break;
    }

@@ -107,28 +107,28 @@ public:
    * @details [long description]
    * @return [description]
    */
-  virtual bool onPointerDown() { return false; }
+  virtual bool onPointerDown(vec2 pos) { return false; }
 
   /**
    * @brief [brief description]
    * @details [long description]
    * @return [description]
    */
-  virtual bool onPointerUp() { return false; }
+  virtual bool onPointerUp(vec2 pos) { return false; }
 
   /**
    * @brief [brief description]
    * @details [long description]
    * @return [description]
    */
-  virtual bool onPointerEnter() { return false; }
+  virtual bool onPointerEnter(vec2 pos) { return false; }
 
   /**
    * @brief [brief description]
    * @details [long description]
    * @return [description]
    */
-  virtual bool onPointerExit() { return false; }
+  virtual bool onPointerExit(vec2 pos) { return false; }
 
   /**
    * @brief [brief description]

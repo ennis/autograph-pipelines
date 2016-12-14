@@ -26,13 +26,25 @@ struct AG_API RectTransform {
 
   struct Calculated {
     mat3 transform;
+	mat3 inverseTransform;
     vec2 size;
+
+	// World space -> local space
+	vec2 worldToLocal(vec2 pos) const {
+		vec3 tmp = inverseTransform * vec3{ pos.x, pos.y, 1.0f };
+		return vec2{ tmp.x, tmp.y };
+	}
+	// World space -> local space
+	vec2 worldToLocal(ivec2 ipos) const {
+		vec3 tmp = inverseTransform * vec3{ (float)ipos.x, (float)ipos.y, 1.0f };
+		return vec2{ tmp.x, tmp.y };
+	}
+
+	bool isPointInside(vec2 point);
   };
 
   Calculated calculateTransform(const mat3& parentTransform, vec2 parentSize);
 
-  // hit-test
-  static bool isPointInside(vec2 point, const mat3& calculatedTransform, vec2 calculatedSize);
 };
 
 }
