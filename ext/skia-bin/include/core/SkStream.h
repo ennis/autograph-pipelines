@@ -40,11 +40,9 @@ public:
     virtual ~SkStream() {}
 
     /**
-     *  Attempts to open the specified file, and return a stream to it (using
-     *  mmap if available). On success, the caller is responsible for deleting.
-     *  On failure, returns NULL.
+     *  Attempts to open the specified file as a stream, returns nullptr on failure.
      */
-    static SkStreamAsset* NewFromFile(const char path[]);
+    static std::unique_ptr<SkStreamAsset> MakeFromFile(const char path[]);
 
     /** Reads or skips size number of bytes.
      *  If buffer == NULL, skip size bytes, return how many were skipped.
@@ -291,12 +289,6 @@ public:
     /** If copyData is true, the stream makes a private copy of the data. */
     SkMemoryStream(const void* data, size_t length, bool copyData = false);
 
-    /** Use the specified data as the memory for this stream.
-     *  The stream will call ref() on the data (assuming it is not NULL).
-     *  DEPRECATED
-     */
-    SkMemoryStream(SkData*);
-
     /** Creates the stream to read from the specified data */
     SkMemoryStream(sk_sp<SkData>);
 
@@ -312,17 +304,8 @@ public:
     */
     void setMemoryOwned(const void* data, size_t length);
 
-    /** Return the stream's data in a SkData.
-     *  The caller must call unref() when it is finished using the data.
-     */
-    SkData* copyToData() const;
-
-    /**
-     *  Use the specified data as the memory for this stream.
-     *  The stream will call ref() on the data (assuming it is not NULL).
-     *  The function returns the data parameter as a convenience.
-     */
-    SkData* setData(SkData*);
+    sk_sp<SkData> asData() const { return fData; }
+    void setData(sk_sp<SkData>);
 
     void skipToAlign4();
     const void* getAtPos();
@@ -404,11 +387,9 @@ public:
     void copyTo(void* dst) const;
     void writeToStream(SkWStream* dst) const;
 
-    /**
-     *  Return a copy of the data written so far. This call is responsible for
-     *  calling unref() when they are finished with the data.
-     */
-    SkData* copyToData() const;
+    sk_sp<SkData> snapshotAsData() const;
+    // Return the contents as SkData, and then reset the stream.
+    sk_sp<SkData> detachAsData();
 
     /** Reset, returning a reader stream with the current content. */
     SkStreamAsset* detachAsStream();

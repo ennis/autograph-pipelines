@@ -143,6 +143,23 @@ TARGET_INCLUDE_DIRECTORIES(gsl INTERFACE GSL)
 #target_include_directories(mono INTERFACE ${MONO_INCLUDE_DIR})
 #target_link_libraries(mono INTERFACE ${MONO_LIBRARY})
 
+# luajit-bin
+add_library(luajit_bin INTERFACE)
+find_package(LuaJIT)
+if (LUAJIT_FOUND)
+target_include_directories(luajit_bin INTERFACE ${LUAJIT_INCLUDE_DIR})
+target_link_libraries(luajit_bin INTERFACE ${LUAJIT_LIBRARY})
+message("LuaJIT include: ${LUAJIT_INCLUDE_DIR}")
+message("LuaJIT lib: ${LUAJIT_LIBRARY}")
+else() # Use bundled binaries for windows
+target_include_directories(luajit_bin INTERFACE luajit_bin/include)
+target_link_libraries(luajit_bin INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/luajit_bin/lib/lua51.lib)
+endif()
+
+# lua52compat
+add_library(lua52compat STATIC lua52compat/compat-5.2.c)
+target_link_libraries(lua52compat luajit_bin)
+
 # binary target for skia 
 add_library(skia-bin INTERFACE)
 target_include_directories(skia-bin INTERFACE 
@@ -161,31 +178,28 @@ target_include_directories(skia-bin INTERFACE
 	skia-bin/include/utils/mac
 	skia-bin/include)
 # TODO do this only for windows
+if (WIN32)
 target_link_libraries(skia-bin INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/skia-bin/skia.lib)
+elseif(UNIX)
+find_package(Freetype REQUIRED)
+target_link_libraries(skia-bin INTERFACE 
+	${CMAKE_CURRENT_SOURCE_DIR}/skia-bin/libskialua.a
+	${CMAKE_CURRENT_SOURCE_DIR}/skia-bin/libskia.a 
+	${FREETYPE_LIBRARIES}
+	-lfontconfig
+	)
+endif()
 
 # lua
-#[[find_package(Lua)
+find_package(Lua 5.3 REQUIRED)
 if (LUA_FOUND)
-add_library(lua-bin INTERFACE)
-target_include_directories(lua-bin INTERFACE ${LUA_INCLUDE_DIR})
-target_link_libraries(lua-bin INTERFACE ${LUA_LIBRARIES})
-endif ()]]
+add_library(lua53_bin INTERFACE)
+target_include_directories(lua53_bin INTERFACE ${LUA_INCLUDE_DIR})
+target_link_libraries(lua53_bin INTERFACE ${LUA_LIBRARIES})
+endif ()
 #add_subdirectory(lua-5.3.3)
-
-# luajit-bin
-add_library(luajit_bin INTERFACE)
-find_package(LuaJIT)
-if (LUAJIT_FOUND)
-target_include_directories(luajit_bin INTERFACE ${LUAJIT_INCLUDE_DIR})
-target_link_libraries(luajit_bin INTERFACE ${LUAJIT_LIBRARY})
-message("LuaJIT include: ${LUAJIT_INCLUDE_DIR}")
-message("LuaJIT lib: ${LUAJIT_LIBRARY}")
-else() # Use bundled binaries for windows
-target_include_directories(luajit_bin INTERFACE luajit_bin/include)
-target_link_libraries(luajit_bin INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/luajit_bin/lib/lua51.lib)
-endif()
 
 #sol2
 add_library(sol2 INTERFACE)
 target_include_directories(sol2 INTERFACE sol2)
-target_link_libraries(sol2 INTERFACE luajit_bin optional)
+target_link_libraries(sol2 INTERFACE lua53_bin optional)

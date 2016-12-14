@@ -82,9 +82,9 @@ namespace ag {
 			ivec2 size, float value, float minVal,
 			float maxVal, int nbDivs)
 		{
-			cv.save();
+            /*cv.save();
 			SkRect rect = SkRect::MakeLTRB(0.0f, 0.0f, size.x, size.y);
-			float halfKnobSize = 0.5f * knobSize;
+            float halfKnobSize = 0.5f * knobSize;
 			SkRect knobRect = SkRect::MakeLTRB(
 				glm::clamp(knobPos - halfKnobSize, 0.0f, (float)size.x), 0.0f, knobSize, size.y);
 			SkPaint paint = getDefaultPaint();
@@ -93,7 +93,7 @@ namespace ag {
 			paint.setColor(sliderBackgroundColor);
 			cv.drawRect(rect, paint);
 			paint.setColor(sliderKnobColor);
-			cv.restore();
+            cv.restore();*/
 		}
 
 		//===========================================
