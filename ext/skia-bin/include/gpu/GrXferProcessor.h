@@ -13,8 +13,10 @@
 #include "GrProcessor.h"
 #include "GrTexture.h"
 #include "GrTypes.h"
+#include "SkXfermode.h"
 
 class GrShaderCaps;
+class GrGLSLCaps;
 class GrGLSLXferProcessor;
 class GrProcOptInfo;
 struct GrPipelineOptimizations;
@@ -68,7 +70,7 @@ public:
         }
 
         DstTexture& operator=(const DstTexture& other) {
-            fTexture = other.fTexture;
+            fTexture.reset(SkSafeRef(other.fTexture.get()));
             fOffset = other.fOffset;
             return *this;
         }
@@ -80,20 +82,21 @@ public:
 
         GrTexture* texture() const { return fTexture.get(); }
 
-        void setTexture(sk_sp<GrTexture> texture) {
-            fTexture = std::move(texture);
+        GrTexture* setTexture(GrTexture* texture) {
+            fTexture.reset(SkSafeRef(texture));
+            return texture;
         }
 
     private:
-        sk_sp<GrTexture> fTexture;
-        SkIPoint         fOffset;
+        SkAutoTUnref<GrTexture> fTexture;
+        SkIPoint                fOffset;
     };
 
     /**
      * Sets a unique key on the GrProcessorKeyBuilder calls onGetGLSLProcessorKey(...) to get the
      * specific subclass's key.
      */ 
-    void getGLSLProcessorKey(const GrShaderCaps&, GrProcessorKeyBuilder*) const;
+    void getGLSLProcessorKey(const GrGLSLCaps& caps, GrProcessorKeyBuilder* b) const;
 
     /** Returns a new instance of the appropriate *GL* implementation class
         for the given GrXferProcessor; caller is responsible for deleting
@@ -177,7 +180,7 @@ public:
      * shader. If the returned texture is NULL then the XP is either not reading the dst or we have
      * extentions that support framebuffer fetching and thus don't need a copy of the dst texture.
      */
-    const GrTexture* getDstTexture() const { return fDstTexture.texture(); }
+    const GrTexture* getDstTexture() const { return fDstTexture.getTexture(); }
 
     /**
      * Returns the offset in device coords to use when accessing the dst texture to get the dst
@@ -216,7 +219,7 @@ public:
         if (this->fWillReadDstColor != that.fWillReadDstColor) {
             return false;
         }
-        if (this->fDstTexture.texture() != that.fDstTexture.texture()) {
+        if (this->fDstTexture.getTexture() != that.fDstTexture.getTexture()) {
             return false;
         }
         if (this->fDstTextureOffset != that.fDstTextureOffset) {
@@ -244,7 +247,8 @@ private:
      * Sets a unique key on the GrProcessorKeyBuilder that is directly associated with this xfer
      * processor's GL backend implementation.
      */
-    virtual void onGetGLSLProcessorKey(const GrShaderCaps&, GrProcessorKeyBuilder*) const = 0;
+    virtual void onGetGLSLProcessorKey(const GrGLSLCaps& caps,
+                                       GrProcessorKeyBuilder* b) const = 0;
 
     /**
      * Determines the type of barrier (if any) required by the subclass. Note that the possibility
@@ -274,7 +278,7 @@ private:
     bool                    fWillReadDstColor;
     bool                    fDstReadUsesMixedSamples;
     SkIPoint                fDstTextureOffset;
-    TextureSampler          fDstTexture;
+    GrTextureAccess         fDstTexture;
 
     typedef GrFragmentProcessor INHERITED;
 };

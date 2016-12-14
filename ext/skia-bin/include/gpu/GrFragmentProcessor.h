@@ -11,11 +11,10 @@
 #include "GrProcessor.h"
 
 class GrCoordTransform;
+class GrGLSLCaps;
 class GrGLSLFragmentProcessor;
 class GrInvariantOutput;
-class GrPipeline;
 class GrProcessorKeyBuilder;
-class GrShaderCaps;
 
 /** Provides custom fragment shader code. Fragment processors receive an input color (vec4f) and
     produce an output color. They may reference textures and uniforms. They may use
@@ -46,7 +45,7 @@ public:
      *  The parent will ignore its input color and instead feed the passed in color as input to the
      *  child.
      */
-    static sk_sp<GrFragmentProcessor> OverrideInput(sk_sp<GrFragmentProcessor>, GrColor4f);
+    static sk_sp<GrFragmentProcessor> OverrideInput(sk_sp<GrFragmentProcessor>, GrColor);
 
     /**
      *  Returns a fragment processor that premuls the input before calling the passed in fragment
@@ -67,20 +66,29 @@ public:
     GrFragmentProcessor()
         : INHERITED()
         , fUsesDistanceVectorField(false)
-        , fUsesLocalCoords(false) {}
+        , fUsesLocalCoords(false)
+        , fNumTexturesExclChildren(0)
+        , fNumBuffersExclChildren(0)
+        , fNumTransformsExclChildren(0) {}
 
     ~GrFragmentProcessor() override;
 
     GrGLSLFragmentProcessor* createGLSLInstance() const;
 
-    void getGLSLProcessorKey(const GrShaderCaps& caps, GrProcessorKeyBuilder* b) const {
+    void getGLSLProcessorKey(const GrGLSLCaps& caps, GrProcessorKeyBuilder* b) const {
         this->onGetGLSLProcessorKey(caps, b);
         for (int i = 0; i < fChildProcessors.count(); ++i) {
             fChildProcessors[i]->getGLSLProcessorKey(caps, b);
         }
     }
 
-    int numCoordTransforms() const { return fCoordTransforms.count(); }
+    int numTexturesExclChildren() const { return fNumTexturesExclChildren; }
+
+    int numBuffersExclChildren() const { return fNumBuffersExclChildren; }
+
+    int numTransformsExclChildren() const { return fNumTransformsExclChildren; }
+
+    int numTransforms() const { return fCoordTransforms.count(); }
 
     /** Returns the coordinate transformation at index. index must be valid according to
         numTransforms(). */
@@ -88,6 +96,12 @@ public:
 
     const SkTArray<const GrCoordTransform*, true>& coordTransforms() const {
         return fCoordTransforms;
+    }
+
+    void gatherCoordTransforms(SkTArray<const GrCoordTransform*, true>* outTransforms) const {
+        if (!fCoordTransforms.empty()) {
+            outTransforms->push_back_n(fCoordTransforms.count(), fCoordTransforms.begin());
+        }
     }
 
     int numChildProcessors() const { return fChildProcessors.count(); }
@@ -107,7 +121,7 @@ public:
         A return value of true from isEqual() should not be used to test whether the processor would
         generate the same shader code. To test for identical code generation use getGLSLProcessorKey
      */
-    bool isEqual(const GrFragmentProcessor& that) const;
+    bool isEqual(const GrFragmentProcessor& that, bool ignoreCoordTransforms) const;
 
     /**
      * This function is used to perform optimizations. When called the invarientOuput param
@@ -121,74 +135,10 @@ public:
         this->onComputeInvariantOutput(inout);
     }
 
-    /**
-     * Pre-order traversal of a FP hierarchy, or of the forest of FPs in a GrPipeline. In the latter
-     * case the tree rooted at each FP in the GrPipeline is visited successively.
-     */
-    class Iter : public SkNoncopyable {
-    public:
-        explicit Iter(const GrFragmentProcessor* fp) { fFPStack.push_back(fp); }
-        explicit Iter(const GrPipeline& pipeline);
-        const GrFragmentProcessor* next();
-
-    private:
-        SkSTArray<4, const GrFragmentProcessor*, true> fFPStack;
-    };
-
-    /**
-     * Iterates over all the Ts owned by a GrFragmentProcessor and its children or over all the Ts
-     * owned by the forest of GrFragmentProcessors in a GrPipeline. FPs are visited in the same
-     * order as Iter and each of an FP's Ts are visited in order.
-     */
-    template <typename T, typename BASE,
-              int (BASE::*COUNT)() const,
-              const T& (BASE::*GET)(int) const>
-    class FPItemIter : public SkNoncopyable {
-    public:
-        explicit FPItemIter(const GrFragmentProcessor* fp)
-                : fCurrFP(nullptr)
-                , fCTIdx(0)
-                , fFPIter(fp) {
-            fCurrFP = fFPIter.next();
-        }
-        explicit FPItemIter(const GrPipeline& pipeline)
-                : fCurrFP(nullptr)
-                , fCTIdx(0)
-                , fFPIter(pipeline) {
-            fCurrFP = fFPIter.next();
-        }
-
-        const T* next() {
-            if (!fCurrFP) {
-                return nullptr;
-            }
-            while (fCTIdx == (fCurrFP->*COUNT)()) {
-                fCTIdx = 0;
-                fCurrFP = fFPIter.next();
-                if (!fCurrFP) {
-                    return nullptr;
-                }
-            }
-            return &(fCurrFP->*GET)(fCTIdx++);
-        }
-
-    private:
-        const GrFragmentProcessor*  fCurrFP;
-        int                         fCTIdx;
-        GrFragmentProcessor::Iter   fFPIter;
-    };
-
-    using CoordTransformIter = FPItemIter<GrCoordTransform,
-                                          GrFragmentProcessor,
-                                          &GrFragmentProcessor::numCoordTransforms,
-                                          &GrFragmentProcessor::coordTransform>;
-
-    using TextureAccessIter = FPItemIter<TextureSampler,
-                                         GrProcessor,
-                                         &GrProcessor::numTextureSamplers,
-                                         &GrProcessor::textureSampler>;
-
 protected:
+    void addTextureAccess(const GrTextureAccess* textureAccess) override;
+    void addBufferAccess(const GrBufferAccess*) override;
+
     /**
      * Fragment Processor subclasses call this from their constructor to register coordinate
      * transformations. Coord transforms provide a mechanism for a processor to receive coordinates
@@ -241,7 +191,8 @@ private:
     virtual GrGLSLFragmentProcessor* onCreateGLSLInstance() const = 0;
 
     /** Implemented using GLFragmentProcessor::GenKey as described in this class's comment. */
-    virtual void onGetGLSLProcessorKey(const GrShaderCaps&, GrProcessorKeyBuilder*) const = 0;
+    virtual void onGetGLSLProcessorKey(const GrGLSLCaps& caps,
+                                       GrProcessorKeyBuilder* b) const = 0;
 
     /**
      * Subclass implements this to support isEqual(). It will only be called if it is known that
@@ -255,7 +206,33 @@ private:
 
     bool                                       fUsesLocalCoords;
 
+    /**
+     * fCoordTransforms stores the transforms of this proc, followed by all the transforms of this
+     * proc's children. In other words, each proc stores all the transforms of its subtree as if
+     * they were collected using preorder traversal.
+     *
+     * Example:
+     * Suppose we have frag proc A, who has two children B and D. B has a child C, and D has
+     * two children E and F. Suppose procs A, B, C, D, E, F have 1, 2, 1, 1, 3, 2 transforms
+     * respectively. The following shows what the fCoordTransforms array of each proc would contain:
+     *
+     *                                   (A)
+     *                        [a1,b1,b2,c1,d1,e1,e2,e3,f1,f2]
+     *                                  /    \
+     *                                /        \
+     *                            (B)           (D)
+     *                        [b1,b2,c1]   [d1,e1,e2,e3,f1,f2]
+     *                          /             /    \
+     *                        /             /        \
+     *                      (C)          (E)          (F)
+     *                     [c1]      [e1,e2,e3]      [f1,f2]
+     *
+     * The same goes for fTextureAccesses with textures.
+     */
     SkSTArray<4, const GrCoordTransform*, true> fCoordTransforms;
+    int                                         fNumTexturesExclChildren;
+    int                                         fNumBuffersExclChildren;
+    int                                         fNumTransformsExclChildren;
 
     /**
      * This is not SkSTArray<1, sk_sp<GrFragmentProcessor>> because this class holds strong

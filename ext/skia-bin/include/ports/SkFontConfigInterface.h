@@ -25,10 +25,9 @@ class SK_API SkFontConfigInterface : public SkRefCnt {
 public:
 
     /**
-     *  Returns the global SkFontConfigInterface instance. If it is not
-     *  nullptr, calls ref() on it. The caller must balance this with a call to
-     *  unref(). The default SkFontConfigInterface is the result of calling
-     *  GetSingletonDirectInterface.
+     *  Returns the global SkFontConfigInterface instance, and if it is not
+     *  NULL, calls ref() on it. The caller must balance this with a call to
+     *  unref().
      */
     static SkFontConfigInterface* RefGlobal();
 
@@ -106,6 +105,7 @@ public:
     /**
      *  Return a singleton instance of a direct subclass that calls into
      *  libfontconfig. This does not affect the refcnt of the returned instance.
+     *  The mutex may be used to guarantee the singleton is only constructed once.
      */
     static SkFontConfigInterface* GetSingletonDirectInterface();
 
@@ -114,5 +114,8 @@ public:
     virtual sk_sp<SkDataTable> getFamilyNames() { return SkDataTable::MakeEmpty(); }
     typedef SkRefCnt INHERITED;
 };
+
+/** Creates a SkFontMgr which wraps a SkFontConfigInterface. */
+SK_API SkFontMgr* SkFontMgr_New_FCI(SkFontConfigInterface* fci);
 
 #endif

@@ -9,13 +9,12 @@
 #define GrAuditTrail_DEFINED
 
 #include "GrConfig.h"
-#include "GrGpuResource.h"
 #include "SkRect.h"
 #include "SkString.h"
 #include "SkTArray.h"
 #include "SkTHash.h"
 
-class GrOp;
+class GrBatch;
 
 /*
  * GrAuditTrail collects a list of draw ops, detailed information about those ops, and can dump them
@@ -85,9 +84,9 @@ public:
         fCurrentStackTrace.push_back(SkString(framename));
     }
 
-    void addBatch(const GrOp* batch);
+    void addBatch(const GrBatch* batch);
 
-    void batchingResultCombined(const GrOp* consumer, const GrOp* consumed);
+    void batchingResultCombined(const GrBatch* consumer, const GrBatch* consumed);
 
     // Because batching is heavily dependent on sequence of draw calls, these calls will only
     // produce valid information for the given draw sequence which preceeded them.
@@ -108,14 +107,13 @@ public:
     // We could just return our internal bookkeeping struct if copying the data out becomes
     // a performance issue, but until then its nice to decouple
     struct BatchInfo {
-        SkRect                  fBounds;
-        // TODO: switch over to GrSurfaceProxy::UniqueID
-        GrGpuResource::UniqueID fRenderTargetUniqueID;
+        SkRect fBounds;
+        uint32_t fRenderTargetUniqueID;
         struct Batch {
             int fClientID;
             SkRect fBounds;
         };
-        SkTArray<Batch>                 fBatches;
+        SkTArray<Batch> fBatches;
     };
 
     void getBoundsByClientID(SkTArray<BatchInfo>* outInfo, int clientID);
@@ -136,25 +134,24 @@ private:
         int fBatchListID;
         int fChildID;
     };
-    typedef SkTArray<std::unique_ptr<Batch>, true> BatchPool;
+    typedef SkTArray<SkAutoTDelete<Batch>, true> BatchPool;
 
     typedef SkTArray<Batch*> Batches;
 
     struct BatchNode {
-        BatchNode(const GrGpuResource::UniqueID& id) : fRenderTargetUniqueID(id) { }
         SkString toJson() const;
-        SkRect                         fBounds;
-        Batches                        fChildren;
-        const GrGpuResource::UniqueID  fRenderTargetUniqueID;
+        SkRect fBounds;
+        Batches fChildren;
+        uint32_t fRenderTargetUniqueID;
     };
-    typedef SkTArray<std::unique_ptr<BatchNode>, true> BatchList;
+    typedef SkTArray<SkAutoTDelete<BatchNode>, true> BatchList;
 
     void copyOutFromBatchList(BatchInfo* outBatchInfo, int batchListID);
 
     template <typename T>
     static void JsonifyTArray(SkString* json, const char* name, const T& array,
                               bool addComma);
-
+    
     BatchPool fBatchPool;
     SkTHashMap<uint32_t, int> fIDLookup;
     SkTHashMap<int, Batches*> fClientIDLookup;

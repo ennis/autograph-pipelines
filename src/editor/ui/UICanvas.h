@@ -91,6 +91,7 @@ public:
 	virtual void render(SkCanvas& canvas) override {
 		drawSlider(canvas, visualState, calculatedTransform.size, value_, minVal_, maxVal_, 0);
 		label_.text = std::to_string(value_);
+		label_.textSize = calculatedTransform.size.y / 2.0f;
 		label_.render(canvas);
 	}
 
@@ -98,7 +99,9 @@ public:
 		auto locPos = calculatedTransform.worldToLocal(pos);
 		float newVal;
 		int hitTestResult = hitTestSlider(locPos, calculatedTransform.size, value_, minVal_, maxVal_, 0, newVal);
-		AG_DEBUG("Slider::onPointerDown pos {},{} locPos {},{} hitTest {}", pos.x, pos.y, locPos.x, locPos.y, hitTestResult);
+		AG_DEBUG("Slider::onPointerDown pos {},{} locPos {},{} hitTest {} newVal {}", pos.x, pos.y, locPos.x, locPos.y, hitTestResult, newVal);
+		if (hitTestResult)
+			value_ = newVal;
 		return true;
 	}
 

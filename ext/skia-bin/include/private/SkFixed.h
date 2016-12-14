@@ -9,7 +9,7 @@
 #define SkFixed_DEFINED
 
 #include "SkScalar.h"
-#include "SkSafe_math.h"
+#include "math.h"
 
 #include "SkTypes.h"
 
@@ -69,15 +69,9 @@ typedef int32_t             SkFixed;
 #define SkFixedCeilToInt(x)     (((x) + SK_Fixed1 - 1) >> 16)
 #define SkFixedFloorToInt(x)    ((x) >> 16)
 
-static inline SkFixed SkFixedRoundToFixed(SkFixed x) {
-    return (x + SK_FixedHalf) & 0xFFFF0000;
-}
-static inline SkFixed SkFixedCeilToFixed(SkFixed x) {
-    return (x + SK_Fixed1 - 1) & 0xFFFF0000;
-}
-static inline SkFixed SkFixedFloorToFixed(SkFixed x) {
-    return x & 0xFFFF0000;
-}
+#define SkFixedRoundToFixed(x)  (((x) + SK_FixedHalf) & 0xFFFF0000)
+#define SkFixedCeilToFixed(x)   (((x) + SK_Fixed1 - 1) & 0xFFFF0000)
+#define SkFixedFloorToFixed(x)  ((x) & 0xFFFF0000)
 
 #define SkFixedAbs(x)       SkAbs32(x)
 #define SkFixedAve(a, b)    (((a) + (b)) >> 1)

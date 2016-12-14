@@ -5,7 +5,8 @@ add_executable(autograph_main
     Mesh.cpp 
     Scene.cpp
     SceneRenderer.cpp
-    Bindings.cpp)
+    Bindings.cpp
+	ImGuiBindings.cpp)
 #reflection_gen(editor src/meta.hpp src/gen/meta.cpp.in)
 
 target_link_libraries(
@@ -15,7 +16,7 @@ target_link_libraries(
 	autograph_support 
 	autograph_engine 
 	assimp 
-	lua53_bin 
+	lua53
 	sol2 
 	fmt 
 	glm 

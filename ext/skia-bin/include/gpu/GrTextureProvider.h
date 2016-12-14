@@ -98,8 +98,8 @@ public:
      *
      * @return GrTexture object or NULL on failure.
      */
-    sk_sp<GrTexture> wrapBackendTexture(const GrBackendTextureDesc& desc,
-                                        GrWrapOwnership = kBorrow_GrWrapOwnership);
+    GrTexture* wrapBackendTexture(const GrBackendTextureDesc& desc,
+                                  GrWrapOwnership = kBorrow_GrWrapOwnership);
 
     /**
      * Wraps an existing render target with a GrRenderTarget object. It is
@@ -110,9 +110,7 @@ public:
      *
      * @return GrRenderTarget object or NULL on failure.
      */
-     sk_sp<GrRenderTarget> wrapBackendRenderTarget(const GrBackendRenderTargetDesc& desc);
-
-     static const int kMinScratchTextureSize;
+     GrRenderTarget* wrapBackendRenderTarget(const GrBackendRenderTargetDesc& desc);
 
 protected:
     GrTextureProvider(GrGpu* gpu, GrResourceCache* cache, GrSingleOwner* singleOwner);
@@ -141,7 +139,6 @@ protected:
         kExact_ScratchTextureFlag           = 0x1,
         kNoPendingIO_ScratchTextureFlag     = 0x2, // (http://skbug.com/4156)
         kNoCreate_ScratchTextureFlag        = 0x4,
-        kLastScratchTextureFlag = kNoCreate_ScratchTextureFlag
     };
 
     /** A common impl for GrTextureProvider and GrResourceProvider variants. */

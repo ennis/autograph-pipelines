@@ -11,7 +11,8 @@
 #define SkFloatingPoint_DEFINED
 
 #include "SkTypes.h"
-#include "SkSafe_math.h"
+
+#include <math.h>
 #include <float.h>
 
 #if SK_CPU_SSE_LEVEL >= SK_CPU_SSE_LEVEL_SSE1
@@ -106,11 +107,9 @@ static const uint32_t kIEEENotANumber = 0x7fffffff;
 
 static inline float sk_float_rsqrt_portable(float x) {
     // Get initial estimate.
-    int i;
-    memcpy(&i, &x, 4);
+    int i = *SkTCast<int*>(&x);
     i = 0x5F1FFFF9 - (i>>1);
-    float estimate;
-    memcpy(&estimate, &i, 4);
+    float estimate = *SkTCast<float*>(&i);
 
     // One step of Newton's method to refine.
     const float estimate_sq = estimate*estimate;

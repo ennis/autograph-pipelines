@@ -14,17 +14,51 @@
 #include "SkYUVSizeInfo.h"
 
 class GrContext;
-class GrContextThreadSafeProxy;
 class GrTexture;
-class GrSamplerParams;
+class GrTextureParams;
 class SkBitmap;
 class SkData;
-class SkImage;
 class SkImageGenerator;
 class SkMatrix;
 class SkPaint;
 class SkPicture;
 
+#ifdef SK_SUPPORT_LEGACY_REFENCODEDDATA_NOCTX
+    #define SK_REFENCODEDDATA_CTXPARAM
+#else
+    #define SK_REFENCODEDDATA_CTXPARAM  GrContext* ctx
+#endif
+
+/**
+ *  Takes ownership of SkImageGenerator.  If this method fails for
+ *  whatever reason, it will return false and immediatetely delete
+ *  the generator.  If it succeeds, it will modify destination
+ *  bitmap.
+ *
+ *  If generator is NULL, will safely return false.
+ *
+ *  If this fails or when the SkDiscardablePixelRef that is
+ *  installed into destination is destroyed, it will
+ *  delete the generator.  Therefore, generator should be
+ *  allocated with new.
+ *
+ *  @param destination Upon success, this bitmap will be
+ *  configured and have a pixelref installed.
+ *
+ *  @return true iff successful.
+ */
+SK_API bool SkDEPRECATED_InstallDiscardablePixelRef(SkImageGenerator*, SkBitmap* destination);
+
+/**
+ *  On success, installs a discardable pixelref into destination, based on encoded data.
+ *  Regardless of success or failure, the caller must still balance their ownership of encoded.
+ */
+SK_API bool SkDEPRECATED_InstallDiscardablePixelRef(SkData* encoded, SkBitmap* destination);
+
+/**
+ *  An interface that allows a purgeable PixelRef (such as a
+ *  SkDiscardablePixelRef) to decode and re-decode an image as needed.
+ */
 class SK_API SkImageGenerator : public SkNoncopyable {
 public:
     /**
@@ -45,7 +79,11 @@ public:
      *  unref() on the data when it is finished.
      */
     SkData* refEncodedData(GrContext* ctx = nullptr) {
+#ifdef SK_SUPPORT_LEGACY_REFENCODEDDATA_NOCTX
+        return this->onRefEncodedData();
+#else
         return this->onRefEncodedData(ctx);
+#endif
     }
 
     /**
@@ -127,8 +165,15 @@ public:
      *  - it has no intrinsic context, and will use the caller's
      *  - its internal context is the same
      *  - it can somehow convert its texture into one that is valid for the provided context.
+     *
+     *  Regarding the GrTextureParams parameter:
+     *
+     *  If the context (the provided one or the generator's intrinsic one) determines that to
+     *  support the specified usage, it must return a different sized texture it may,
+     *  so the caller must inspect the texture's width/height and compare them to the generator's
+     *  getInfo() width/height. For readback usage use GrTextureParams::ClampNoFilter()
      */
-    GrTexture* generateTexture(GrContext*, const SkIRect& subset);
+    GrTexture* generateTexture(GrContext*, const SkIRect* subset = nullptr);
 
     struct SupportedSizes {
         SkISize fSizes[2];
@@ -174,49 +219,6 @@ public:
     }
 
     /**
-     *  External generator API: provides efficient access to externally-managed image data.
-     *
-     *  Skia calls accessScaledPixels() during rasterization, to gain temporary access to
-     *  the external pixel data.  When done, the provided callback is invoked to release the
-     *  associated resources.
-     *
-     *  @param srcRect     the source rect in use for the current draw
-     *  @param totalMatrix full matrix in effect (mapping srcRect -> device space)
-     *  @param quality     the SkFilterQuality requested for rasterization.
-     *  @param rec         out param, expected to be set when the call succeeds:
-     *
-     *                       - fPixmap      external pixel data
-     *                       - fSrcRect     is an adjusted srcRect
-     *                       - fQuality     is the adjusted filter quality
-     *                       - fReleaseProc pixmap release callback, same signature as the
-     *                                      SkBitmap::installPixels() callback
-     *                       - fReleaseCtx  opaque release context argument
-     *
-     *  @return            true on success, false otherwise (error or if this API is not supported;
-     *                     in this case Skia will fall back to its internal scaling and caching
-     *                     heuristics)
-     *
-     *  Implementors can return pixmaps with a different size than requested, by adjusting the
-     *  src rect.  The contract is that Skia will observe the adjusted src rect, and will map it
-     *  to the same dest as the original draw (the impl doesn't get to control the destination).
-     *
-     */
-
-    struct ScaledImageRec {
-        SkPixmap        fPixmap;
-        SkRect          fSrcRect;
-        SkFilterQuality fQuality;
-
-        using ReleaseProcT = void (*)(void* pixels, void* releaseCtx);
-
-        ReleaseProcT    fReleaseProc;
-        void*           fReleaseCtx;
-    };
-
-    bool accessScaledImage(const SkRect& srcRect, const SkMatrix& totalMatrix,
-                           SkFilterQuality quality, ScaledImageRec* rec);
-
-    /**
      *  If the default image decoder system can interpret the specified (encoded) data, then
      *  this returns a new ImageGenerator for it. Otherwise this returns NULL. Either way
      *  the caller is still responsible for managing their ownership of the data.
@@ -231,8 +233,16 @@ public:
     static SkImageGenerator* NewFromPicture(const SkISize&, const SkPicture*, const SkMatrix*,
                                             const SkPaint*);
 
+    bool tryGenerateBitmap(SkBitmap* bm) {
+        return this->tryGenerateBitmap(bm, nullptr, nullptr);
+    }
     bool tryGenerateBitmap(SkBitmap* bm, const SkImageInfo& info, SkBitmap::Allocator* allocator) {
         return this->tryGenerateBitmap(bm, &info, allocator);
+    }
+    void generateBitmap(SkBitmap* bm) {
+        if (!this->tryGenerateBitmap(bm, nullptr, nullptr)) {
+            sk_throw();
+        }
     }
     void generateBitmap(SkBitmap* bm, const SkImageInfo& info) {
         if (!this->tryGenerateBitmap(bm, &info, nullptr)) {
@@ -247,7 +257,7 @@ protected:
 
     SkImageGenerator(const SkImageInfo& info, uint32_t uniqueId = kNeedNewImageUniqueID);
 
-    virtual SkData* onRefEncodedData(GrContext* ctx);
+    virtual SkData* onRefEncodedData(SK_REFENCODEDDATA_CTXPARAM);
 
     virtual bool onGetPixels(const SkImageInfo& info, void* pixels, size_t rowBytes,
                              SkPMColor ctable[], int* ctableCount);
@@ -259,7 +269,7 @@ protected:
         return false;
     }
 
-    virtual GrTexture* onGenerateTexture(GrContext*, const SkIRect&) {
+    virtual GrTexture* onGenerateTexture(GrContext*, const SkIRect*) {
         return nullptr;
     }
 
@@ -267,11 +277,6 @@ protected:
         return false;
     }
     virtual bool onGenerateScaledPixels(const SkISize&, const SkIPoint&, const SkPixmap&) {
-        return false;
-    }
-
-    virtual bool onAccessScaledImage(const SkRect&, const SkMatrix&, SkFilterQuality,
-                                     ScaledImageRec*) {
         return false;
     }
 

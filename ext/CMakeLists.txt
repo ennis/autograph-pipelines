@@ -157,8 +157,8 @@ target_link_libraries(luajit_bin INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/luajit_bi
 endif()
 
 # lua52compat
-add_library(lua52compat STATIC lua52compat/compat-5.2.c)
-target_link_libraries(lua52compat luajit_bin)
+#add_library(lua52compat STATIC lua52compat/compat-5.2.c)
+#target_link_libraries(lua52compat luajit_bin)
 
 # binary target for skia 
 add_library(skia-bin INTERFACE)
@@ -191,15 +191,20 @@ target_link_libraries(skia-bin INTERFACE
 endif()
 
 # lua
+# on windows, compile it from source
+if (WIN32)
+add_subdirectory(lua-5.3.3 EXCLUDE_FROM_ALL)
+# on linux, use find_package
+elseif(UNIX)
 find_package(Lua 5.3 REQUIRED)
 if (LUA_FOUND)
-add_library(lua53_bin INTERFACE)
-target_include_directories(lua53_bin INTERFACE ${LUA_INCLUDE_DIR})
-target_link_libraries(lua53_bin INTERFACE ${LUA_LIBRARIES})
-endif ()
-#add_subdirectory(lua-5.3.3)
+add_library(lua53 INTERFACE)
+target_include_directories(lua53 INTERFACE ${LUA_INCLUDE_DIR})
+target_link_libraries(lua53 INTERFACE ${LUA_LIBRARIES})
+endif()
+endif()
 
 #sol2
 add_library(sol2 INTERFACE)
 target_include_directories(sol2 INTERFACE sol2)
-target_link_libraries(sol2 INTERFACE lua53_bin optional)
+target_link_libraries(sol2 INTERFACE lua53 optional)

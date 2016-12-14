@@ -20,10 +20,6 @@
 #include "Scene.h"
 #include "SceneRenderer.h"
 
-#include <SkLua.h>
-#include <SkSurface.h>
-#include <SkLuaCanvas.h>
-
 using namespace ag;
 
 /////////////////////////////////////////////////////////////
@@ -63,7 +59,6 @@ public:
   EditorApplication() :
       ag::Application{ag::ivec2{640, 480}}
   {
-      SkLua::Load(gLuaState->lua_state());
 	  reloadPipeline();
   }
 
@@ -115,14 +110,6 @@ public:
 			lastOnRenderFailed = true;
 		}
 	}
-
-    // onPostRender
-    auto L = gLuaState->lua_state();
-    auto canvas = getSkSurface()->getCanvas();
-    lua_getglobal(L, "onPostRender");
-    SkLua{L}.pushCanvas(canvas);
-    lua_pcall(L, 1, 0, 0);
-    canvas->flush();
   }
 
   void resize(ivec2 size) override {
@@ -146,7 +133,7 @@ int main(int argc, char *argv[]) {
                           sol::lib::jit, sol::lib::string, sol::lib::io,
                           sol::lib::math);
   gLuaState = &luaState; 
-  //LoadImguiBindings(luaState.lua_state());
+  LoadImguiBindings(luaState.lua_state());
   addPackagePath(luaState, getActualPath("resources/scripts/?.lua").c_str());
   EditorApplication ea{};
   ea.run();

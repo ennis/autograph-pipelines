@@ -54,7 +54,7 @@ namespace ag {
 			const float range = maxVal - minVal;
 			const float knobWidth = (nbDivs != 0) ? std::max(minSliderKnobSize, fx / nbDivs) : minSliderKnobSize;
 			knobSnapWidth = (nbDivs != 0) ? knobWidth : 1.0f;
-			knobRect.position.x = value * ((fx - knobWidth) / range);
+			knobRect.position.x = ((glm::clamp(value, minVal, maxVal) - minVal) / range) * (fx - knobWidth);
 			knobRect.size.x = knobWidth;
 			knobRect.position.y = 0.0f;
 			knobRect.size.y = (float)size.y;
@@ -67,6 +67,7 @@ namespace ag {
 			Rect2D knob;
 			float knobSnapWidth;
 			getSliderKnobRect(size, value, minVal, maxVal, nbDivs, knob, knobSnapWidth);
+			newVal = (locPos.x / size.x) * (maxVal - minVal) + minVal;
 			if (knob.inside(locPos)) {
 				return 2;	// clicked knob 
 			}
@@ -88,7 +89,7 @@ namespace ag {
 			float knobSnapWidth;
 			getSliderKnobRect(size, value, minVal, maxVal, nbDivs, knob, knobSnapWidth);
 			SkRect rect = SkRect::MakeLTRB(0.0f, 0.0f, size.x, size.y);
-			SkRect knobRect = SkRect::MakeLTRB(knob.position.x, knob.position.y, knob.size.x, knob.size.y);
+			SkRect knobRect = SkRect::MakeLTRB(knob.position.x, knob.position.y, knob.position.x+knob.size.x, knob.size.y);
 			SkPaint paint = getDefaultPaint();
 			paint.setStyle(SkPaint::kFill_Style);
 			// draw slider background

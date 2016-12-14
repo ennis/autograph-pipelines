@@ -1121,12 +1121,12 @@ private:
         kCurrent_Version = 2
     };
 
-    sk_sp<SkPathRef>                                   fPathRef;
+    SkAutoTUnref<SkPathRef>                            fPathRef;
     int                                                fLastMoveToIndex;
     uint8_t                                            fFillType;
     mutable uint8_t                                    fConvexity;
     mutable SkAtomic<uint8_t, sk_memory_order_relaxed> fFirstDirection;// SkPathPriv::FirstDirection
-    SkBool8                                            fIsVolatile;
+    mutable SkBool8                                    fIsVolatile;
 
     /** Resets all fields other than fPathRef to their initial 'empty' values.
      *  Assumes the caller has already emptied fPathRef.
@@ -1190,8 +1190,6 @@ private:
     friend class SkAutoPathBoundsUpdate;
     friend class SkAutoDisableOvalCheck;
     friend class SkAutoDisableDirectionCheck;
-    friend class SkPathWriter;
-    friend class SkOpBuilder;
     friend class SkBench_AddPathTest; // perf test reversePathTo
     friend class PathTest_Private; // unit test reversePathTo
     friend class ForceIsRRect_Private; // unit test isRRect

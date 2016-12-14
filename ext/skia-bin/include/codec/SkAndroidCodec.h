@@ -9,7 +9,7 @@
 #define SkAndroidCodec_DEFINED
 
 #include "SkCodec.h"
-#include "SkEncodedImageFormat.h"
+#include "SkEncodedFormat.h"
 #include "SkStream.h"
 #include "SkTypes.h"
 
@@ -37,11 +37,10 @@ public:
      *
      *  The SkPngChunkReader handles unknown chunks in PNGs.
      *  See SkCodec.h for more details.
+     *
+     *  Will take a ref if it returns a codec, else will not affect the data.
      */
-    static SkAndroidCodec* NewFromData(sk_sp<SkData>, SkPngChunkReader* = NULL);
-    static SkAndroidCodec* NewFromData(SkData* data, SkPngChunkReader* reader) {
-        return NewFromData(sk_ref_sp(data), reader);
-    }
+    static SkAndroidCodec* NewFromData(SkData*, SkPngChunkReader* = NULL);
 
     virtual ~SkAndroidCodec() {}
 
@@ -51,7 +50,7 @@ public:
     /**
      *  Format of the encoded data.
      */
-    SkEncodedImageFormat getEncodedFormat() const { return fCodec->getEncodedFormat(); }
+    SkEncodedFormat getEncodedFormat() const { return fCodec->getEncodedFormat(); }
 
     /**
      *  @param requestedColorType Color type requested by the client
@@ -70,16 +69,6 @@ public:
      *  has alpha, the value of requestedUnpremul will be honored.
      */
     SkAlphaType computeOutputAlphaType(bool requestedUnpremul);
-
-    /**
-     *  @param outputColorType Color type that the client will decode to
-     *
-     *  Returns the appropriate color space to decode to.
-     *
-     *  For now, this just returns a default.  This could be updated to take
-     *  requests for wide gamut modes or specific output spaces.
-     */
-    sk_sp<SkColorSpace> computeOutputColorSpace(SkColorType outputColorType);
 
     /**
      *  Returns the dimensions of the scaled output image, for an input
@@ -164,7 +153,7 @@ public:
          *
          *  Must be within the bounds returned by getInfo().
          *
-         *  If the EncodedFormat is SkEncodedImageFormat::kWEBP, the top and left
+         *  If the EncodedFormat is kWEBP_SkEncodedFormat, the top and left
          *  values must be even.
          *
          *  The default is NULL, meaning a decode of the entire image.
@@ -270,6 +259,6 @@ private:
     // embedded SkCodec.
     const SkImageInfo& fInfo;
 
-    std::unique_ptr<SkCodec> fCodec;
+    SkAutoTDelete<SkCodec> fCodec;
 };
 #endif // SkAndroidCodec_DEFINED

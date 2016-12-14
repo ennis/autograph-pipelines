@@ -53,7 +53,7 @@ public:
 
     // Validates that the GrVkInterface supports its advertised standard. This means the necessary
     // function pointers have been initialized for Vulkan version.
-    bool validate(uint32_t extensionFlags) const;
+    bool validate() const;
 
     /**
      * The function pointers are in a struct so that we can have a compiler generated assignment

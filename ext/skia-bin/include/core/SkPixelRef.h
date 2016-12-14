@@ -21,6 +21,7 @@
 #include "SkYUVSizeInfo.h"
 
 class SkColorTable;
+class SkData;
 struct SkIRect;
 
 class GrTexture;
@@ -167,6 +168,18 @@ public:
     */
     void setURI(const SkString& uri) { fURI = uri; }
 
+    /**
+     *  If the pixelRef has an encoded (i.e. compressed) representation,
+     *  return a ref to its data. If the pixelRef
+     *  is uncompressed or otherwise does not have this form, return NULL.
+     *
+     *  If non-null is returned, the caller is responsible for calling unref()
+     *  on the data when it is finished.
+     */
+    SkData* refEncodedData() {
+        return this->onRefEncodedData();
+    }
+
     struct LockRequest {
         SkISize         fSize;
         SkFilterQuality fQuality;
@@ -280,6 +293,9 @@ protected:
      *  The base class implementation returns false;
      */
     virtual bool onReadPixels(SkBitmap* dst, SkColorType colorType, const SkIRect* subsetOrNull);
+
+    // default impl returns NULL.
+    virtual SkData* onRefEncodedData();
 
     // default impl does nothing.
     virtual void onNotifyPixelsChanged();

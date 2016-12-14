@@ -8,19 +8,17 @@
 #ifndef GrCustomXfermode_DEFINED
 #define GrCustomXfermode_DEFINED
 
-#include "SkBlendMode.h"
-#include "SkRefCnt.h"
+#include "SkXfermode.h"
 
 class GrTexture;
-class GrXPFactory;
 
 /**
  * Custom Xfer modes are used for blending when the blend mode cannot be represented using blend
  * coefficients.
  */
 namespace GrCustomXfermode {
-    bool IsSupportedMode(SkBlendMode mode);
-    sk_sp<GrXPFactory> MakeXPFactory(SkBlendMode mode);
+    bool IsSupportedMode(SkXfermode::Mode mode);
+    sk_sp<GrXPFactory> MakeXPFactory(SkXfermode::Mode mode);
 };
 
 #endif

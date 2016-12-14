@@ -98,9 +98,7 @@ function loadMeshAction(path) end
 -- 	}
 -- }
 
-
 --ui.addChild(ui.dock { ui.vbox { mainui.curvatureScaling, mainui.loadMesh, mainui.saveMesh }})
-
 -- local loadFileDock = ui.dock {
 -- 	ui.vbox {
 -- 		label = 'File',
@@ -120,35 +118,12 @@ function init()
 	core.debug('tr.position = %f,%f,%f', obj.transform.position.x, obj.transform.position.y, obj.transform.position.z)
 end
 
+local value0 = 1.0
 
 function onRender()
---	imgui.BeginMainMenuBar()
---	if imgui.BeginMenu('File', true) then
---		if imgui.MenuItem('New...', 'Ctrl+N', false, true) then
---			core.debug('New!')
---		end
---		if imgui.MenuItem('Open...', 'Ctrl+O', false, true) then
---			core.debug('Open')
---		end
---		imgui.EndMenu()
---	end
---	imgui.EndMainMenuBar()
-
---	_, value0 = imgui.SliderFloat('value', value0, 0.0, 1.0, '%.3f', 1.0)
-
-
 	--core.debug('onRender (%ix%i), value=%f', framebufferWidth, framebufferHeight, value0)
 	--sceneRenderer:render()
 	--core.drawMesh(mesh, pipeline, { uniforms = {
 	--	screen_size = types.vec2(screen_width, screen_height)
 	--	} })
-end
-
-function onPostRender(canvas) 
-    paint = Sk.newPaint()
-    paint:setTextSize(30)
-    paint:setAntiAlias(true)
-    paint:setColor{a=1, r=1, g=0, b=0}
-    canvas:drawText('Hello world', 300, 300, paint)
-
 end

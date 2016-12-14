@@ -11,34 +11,34 @@
 #include "GrSurfaceProxy.h"
 #include "GrTexture.h"
 
-class GrCaps;
-class GrTextureOpList;
 class GrTextureProvider;
 
 // This class delays the acquisition of textures until they are actually required
-class GrTextureProxy : virtual public GrSurfaceProxy {
+class GrTextureProxy : public GrSurfaceProxy {
 public:
+    // TODO: need to refine ownership semantics of 'srcData' if we're in completely
+    // deferred mode
+    static sk_sp<GrTextureProxy> Make(const GrSurfaceDesc&, SkBackingFit, SkBudgeted,
+                                      const void* srcData = nullptr, size_t rowBytes = 0);
+    static sk_sp<GrTextureProxy> Make(sk_sp<GrTexture>);
+
+    // TODO: add asRenderTargetProxy variants
     GrTextureProxy* asTextureProxy() override { return this; }
     const GrTextureProxy* asTextureProxy() const override { return this; }
 
     // Actually instantiate the backing texture, if necessary
-    GrTexture* instantiate(GrTextureProvider*);
+    GrTexture* instantiate(GrTextureProvider* texProvider);
 
-protected:
-    friend class GrSurfaceProxy; // for ctors
-
+private:
     // Deferred version
     GrTextureProxy(const GrSurfaceDesc& srcDesc, SkBackingFit, SkBudgeted,
                    const void* srcData, size_t srcRowBytes);
     // Wrapped version
-    GrTextureProxy(sk_sp<GrSurface>);
+    GrTextureProxy(sk_sp<GrTexture> tex);
 
-private:
-    size_t onGpuMemorySize() const override;
-
-    // For wrapped proxies the GrTexture pointer is stored in GrIORefProxy.
-    // For deferred proxies that pointer will be filled n when we need to instantiate
-    // the deferred resource
+    // For wrapped textures we store it here.
+    // For deferred proxies we will fill this in when we need to instantiate the deferred resource
+    sk_sp<GrTexture> fTexture;
 
     typedef GrSurfaceProxy INHERITED;
 };

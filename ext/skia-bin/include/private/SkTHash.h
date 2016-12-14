@@ -50,13 +50,12 @@ public:
 
     // Copy val into the hash table, returning a pointer to the copy now in the table.
     // If there already is an entry in the table with the same key, we overwrite it.
-    T* set(T&& val) {
+    T* set(const T& val) {
         if (4 * (fCount+fRemoved) >= 3 * fCapacity) {
             this->resize(fCapacity > 0 ? fCapacity * 2 : 4);
         }
-        return this->uncheckedSet(std::move(val));
+        return this->uncheckedSet(val);
     }
-    T* set(const T& val) { return this->set(std::move(T(val))); }
 
     // If there is an entry in the table with this key, return a pointer to it.  If not, NULL.
     T* find(const K& key) const {
@@ -117,7 +116,7 @@ public:
     }
 
 private:
-    T* uncheckedSet(T&& val) {
+    T* uncheckedSet(const T& val) {
         const K& key = Traits::GetKey(val);
         uint32_t hash = Hash(key);
         int index = hash & (fCapacity-1);
@@ -128,7 +127,7 @@ private:
                 if (s.removed()) {
                     fRemoved--;
                 }
-                s.val  = std::move(val);
+                s.val  = val;
                 s.hash = hash;
                 fCount++;
                 return &s.val;
@@ -136,7 +135,7 @@ private:
             if (hash == s.hash && key == Traits::GetKey(s.val)) {
                 // Overwrite previous entry.
                 // Note: this triggers extra copies when adding the same value repeatedly.
-                s.val = std::move(val);
+                s.val = val;
                 return &s.val;
             }
             index = this->next(index, n);
@@ -155,9 +154,9 @@ private:
         oldSlots.swap(fSlots);
 
         for (int i = 0; i < oldCapacity; i++) {
-            Slot& s = oldSlots[i];
+            const Slot& s = oldSlots[i];
             if (!s.empty() && !s.removed()) {
-                this->uncheckedSet(std::move(s.val));
+                this->uncheckedSet(s.val);
             }
         }
         SkASSERT(fCount == oldCount);
@@ -210,11 +209,11 @@ public:
 
     // Set key to val in the table, replacing any previous value with the same key.
     // We copy both key and val, and return a pointer to the value copy now in the table.
-    V* set(K&& key, V&& val) {
-        Pair* out = fTable.set({std::move(key), std::move(val)});
+    V* set(const K& key, const V& val) {
+        Pair in = { key, val };
+        Pair* out = fTable.set(in);
         return &out->val;
     }
-    V* set(const K& key, const V& val) { return this->set(std::move(K(key)), std::move(V(val))); }
 
     // If there is key/value entry in the table with this key, return a pointer to the value.
     // If not, return NULL.
@@ -270,8 +269,7 @@ public:
     size_t approxBytesUsed() const { return fTable.approxBytesUsed(); }
 
     // Copy an item into the set.
-    void add(T&& item) { fTable.set(std::move(item)); }
-    void add(const T& item) { this->add(std::move(T(item))); }
+    void add(const T& item) { fTable.set(item); }
 
     // Is this item in the set?
     bool contains(const T& item) const { return SkToBool(this->find(item)); }

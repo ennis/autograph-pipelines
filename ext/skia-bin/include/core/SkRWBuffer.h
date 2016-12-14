@@ -79,15 +79,7 @@ public:
     ~SkRWBuffer();
 
     size_t size() const { return fTotalUsed; }
-
-    /**
-     *  Append |length| bytes from |buffer|.
-     *
-     *  If the caller knows in advance how much more data they are going to append, they can
-     *  pass a |reserve| hint (representing the number of upcoming bytes *in addition* to the
-     *  current append), to minimize the number of internal allocations.
-     */
-    void append(const void* buffer, size_t length, size_t reserve = 0);
+    void append(const void* buffer, size_t length);
 
     SkROBuffer* newRBufferSnapshot() const;
     SkStreamAsset* newStreamSnapshot() const;
