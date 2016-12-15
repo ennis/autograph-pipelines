@@ -131,6 +131,16 @@ private:
   DrawPass drawPass_;
 };
 
+//
+// Use that to load a standalone draw pass file without needing a full Lua context 
+class DrawPassFile 
+{
+public:
+  DrawPassFile(const char* filepath);
+  auto makePass() -> std::unique_ptr<DrawPass>;
+private:
+}
+
 ////////////////////////////////////////////////////////
 class ScreenPass : public Pass {
 public:

@@ -152,6 +152,9 @@ sol::table openLuaBindings(sol::this_state s) {
   module["warningMessage"] = [](const char* str) { rawLogMessage(LogLevel::Warning, str); };
   module["errorMessage"] = [](const char* str) { rawLogMessage(LogLevel::Error, str); };
 
+  module.new_usertype<DeferredSceneRenderer>("DeferredSceneRenderer");
+
+
   // imgui bindings
  /* module["imgui_BeginMainMenuBar"] = &ImGui::BeginMainMenuBar;
   module["imgui_BeginMenu"] = &ImGui::BeginMenu;

@@ -1,10 +1,6 @@
-fx = require 'autograph/fx'
-core = require 'autograph/core'
-gl = require 'autograph/gl'
-glapi = require 'autograph/glapi'
-ui = require 'autograph/ui'
+require 'glapi'
 
-local deferredVS = [[
+local VS = [[
 #version 450
 layout(std140, binding = 0) uniform U0 {
   mat4 modelMatrix;
@@ -31,28 +27,23 @@ void main() {
 }
 ]]
 
-local deferredFS = [[
+local FS = [[
 #version 450
 in vec3 Nw0;
 in vec3 Pv;
 in vec3 Tv0;
 in vec2 fTexcoords;
 
-layout(location = 0) out vec4 rtStencil;
-layout(location = 1) out vec4 rtPositions;
-layout(location = 2) out vec4 rtNormals;
-layout(location = 3) out vec4 rtDepth;
-layout(location = 4) out vec4 rtTangents;
+layout(location = 0) out vec4 rtNormals;
+layout(location = 1) out vec4 rtDiffuse;
 
 void main() {
-  rtPositions = vec4(Pv, 1.0f);
   rtNormals = vec4(Nw0 / 2.0 + vec3(0.5), 1.0f);
-  rtStencil = vec4(1.0);
-} 
+  rtDiffuse = vec4(1.0);	// TODO
+}
 ]]
 
-
-local defaultEffect = {
+return {
 	rasterizerState = {
 		fillMode = glapi.GL_FILL,
 		cullMode = glapi.GL_BACK,
@@ -73,29 +64,6 @@ local defaultEffect = {
 			funcDstAlpha = glapi.GL_ZERO
 		}
 	},
-	viewports = {
-		[0] = { x = 0, y = 0, w = 1024, h = 1024 }
-	},
-	vertexShader = deferredVS,
-	fragmentShader = deferredFS	
+	vertexShader = VS,
+	fragmentShader = FS	
 }
-
-local scene = core.Scene()
-local obj = scene:loadMesh(core.getActualPath('resources/mesh/youmu/youmu.fbx'))
-local defaultPass = fx.createDrawPass(defaultEffect)
-local sceneRenderer = core.DeferredSceneRenderer()
-
-function init() 
-	obj.transform:setPosition(0.0, 1.0, 0.0)
-	core.debug('tr.position = %f,%f,%f', obj.transform.position.x, obj.transform.position.y, obj.transform.position.z)
-end
-
-local value0 = 1.0
-
-function onRender()
-	--core.debug('onRender (%ix%i), value=%f', framebufferWidth, framebufferHeight, value0)
-	--sceneRenderer:render()
-	--core.drawMesh(mesh, pipeline, { uniforms = {
-	--	screen_size = types.vec2(screen_width, screen_height)
-	--	} })
-end

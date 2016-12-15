@@ -6,15 +6,17 @@
 
 namespace ag {
 enum class ImageFormat {
-  RGBA32_Float = 0,
-  RGBA16_Float,
-  RG32_Float,
-  R32_Float,
-  R8_Unorm,
-  RGBA8_Unorm,
-  RGBA8_Snorm,
-  RGB_11_11_10_Float_Packed,
-  Depth32_Float,
+  R32G32B32A32_SFLOAT = 0,
+  R16G16B16A16_SFLOAT,
+  R32G32_SFLOAT,
+  R32_SFLOAT,
+  R8_UNORM,
+  R8G8B8A8_UNORM,
+  R8G8B8A8_SNORM,
+  B10G11R11_UFLOAT_PACK32,
+  D32_SFLOAT,
+  A2R10G10B10_UNORM_PACK32,
+  A2R10G10B10_SNORM_PACK32,
   Max
 };
 

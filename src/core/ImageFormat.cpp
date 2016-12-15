@@ -3,29 +3,33 @@
 namespace ag {
 /*
 enum class ImageFormat {
-  RGBA32_Float = 0,
-  RGBA16_Float,
-  RG32_Float,
-  R32_Float,
-  R8_Unorm,
-  rgba8_unorm,
-  rgba8_snorm,
-  rgb_11_11_10_float_packed,
-  depth32_float,
+  R32G32B32A32_SFLOAT = 0,
+  R16G16B16A16_SFLOAT,
+  R32G32_SFLOAT,
+  R32_SFLOAT,
+  R8_UNORM,
+  R8G8B8A8_UNORM,
+  R8G8B8A8_SNORM,
+  B10G11R11_UFLOAT_PACK32,
+  D32_SFLOAT,
+  Max
+
   max
 };*/
 
 std::array<ImageFormatInfo, static_cast<std::size_t>(ImageFormat::Max)>
     format_infos = {{
-        {"RGBA32_Float", 16, 4},             // RGBA32_Float
-        {"RGBA16_Float", 8, 4},              // RGBA16_Float
-        {"RG32_Float", 8, 2},                // RG32_Float
-        {"R32_Float", 4, 1},                 // R32_Float
-        {"R8_Unorm", 1, 1},                  // R8_Unorm
-        {"RGBA8_unorm", 4, 4},               // rgba8_unorm
-        {"RGBA8_snorm", 4, 4},               // rgba8_snorm
-        {"RGB_11_11_10_Float_Packed", 4, 3}, // rgb_11_11_10_float_packed
-        {"Depth32_Float", 4, 1}              // depth32_float
+        {"R32G32B32A32_SFLOAT", 16, 4},             // RGBA32_Float
+        {"R16G16B16A16_SFLOAT", 8, 4},              // RGBA16_Float
+        {"R32G32_SFLOAT", 8, 2},                // RG32_Float
+        {"R32_SFLOAT", 4, 1},                 // R32_Float
+        {"R8_UNORM", 1, 1},                  // R8_Unorm
+        {"R8G8B8A8_UNORM", 4, 4},               // rgba8_unorm
+        {"R8G8B8A8_SNORM", 4, 4},               // rgba8_snorm
+        {"B10G11R11_UFLOAT_PACK32", 4, 3}, // rgb_11_11_10_float_packed
+        {"D32_SFLOAT", 4, 1},              // depth32_float
+        {"A2R10G10B10_UNORM_PACK32", 4, 4},
+{"A2R10G10B10_SNORM_PACK32", 4, 4},
     }};
 
 AG_API const ImageFormatInfo &getImageFormatInfo(ImageFormat fmt) {

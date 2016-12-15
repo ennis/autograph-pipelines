@@ -13,6 +13,8 @@ static GLFormatInfo glfmt_rg32_float{GL_RG32F, GL_RG, GL_FLOAT, 2, 8};
 static GLFormatInfo glfmt_rgba32_float{GL_RGBA32F, GL_RGBA, GL_FLOAT, 4, 16};
 static GLFormatInfo glfmt_depth32_float{GL_DEPTH_COMPONENT32F,
                                         GL_DEPTH_COMPONENT, GL_FLOAT, 1, 4};
+static GLFormatInfo glfmt_argb_10_10_10_2_unorm{GL_RGB10_A2,
+                                        GL_DEPTH_COMPONENT, GL_FLOAT, 1, 4};
 
 void TextureDeleter::operator()(GLuint tex_obj) { 
 	glDeleteTextures(1, &tex_obj); 
@@ -20,18 +22,22 @@ void TextureDeleter::operator()(GLuint tex_obj) {
 
 const GLFormatInfo &getGLImageFormatInfo(ImageFormat fmt) {
   switch (fmt) {
-  case ImageFormat::RGBA8_Unorm:
+  case ImageFormat::R8G8B8A8_UNORM:
     return glfmt_rgba8_unorm;
-  case ImageFormat::R8_Unorm:
+  case ImageFormat::R8G8B8A8_SNORM:
     return glfmt_r8_unorm;
-  case ImageFormat::R32_Float:
+  case ImageFormat::R32_SFLOAT:
     return glfmt_r32_float;
-  case ImageFormat::RG32_Float:
+  case ImageFormat::R32G32_SFLOAT:
     return glfmt_rg32_float;
-  case ImageFormat::RGBA32_Float:
+  case ImageFormat::R32G32B32A32_SFLOAT:
     return glfmt_rgba32_float;
-  case ImageFormat::Depth32_Float:
+  case ImageFormat::D32_SFLOAT:
     return glfmt_depth32_float;
+  case ImageFormat::A2R10G10B10_UNORM_PACK32:
+      return glfmt_argb_10_10_10_2_unorm;
+  case ImageFormat::A2R10G10B10_SNORM_PACK32:
+      //return glfmt_argb_10_10_10_2_snorm;   // there is no signed version of this format in OpenGL
   default:
     throw std::logic_error("Unsupported image format");
   }
