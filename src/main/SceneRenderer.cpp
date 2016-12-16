@@ -6,18 +6,16 @@
 namespace ag 
 {
 
-    DeferredSceneRenderer::GBuffer DeferredSceneRenderer::GBuffer::create(ivec2 size)
+    DeferredSceneRenderer::GBuffer::GBuffer(ivec2 size)
     {
-        GBuffer buf;
-        buf.depthStencil = gl::Texture::create2D(ImageFormat::D32_SFLOAT);
-        buf.diffuse = gl::Texture::create2D(ImageFormat::R8G8B8A8_UNORM);
-        buf.normals = gl::Texture::create2D(ImageFormat::A2R10G10B10_UNORM_PACK32); // SNORM not supported in OpenGL
-        buf.fbo = gl::Framebuffer::create({&buf.diffuse, &buf.normals}, buf.depthStencil);
+        depthStencil = gl::Texture::create2D(ImageFormat::D32_SFLOAT, size.x, size.y);
+        diffuse = gl::Texture::create2D(ImageFormat::R8G8B8A8_UNORM, size.x, size.y);
+        normals = gl::Texture::create2D(ImageFormat::A2R10G10B10_UNORM_PACK32, size.x, size.y); // SNORM not supported in OpenGL
+        fbo = gl::Framebuffer::create({&diffuse, &normals}, depthStencil);
     }
 	
-    DeferredSceneRenderer::SceneRenderer()
+    DeferredSceneRenderer::DeferredSceneRenderer()
 	{
-        //deferredProgram_ = gl::Program::create(deferredShadingVertexShader, deferredShadingFragmentShader);
 	}
 
     DeferredSceneRenderer::~DeferredSceneRenderer()
@@ -25,7 +23,7 @@ namespace ag
 
     void DeferredSceneRenderer::reloadShaders()
     {
-
+        AG_DEBUG("DeferredSceneRenderer::reloadShaders");
     }
 
     void DeferredSceneRenderer::renderScene(GBuffer& targets, Scene& scene, Camera& camera)

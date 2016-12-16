@@ -136,10 +136,14 @@ private:
 class DrawPassFile 
 {
 public:
+  // Load the specified effect file in a separate Lua context
   DrawPassFile(const char* filepath);
+  // Load the specified effect file in the specified Lua context
+  // The effect file has read/write access to the state
+  DrawPassFile(const char *filepath, sol::state& lua);
   auto makePass() -> std::unique_ptr<DrawPass>;
 private:
-}
+};
 
 ////////////////////////////////////////////////////////
 class ScreenPass : public Pass {

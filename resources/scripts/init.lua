@@ -1,8 +1,5 @@
-fx = require 'autograph/fx'
-core = require 'autograph/core'
-gl = require 'autograph/gl'
-glapi = require 'autograph/glapi'
-ui = require 'autograph/ui'
+ag = require 'autograph'
+gl = require 'glapi'
 
 local deferredVS = [[
 #version 450
@@ -54,9 +51,9 @@ void main() {
 
 local defaultEffect = {
 	rasterizerState = {
-		fillMode = glapi.GL_FILL,
-		cullMode = glapi.GL_BACK,
-		frontFace = glapi.GL_CCW
+		fillMode = gl.GL_FILL,
+		cullMode = gl.GL_BACK,
+		frontFace = gl.GL_CCW
 	},
 	depthStencilState = {
 		depthTestEnable = true,
@@ -65,12 +62,12 @@ local defaultEffect = {
 	blendState = {
 		[0] = { 
 			enabled = true,
-			modeRGB = glapi.GL_FUNC_ADD,
-			modeAlpha = glapi.GL_FUNC_ADD,
-			funcSrcRGB = glapi.GL_SRC_ALPHA,
-			funcDstRGB = glapi.GL_ONE_MINUS_SRC_ALPHA,
-			funcSrcAlpha = glapi.GL_ONE,
-			funcDstAlpha = glapi.GL_ZERO
+			modeRGB = gl.GL_FUNC_ADD,
+			modeAlpha = gl.GL_FUNC_ADD,
+			funcSrcRGB = gl.GL_SRC_ALPHA,
+			funcDstRGB = gl.GL_ONE_MINUS_SRC_ALPHA,
+			funcSrcAlpha = gl.GL_ONE,
+			funcDstAlpha = gl.GL_ZERO
 		}
 	},
 	viewports = {
@@ -80,22 +77,25 @@ local defaultEffect = {
 	fragmentShader = deferredFS	
 }
 
-local scene = core.Scene()
-local obj = scene:loadMesh(core.getActualPath('resources/mesh/youmu/youmu.fbx'))
-local defaultPass = fx.createDrawPass(defaultEffect)
-local sceneRenderer = core.DeferredSceneRenderer()
+local scene = ag.Scene()
+local camera = ag.Camera()
+local obj = scene:loadMesh(ag.getActualPath('resources/mesh/youmu/youmu.fbx'))
+local defaultPass = ag.createDrawPass(defaultEffect)
+local sceneRenderer = ag.DeferredSceneRenderer()
+local gBuffer = ag.DeferredGBuffer(1280, 720)
 
 function init() 
 	obj.transform:setPosition(0.0, 1.0, 0.0)
-	core.debug('tr.position = %f,%f,%f', obj.transform.position.x, obj.transform.position.y, obj.transform.position.z)
+	ag.debug('tr.position = %f,%f,%f', obj.transform.position.x, obj.transform.position.y, obj.transform.position.z)
 end
 
 local value0 = 1.0
 
-function onRender()
-	--core.debug('onRender (%ix%i), value=%f', framebufferWidth, framebufferHeight, value0)
-	--sceneRenderer:render()
-	--core.drawMesh(mesh, pipeline, { uniforms = {
-	--	screen_size = types.vec2(screen_width, screen_height)
-	--	} })
+function resize(w, h)
+	ag.debug('resize: %i,%i', w, h)
+end
+
+function render()
+	--ag.debug('render (%ix%i), value=%f', framebufferWidth, framebufferHeight, value0)
+	sceneRenderer:renderScene(gBuffer, scene, camera)
 end
