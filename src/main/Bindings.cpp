@@ -21,6 +21,15 @@
 
 namespace ag {
 
+// bindings for standalone shader files
+sol::table openLuaShaderBindings(sol::this_state s)
+{
+    sol::state_view lua{s};
+    sol::table module = lua.create_table();
+
+}
+
+// core bindings
 sol::table openLuaBindings(sol::this_state s) {
   sol::state_view lua{s};
   sol::table module = lua.create_table();
@@ -44,7 +53,8 @@ sol::table openLuaBindings(sol::this_state s) {
 
   // Camera
   module.new_usertype<Frustum>("Frustum");
-  module.new_usertype<Camera>("Camera");
+  module.new_usertype<Camera>("Camera",
+                              sol::call_constructor, sol::constructors<sol::types<>>{});
 
 
   // Transform
@@ -152,7 +162,13 @@ sol::table openLuaBindings(sol::this_state s) {
   module["warningMessage"] = [](const char* str) { rawLogMessage(LogLevel::Warning, str); };
   module["errorMessage"] = [](const char* str) { rawLogMessage(LogLevel::Error, str); };
 
-  module.new_usertype<DeferredSceneRenderer>("DeferredSceneRenderer");
+  module.new_usertype<DeferredSceneRenderer>("DeferredSceneRenderer", 
+    sol::call_constructor, sol::constructors<sol::types<>>(),
+    "renderScene", &DeferredSceneRenderer::renderScene);
+  module.new_usertype<DeferredSceneRenderer::GBuffer>("DeferredGBuffer",
+    sol::call_constructor, [](int w, int h) {
+      return DeferredSceneRenderer::GBuffer{ivec2{w, h}};
+    });
 
 
   // imgui bindings

@@ -1,4 +1,3 @@
-require 'glapi'
 
 local VS = [[
 #version 450
@@ -45,9 +44,9 @@ void main() {
 
 return {
 	rasterizerState = {
-		fillMode = glapi.GL_FILL,
-		cullMode = glapi.GL_BACK,
-		frontFace = glapi.GL_CCW
+		fillMode = gl.GL_FILL,
+		cullMode = gl.GL_BACK,
+		frontFace = gl.GL_CCW
 	},
 	depthStencilState = {
 		depthTestEnable = true,
@@ -56,12 +55,12 @@ return {
 	blendState = {
 		[0] = { 
 			enabled = true,
-			modeRGB = glapi.GL_FUNC_ADD,
-			modeAlpha = glapi.GL_FUNC_ADD,
-			funcSrcRGB = glapi.GL_SRC_ALPHA,
-			funcDstRGB = glapi.GL_ONE_MINUS_SRC_ALPHA,
-			funcSrcAlpha = glapi.GL_ONE,
-			funcDstAlpha = glapi.GL_ZERO
+			modeRGB = gl.GL_FUNC_ADD,
+			modeAlpha = gl.GL_FUNC_ADD,
+			funcSrcRGB = gl.GL_SRC_ALPHA,
+			funcDstRGB = gl.GL_ONE_MINUS_SRC_ALPHA,
+			funcSrcAlpha = gl.GL_ONE,
+			funcDstAlpha = gl.GL_ZERO
 		}
 	},
 	vertexShader = VS,

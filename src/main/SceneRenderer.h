@@ -15,7 +15,8 @@ namespace ag
         struct GBuffer
         {
         public:
-            static GBuffer create(ivec2 size);
+            GBuffer() {}
+            GBuffer(ivec2 size);
 
             gl::Texture& getDepthTarget() {
                 return depthStencil;

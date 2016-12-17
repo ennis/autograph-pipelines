@@ -57,7 +57,8 @@ void LoadImguiBindings(lua_State* s);
 class EditorApplication : public ag::Application {
 public:
   EditorApplication() :
-      ag::Application{ag::ivec2{640, 480}}
+      ag::Application{ag::ivec2{640, 480}},
+      lua{*gLuaState}
   {
 	  reloadPipeline();
   }
@@ -74,12 +75,7 @@ public:
   void reloadPipeline() {
     AG_DEBUG("==============================================");
     AG_DEBUG("Reloading pipelines");
-    scene = std::make_unique<Scene>();
-    sceneRenderer = std::make_unique<SceneRenderer>();
-
-    auto &lua = *gLuaState;
-    lua.require("__bindings",
-                sol::c_call<decltype(&openLuaBindings), &openLuaBindings>);
+    lua.require("autograph_bindings", sol::c_call<decltype(&openLuaBindings), &openLuaBindings>);
 
     try {
       lua.script_file(getActualPath("resources/scripts/init.lua"));
@@ -95,17 +91,14 @@ public:
     glViewport(0, 0, framebufferSize.x, framebufferSize.y);
     glClearColor(60.f / 255.f, 60.f / 255.f, 168.f / 255.f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT);
-    auto &lua = *gLuaState;
-
     lua["framebufferWidth"] = framebufferSize.x;
     lua["framebufferHeight"] = framebufferSize.y;
-
 	if (!lastOnRenderFailed) {
 		try {
-			lua.script("onRender()");
+            lua.script("render()");
 		}
 		catch (sol::error& e) {
-			errorMessage("Error running onRender:\n\t{}", e.what());
+            errorMessage("Error running render():\n\t{}", e.what());
 			errorMessage("Please fix the script and reload (F5 key)");
 			lastOnRenderFailed = true;
 		}
@@ -114,13 +107,13 @@ public:
 
   void resize(ivec2 size) override {
     AG_DEBUG("resize {} {}", size.x, size.y);
-    gl::resizeDefaultFramebuffer(size);
+    //gl::resizeDefaultFramebuffer(size);
+    lua["resize"](size.x, size.y);
   }
 
 private:
 	bool lastOnRenderFailed{ false };
-  std::unique_ptr<Scene> scene;
-  std::unique_ptr<SceneRenderer> sceneRenderer;
+    sol::state& lua;
 };
 
 ///////////////////////////////////////////////////////////////
