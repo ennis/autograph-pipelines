@@ -50,7 +50,7 @@ public:
   enum class ScrollMode { Zoom, MoveForward };
   enum class RotationMode { Scene, Camera };
 
-  TrackballCameraControl(const CameraSettings &initialSettings);
+  TrackballCameraControl(const CameraSettings &initialSettings = CameraSettings{});
 
   const Camera &getCamera();
 
@@ -58,13 +58,20 @@ public:
   //                  MouseMoveMode mode);
   void cursorMove(ivec2 cursor, RotationMode rotationMode);
   void scrollWheel(double delta, ScrollMode scrollMode);
+  void setScreenSize(int width, int height) {
+	  screenWidth = width;
+	  screenHeight = height;
+  }
 
 private:
   void updatePanVectors();
 
   CameraSettings settings;
   mat4 modelMatrix{1.0f};
+  mat4 viewMat;
   ivec2 lastCur;
   Camera cam;
+  int screenWidth;
+  int screenHeight;
 };
 }

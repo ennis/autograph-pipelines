@@ -4,11 +4,11 @@
 
 namespace ag {
 namespace gl {
-VertexArray::VertexArray(std::initializer_list<VertexAttribute> attribs) {
+VertexArray::VertexArray(ag::span<VertexAttribute> attribs) {
   initialize(attribs);
 }
 
-void VertexArray::initialize(std::initializer_list<VertexAttribute> attribs) {
+void VertexArray::initialize(ag::span<VertexAttribute> attribs) {
   constexpr auto max_attribs = 16;
   auto num_attribs = attribs.size();
   GLuint strides[max_attribs] = {0};

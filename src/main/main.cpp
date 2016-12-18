@@ -50,15 +50,15 @@ void addPackagePath(sol::state &state, const char *path) {
       package_path + (!package_path.empty() ? ";" : "") + path;
 }
 
-void LoadImguiBindings(lua_State* s);
-
 /////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////
 class EditorApplication : public ag::Application {
 public:
   EditorApplication() :
       ag::Application{ag::ivec2{640, 480}},
-      lua{*gLuaState}
+      lua{*gLuaState},
+	  sm{*gLuaState},
+	  camctl{ CameraSettings{} }
   {
 	  reloadPipeline();
   }
@@ -69,6 +69,8 @@ public:
           keyEvent->state == ag::KeyState::Pressed) {
         reloadPipeline();
       }
+
+	  //camctl.
     }
   }
 
@@ -76,6 +78,8 @@ public:
     AG_DEBUG("==============================================");
     AG_DEBUG("Reloading pipelines");
     lua.require("autograph_bindings", sol::c_call<decltype(&openLuaBindings), &openLuaBindings>);
+	// set shader manager
+	lua["g_shaderManager"] = &sm;
 
     try {
       lua.script_file(getActualPath("resources/scripts/init.lua"));
@@ -90,7 +94,8 @@ public:
     auto framebufferSize = getFramebufferSize();
     glViewport(0, 0, framebufferSize.x, framebufferSize.y);
     glClearColor(60.f / 255.f, 60.f / 255.f, 168.f / 255.f, 1.0f);
-    glClear(GL_COLOR_BUFFER_BIT);
+	glClearDepthf(1.0f);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     lua["framebufferWidth"] = framebufferSize.x;
     lua["framebufferHeight"] = framebufferSize.y;
 	if (!lastOnRenderFailed) {
@@ -107,13 +112,15 @@ public:
 
   void resize(ivec2 size) override {
     AG_DEBUG("resize {} {}", size.x, size.y);
-    //gl::resizeDefaultFramebuffer(size);
+    gl::resizeDefaultFramebuffer(size);
     lua["resize"](size.x, size.y);
   }
 
 private:
 	bool lastOnRenderFailed{ false };
     sol::state& lua;
+	ShaderManager sm;
+	TrackballCameraControl camctl;
 };
 
 ///////////////////////////////////////////////////////////////
@@ -122,12 +129,14 @@ private:
 int main(int argc, char *argv[]) {
   // initialize Lua VM
   sol::state luaState;
-  luaState.open_libraries(sol::lib::base, sol::lib::package, sol::lib::ffi,
-                          sol::lib::jit, sol::lib::string, sol::lib::io,
-                          sol::lib::math);
+  luaState.open_libraries(sol::lib::base, sol::lib::package, sol::lib::debug,
+						  sol::lib::string, sol::lib::io,
+                          sol::lib::math, sol::lib::coroutine, sol::lib::os,
+						  sol::lib::table);
   gLuaState = &luaState; 
-  LoadImguiBindings(luaState.lua_state());
+  //LoadImguiBindings(luaState.lua_state());
   addPackagePath(luaState, getActualPath("resources/scripts/?.lua").c_str());
+  addPackagePath(luaState, getActualPath("resources/shaders/?.lua").c_str());
   EditorApplication ea{};
   ea.run();
   return 0;

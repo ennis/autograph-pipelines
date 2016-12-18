@@ -1,5 +1,6 @@
 #pragma once
 #include <autograph/Config.h>
+#include <autograph/support/Span.h>
 #include <autograph/gl/GLHandle.h>
 
 namespace ag {
@@ -19,8 +20,8 @@ struct VertexAttribute {
 class AG_API VertexArray {
 public:
   VertexArray() = default;
-  VertexArray(std::initializer_list<VertexAttribute> attribs);
-  void initialize(std::initializer_list<VertexAttribute> attribs);
+  VertexArray(span<VertexAttribute> attribs);
+  void initialize(span<VertexAttribute> attribs);
 
   GLuint object() const { return obj_.get(); }
 

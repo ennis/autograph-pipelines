@@ -2,32 +2,29 @@
 #include <autograph/Types.h>
 #include <autograph/gl/Buffer.h>
 #include <autograph/gl/DrawState.h>
+#include <autograph/gl/Framebuffer.h>
+#include <autograph/gl/Program.h>
+#include <autograph/gl/Sampler.h>
 #include <autograph/gl/StateGroup.h>
 #include <autograph/gl/Texture.h>
-#include <autograph/gl/Sampler.h>
-#include <autograph/gl/Program.h>
-#include <autograph/gl/Framebuffer.h>
 #include <autograph/gl/VertexArray.h>
 #include <gl_core_4_5.h>
 
 namespace ag {
 namespace gl {
-struct GLBindContext {
-  GLuint program;
-};
 
 namespace bind {
 
 #define UNIFORM_VECN(ty, value_ty, fn)                                         \
   auto uniform_##ty(const char *name, value_ty v) {                            \
-    return [=](GLBindContext &ctx) {                                           \
-      int loc = glGetUniformLocation(ctx.program, name);                       \
+    return [=](StateGroup &sg) {                                               \
+      int loc = glGetUniformLocation(sg.drawStates.program, name);             \
       if (loc != -1)                                                           \
         fn(loc, 1, &v[0]);                                                     \
     };                                                                         \
   }                                                                            \
   auto uniform_##ty(int loc, value_ty v) {                                     \
-    return [=](GLBindContext &ctx) { fn(loc, 1, &v[0]); };                     \
+    return [=](StateGroup &sg) { fn(loc, 1, &v[0]); };                         \
   }
 
 UNIFORM_VECN(vec2, vec2, glUniform2fv)
@@ -41,14 +38,14 @@ UNIFORM_VECN(ivec4, ivec4, glUniform4iv)
 #define UNIFORM_MATRIX_NXN(nxn)                                                \
   auto uniform_mat##nxn(const char *name, const mat##nxn &v,                   \
                         bool transpose = false) {                              \
-    return [=](GLBindContext &ctx) {                                           \
-      int loc = glGetUniformLocation(ctx.program, name);                       \
+    return [=](StateGroup &sg) {                                               \
+      int loc = glGetUniformLocation(sg.drawStates.program, name);             \
       if (loc != -1)                                                           \
         glUniformMatrix##nxn##fv(loc, 1, transpose, &v[0][0]);                 \
     };                                                                         \
   }                                                                            \
   auto uniform_mat##nxn(int loc, const mat##nxn &v, bool transpose = false) {  \
-    return [=](GLBindContext &ctx) {                                           \
+    return [=](StateGroup &sg) {                                               \
       glUniformMatrix##nxn##fv(loc, 1, transpose, &v[0][0]);                   \
     };                                                                         \
   }
@@ -60,62 +57,83 @@ UNIFORM_MATRIX_NXN(3x4)
 #undef UNIFORM_MATRIX_NXN
 
 auto texture(int unit, const Texture &tex, Sampler &sampler) {
-  return [unit, obj = tex.object(), sobj = sampler.object()](GLBindContext &) {
-    glBindTextureUnit(unit, obj);
-    glBindSampler(unit, sobj);
+  return
+      [ unit, obj = tex.object(), sobj = sampler.object() ](StateGroup & sg) {
+    sg.uniforms.textures[unit] = obj;
+    sg.uniforms.samplers[unit] = sobj;
   };
 }
 
 auto image(int unit, const Texture &tex) {
-  return [ unit, obj = tex.object() ](GLBindContext &) {
-    glBindImageTextures(unit, 1, &obj);
+  return [ unit, obj = tex.object() ](StateGroup & sg) {
+    sg.uniforms.images[unit] = obj;
   };
+}
+
+auto uniformBuffer(int slot, BufferSlice buf) {
+	return [=](StateGroup &sg) {
+		sg.uniforms.uniformBuffers[slot] = buf.obj;
+		sg.uniforms.uniformBufferOffsets[slot] = buf.offset;
+		sg.uniforms.uniformBufferSizes[slot] = buf.size;
+	};
 }
 
 auto vertexBuffer(int slot, BufferSlice buf, int stride) {
-  return [=](GLBindContext &ctx) {
-    glBindVertexBuffer(slot, buf.obj, buf.offset, static_cast<GLsizei>(stride));
+  return [=](StateGroup &sg) {
+    sg.uniforms.vertexBuffers[slot] = buf.obj;
+    sg.uniforms.vertexBufferOffsets[slot] = buf.offset;
+    sg.uniforms.vertexBufferStrides[slot] = static_cast<GLsizei>(stride);
   };
 }
 
+auto indexBuffer(BufferSlice buf, GLenum type) {
+	return [=](StateGroup &sg) {
+		sg.uniforms.indexBuffer = buf;
+		sg.uniforms.indexBufferType = type;
+	};
+}
+
 auto program(const Program &prog) {
-  return [obj = prog.object()](GLBindContext & ctx) { glUseProgram(obj); };
+  return [obj = prog.object()](StateGroup & sg) {
+    sg.drawStates.program = obj;
+  };
 }
 
 auto framebuffer(const Framebuffer &fbo) {
-  return [ obj = fbo.object(), w = fbo.width(),
-           h = fbo.height() ](GLBindContext & ctx) {
+  return [ obj = fbo.object(), w = fbo.width(), h = fbo.height() ](StateGroup &
+                                                                   sg) {
     glBindFramebuffer(GL_DRAW_FRAMEBUFFER, obj);
-    glViewport(0, 0, w, h);
+    // initialize the default viewport
+    sg.drawStates.viewports[0] = gl::Viewport{0.0f, 0.0f, (float)w, (float)h};
   };
 }
 
 auto vertexArray(const VertexArray &vao) {
-  return [obj = vao.object()](GLBindContext & ctx) { glBindVertexArray(obj); };
+  return [obj = vao.object()](StateGroup & sg) {
+    sg.drawStates.vertexArray = obj;
+  };
 }
 
 auto viewport(const Viewport &vp) {
-  return
-      [=](GLBindContext &) { glViewportIndexedf(0, vp.x, vp.y, vp.w, vp.h); };
+  return [=](StateGroup &sg) { sg.drawStates.viewports[0] = vp; };
 }
 
 auto viewport(int index, const Viewport &vp) {
-  return [=](GLBindContext &) {
-    glViewportIndexedf(index, vp.x, vp.y, vp.w, vp.h);
-  };
+  return [=](StateGroup &sg) { sg.drawStates.viewports[index] = vp; };
 }
 
-auto blendState(const BlendState &bs) {
-  return [=](GLBindContext &) {
-    glEnable(GL_BLEND); // XXX is this necessary
-    if (bs.enabled) {
-      glEnablei(GL_BLEND, 0);
-      glBlendEquationSeparatei(0, bs.modeRGB, bs.modeAlpha);
-      glBlendFuncSeparatei(0, bs.funcSrcRGB, bs.funcDstRGB, bs.funcSrcAlpha,
-                           bs.funcDstAlpha);
-    } else
-      glDisablei(GL_BLEND, 0);
-  };
+auto blendState(int index, const BlendState &bs) {
+  return
+      [index, &bs](StateGroup &sg) { sg.drawStates.blendStates[index] = bs; };
+}
+
+auto depthStencilState(int index, const DepthStencilState &dss) {
+  return
+      [index, &dss](StateGroup &sg) { sg.drawStates.depthStencilState = dss; };
+}
+
+auto rasterizerState(int index, const RasterizerState &rs) {
+  return [index, &rs](StateGroup &sg) { sg.drawStates.rasterizerState = rs; };
 }
 }
 }

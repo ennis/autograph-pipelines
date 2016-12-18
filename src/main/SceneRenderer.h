@@ -1,8 +1,10 @@
 #include "Scene.h"
+#include "ShaderManager.h"
 #include "Effect.h"
 #include <autograph/gl/Framebuffer.h>
 #include <autograph/gl/Program.h>
 #include <autograph/gl/Texture.h>
+#include <autograph/gl/UploadBuffer.h>
 #include <autograph/Camera.h>
 
 namespace ag 
@@ -16,7 +18,7 @@ namespace ag
         {
         public:
             GBuffer() {}
-            GBuffer(ivec2 size);
+            GBuffer(int width, int height);
 
             gl::Texture& getDepthTarget() {
                 return depthStencil;
@@ -41,10 +43,10 @@ namespace ag
             gl::Framebuffer fbo;
         };
 
-        DeferredSceneRenderer();
+        DeferredSceneRenderer(ShaderManager& sm);
         ~DeferredSceneRenderer();
 
-        void reloadShaders();
+        void reloadShaders(ShaderManager& sm);
         void renderScene(GBuffer& targets, Scene& scene, Camera& camera);
 
 	private:

@@ -22,12 +22,11 @@
 namespace ag {
 
 // bindings for standalone shader files
-sol::table openLuaShaderBindings(sol::this_state s)
+/*sol::table openLuaShaderBindings(sol::this_state s)
 {
     sol::state_view lua{s};
     sol::table module = lua.create_table();
-
-}
+}*/
 
 // core bindings
 sol::table openLuaBindings(sol::this_state s) {
@@ -162,13 +161,16 @@ sol::table openLuaBindings(sol::this_state s) {
   module["warningMessage"] = [](const char* str) { rawLogMessage(LogLevel::Warning, str); };
   module["errorMessage"] = [](const char* str) { rawLogMessage(LogLevel::Error, str); };
 
+  // ShaderManager
+  module.new_usertype<ShaderManager>("ShaderManager");
+
+  // DeferredSceneRenderer
   module.new_usertype<DeferredSceneRenderer>("DeferredSceneRenderer", 
-    sol::call_constructor, sol::constructors<sol::types<>>(),
+    sol::call_constructor, sol::constructors<sol::types<ShaderManager&>>(),
     "renderScene", &DeferredSceneRenderer::renderScene);
   module.new_usertype<DeferredSceneRenderer::GBuffer>("DeferredGBuffer",
-    sol::call_constructor, [](int w, int h) {
-      return DeferredSceneRenderer::GBuffer{ivec2{w, h}};
-    });
+    sol::call_constructor, sol::constructors<sol::types<int,int>>());
+
 
 
   // imgui bindings

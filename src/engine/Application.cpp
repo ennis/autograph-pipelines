@@ -1,6 +1,8 @@
 #include <autograph/engine/Application.h>
 #include <autograph/engine/Input.h>
 
+#include <autograph/gl/Device.h>
+
 #include <gl_core_4_5.h>
 #include <GLFW/glfw3.h>
 #include <GrContext.h>
@@ -132,11 +134,11 @@ void Application::initialize(ivec2 initSize) {
   glfwSetWindowSizeCallback(impl->window, appWindowSizeChanged);
 
   // autograph init
-  /*ag::DeviceConfig devCfg;
-  devCfg.init_fb_width = width;
-  devCfg.init_fb_height = height;
+  gl::DeviceConfig devCfg;
+  devCfg.init_fb_width = initSize.x;
+  devCfg.init_fb_height = initSize.y;
   devCfg.max_frames_in_flight = 3;
-  ag::initialize(devCfg);*/
+  gl::initialize(devCfg);
 
   // ImGui init
   ImGui_ImplGlfwGL3_Init(impl->window, false);

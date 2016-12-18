@@ -207,4 +207,4 @@ endif()
 #sol2
 add_library(sol2 INTERFACE)
 target_include_directories(sol2 INTERFACE sol2)
-target_link_libraries(sol2 INTERFACE lua53 optional)
+target_link_libraries(sol2 INTERFACE luajit_bin optional)

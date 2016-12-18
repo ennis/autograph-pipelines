@@ -22,6 +22,17 @@ public:
         return aabb_;
     }
 
+	auto& getVertices() { return vertices_; }
+	auto& getIndices() { return indices_; }
+
+	auto getVertexBuffer() { 
+		return gl::BufferSlice{ vbo_.object(), 0, vbo_.size() };
+	}
+
+	auto getIndexBuffer() {
+		return gl::BufferSlice{ ibo_.object(), 0, ibo_.size() };
+	}
+
 private:
   std::vector<Vertex3D> vertices_;
   std::vector<unsigned int> indices_;

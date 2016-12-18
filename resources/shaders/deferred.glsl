@@ -1,6 +1,6 @@
-
-local VS = [[
 #version 450
+
+## if _VERTEX_ then
 layout(std140, binding = 0) uniform U0 {
   mat4 modelMatrix;
   mat4 viewMatrix;
@@ -24,10 +24,9 @@ void main() {
   Pv = (viewMatrix * modelMatrix * vec4(position, 1.0)).xyz;
   fTexcoords = texcoords;
 }
-]]
 
-local FS = [[
-#version 450
+## elseif _FRAGMENT_ then
+
 in vec3 Nw0;
 in vec3 Pv;
 in vec3 Tv0;
@@ -38,31 +37,8 @@ layout(location = 1) out vec4 rtDiffuse;
 
 void main() {
   rtNormals = vec4(Nw0 / 2.0 + vec3(0.5), 1.0f);
-  rtDiffuse = vec4(1.0);	// TODO
+  rtDiffuse = vec4(1.0);  // TODO
 }
-]]
 
-return {
-	rasterizerState = {
-		fillMode = gl.GL_FILL,
-		cullMode = gl.GL_BACK,
-		frontFace = gl.GL_CCW
-	},
-	depthStencilState = {
-		depthTestEnable = true,
-		depthWriteEnable = true
-	},
-	blendState = {
-		[0] = { 
-			enabled = true,
-			modeRGB = gl.GL_FUNC_ADD,
-			modeAlpha = gl.GL_FUNC_ADD,
-			funcSrcRGB = gl.GL_SRC_ALPHA,
-			funcDstRGB = gl.GL_ONE_MINUS_SRC_ALPHA,
-			funcSrcAlpha = gl.GL_ONE,
-			funcDstAlpha = gl.GL_ZERO
-		}
-	},
-	vertexShader = VS,
-	fragmentShader = FS	
-}
+## end
+
