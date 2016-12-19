@@ -19,6 +19,7 @@
 #include "Mesh.h"
 #include "Scene.h"
 #include "SceneRenderer.h"
+#include "TrackballCamera.h"
 
 using namespace ag;
 
@@ -54,13 +55,10 @@ void addPackagePath(sol::state &state, const char *path) {
 /////////////////////////////////////////////////////////////
 class EditorApplication : public ag::Application {
 public:
-  EditorApplication() :
-      ag::Application{ag::ivec2{640, 480}},
-      lua{*gLuaState},
-	  sm{*gLuaState},
-	  camctl{ CameraSettings{} }
-  {
-	  reloadPipeline();
+  EditorApplication()
+      : ag::Application{ag::ivec2{640, 480}}, lua{*gLuaState}, sm{*gLuaState},
+        camctl{CameraSettings{}} {
+    reloadPipeline();
   }
 
   void onInputEvent(ag::InputEvent &ev) override {
@@ -70,21 +68,22 @@ public:
         reloadPipeline();
       }
 
-	  //camctl.
+      // camctl.
     }
   }
 
   void reloadPipeline() {
     AG_DEBUG("==============================================");
     AG_DEBUG("Reloading pipelines");
-    lua.require("autograph_bindings", sol::c_call<decltype(&openLuaBindings), &openLuaBindings>);
-	// set shader manager
-	lua["g_shaderManager"] = &sm;
+    lua.require("autograph_bindings",
+                sol::c_call<decltype(&openLuaBindings), &openLuaBindings>);
+    // set shader manager
+    lua["g_shaderManager"] = &sm;
 
     try {
       lua.script_file(getActualPath("resources/scripts/init.lua"));
       lua.script("init()");
-	  lastOnRenderFailed = false;
+      lastOnRenderFailed = false;
     } catch (sol::error &e) {
       errorMessage("Error loading init script:\n\t{}", e.what());
     }
@@ -94,20 +93,19 @@ public:
     auto framebufferSize = getFramebufferSize();
     glViewport(0, 0, framebufferSize.x, framebufferSize.y);
     glClearColor(60.f / 255.f, 60.f / 255.f, 168.f / 255.f, 1.0f);
-	glClearDepthf(1.0f);
+    glClearDepthf(1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     lua["framebufferWidth"] = framebufferSize.x;
     lua["framebufferHeight"] = framebufferSize.y;
-	if (!lastOnRenderFailed) {
-		try {
-            lua.script("render()");
-		}
-		catch (sol::error& e) {
-            errorMessage("Error running render():\n\t{}", e.what());
-			errorMessage("Please fix the script and reload (F5 key)");
-			lastOnRenderFailed = true;
-		}
-	}
+    if (!lastOnRenderFailed) {
+      try {
+        lua.script("render()");
+      } catch (sol::error &e) {
+        errorMessage("Error running render():\n\t{}", e.what());
+        errorMessage("Please fix the script and reload (F5 key)");
+        lastOnRenderFailed = true;
+      }
+    }
   }
 
   void resize(ivec2 size) override {
@@ -117,10 +115,10 @@ public:
   }
 
 private:
-	bool lastOnRenderFailed{ false };
-    sol::state& lua;
-	ShaderManager sm;
-	TrackballCameraControl camctl;
+  bool lastOnRenderFailed{false};
+  sol::state &lua;
+  ShaderManager sm;
+  TrackballCamera trackball;
 };
 
 ///////////////////////////////////////////////////////////////
@@ -130,11 +128,10 @@ int main(int argc, char *argv[]) {
   // initialize Lua VM
   sol::state luaState;
   luaState.open_libraries(sol::lib::base, sol::lib::package, sol::lib::debug,
-						  sol::lib::string, sol::lib::io,
-                          sol::lib::math, sol::lib::coroutine, sol::lib::os,
-						  sol::lib::table);
-  gLuaState = &luaState; 
-  //LoadImguiBindings(luaState.lua_state());
+                          sol::lib::string, sol::lib::io, sol::lib::math,
+                          sol::lib::coroutine, sol::lib::os, sol::lib::table);
+  gLuaState = &luaState;
+  // LoadImguiBindings(luaState.lua_state());
   addPackagePath(luaState, getActualPath("resources/scripts/?.lua").c_str());
   addPackagePath(luaState, getActualPath("resources/shaders/?.lua").c_str());
   EditorApplication ea{};

@@ -42,36 +42,4 @@ struct CameraSettings {
   ivec2 screenSize;
 };
 
-//////////////////////////////////////////////
-// Translates input to camera motion
-class AG_API TrackballCameraControl {
-public:
-  enum class MouseMoveMode { Pan, Rotate, RotateScene, Idle };
-  enum class ScrollMode { Zoom, MoveForward };
-  enum class RotationMode { Scene, Camera };
-
-  TrackballCameraControl(const CameraSettings &initialSettings = CameraSettings{});
-
-  const Camera &getCamera();
-
-  //void mouseMoveRaw(double raw_dx, double raw_dy, int cur_mx, int cur_my,
-  //                  MouseMoveMode mode);
-  void cursorMove(ivec2 cursor, RotationMode rotationMode);
-  void scrollWheel(double delta, ScrollMode scrollMode);
-  void setScreenSize(int width, int height) {
-	  screenWidth = width;
-	  screenHeight = height;
-  }
-
-private:
-  void updatePanVectors();
-
-  CameraSettings settings;
-  mat4 modelMatrix{1.0f};
-  mat4 viewMat;
-  ivec2 lastCur;
-  Camera cam;
-  int screenWidth;
-  int screenHeight;
-};
 }
