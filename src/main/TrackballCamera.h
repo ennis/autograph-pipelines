@@ -14,8 +14,8 @@ public:
   CameraControl &setZoom(float zoom);
   //
   void rotate(float dTheta, float dPhi) {
-  	rotTheta_ += dTheta;
-  	rotPhi_ += dPhi;
+  	theta_ += dTheta;
+  	phi_ += dPhi;
   }
   // dx, dy in camera space
   void pan(float dx, float dy)
@@ -36,15 +36,17 @@ public:
   {
   	Camera cam;
   	cam.viewMat = getLookAt();
-  	cam.invViewMat = glm::inverse(cam.viewMat);
+  	cam.invViewMat = glm::inverse(cam.viewMat);    
+  	cam.wEye = glm::vec3(glm::inverse(cam.viewMat) *
+                         glm::vec4(0.0f, 0.0f, 0.0f, 1.0f));
   }
 
 private:
-  mat4 getLookAt() {
-    return glm::lookAt(target + toCartesian, target, CamUp);
+  mat4 getLookAt() const {
+    return glm::lookAt(target + toCartesian(), target, CamUp);
   }
 
-  vec3 toCartesian() {
+  vec3 toCartesian() const {
     float x = radius_ * sinf(phi_) * sinf(theta_);
     float y = radius_ * cosf(phi_);
     float z = radius_ * sinf(phi_) * cosf(theta_);
@@ -60,15 +62,20 @@ private:
 };
 
 /////////////////////////////////////////////////////
-class Trackball {
+class Arcball {
 public:
-  // Apply a trackball rotation to an object
-  void beginRotate(mat4& modelMat, int screenWidth, int screenHeight, int mouseX,
-             int mouseY) {
+  // Apply an arcball rotation to an object
+  void onMouseDown(mat4& modelMat, int mouseX, int mouseY) 
+  {
+  	mouseDownX = mouseX;
+  	mouseDownY = mouseY;
+  }
 
-    if (mouseX != lastMouseX || mouseY != lastMouseY) {
-      glm::vec3 va = getArcballVector(lastMouseX, lastMouseY);
-      glm::vec3 vb = getArcballVector(mouseX, mouseY);
+  void onMouseDrag(mat4& modelMat, const Camera& cam, int screenWidth, int screenHeight, int mouseX, int mouseY)
+  {
+    if (mouseX != mouseDownX || mouseY != mouseDownY) {
+      glm::vec3 va = getArcballVector(screenWidth, screenHeight, mouseDownX, mouseDownY);
+      glm::vec3 vb = getArcballVector(screenWidth, screenHeight, mouseX, mouseY);
       float angle = std::acos(std::min(1.0f, glm::dot(va, vb)));
       vec3 axis_in_camera_coord = glm::cross(va, vb);
       mat3 camera2object = glm::inverse(mat3(cam.viewMat) * mat3(modelMat));
@@ -77,7 +84,7 @@ public:
       lastMouseX = mouseX;
       lastMouseY = mouseY;
     }
-    cam.viewMat = cam.viewMat * modelMat;
+    //cam.viewMat = cam.viewMat * modelMat;
   }
 
 private:
@@ -94,8 +101,8 @@ private:
   }
 
   mat4 modelMat;
-  int lastMouseX;
-  int lastMouseY;
+  int mouseDownX;
+  int mouseDownY;
 };
 
 /////////////////////////////////////////////////////
