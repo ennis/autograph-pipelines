@@ -138,7 +138,7 @@ struct DrawStates
 	DepthStencilState depthStencilState;
 	RasterizerState rasterizerState;
 	ScissorRect scissorRect;
-	std::array<Viewport, 8> viewports;
+        std::array<Viewport, 8> viewports {{0}};
 	std::array<BlendState, 8> blendStates;
 	GLuint vertexArray;
 	GLuint program;
