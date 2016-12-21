@@ -16,6 +16,7 @@
 #include "Scene.h"
 #include "SceneRenderer.h"
 #include "Effect.h"
+#include "TrackballCamera.h"
 // imgui
 #include "imgui.h"
 
@@ -170,6 +171,19 @@ sol::table openLuaBindings(sol::this_state s) {
     "renderScene", &DeferredSceneRenderer::renderScene);
   module.new_usertype<DeferredSceneRenderer::GBuffer>("DeferredGBuffer",
     sol::call_constructor, sol::constructors<sol::types<int,int>>());
+
+  // CameraControl
+  module.new_usertype<CameraControl>("CameraControl", sol::call_constructor, sol::constructors<sol::types<>>(),
+    "zoomIn", &CameraControl::zoomIn,
+    "setZoom", &CameraControl::setZoom,
+    "rotate", &CameraControl::rotate,
+    "pan", &CameraControl::pan,
+    "lookAt", static_cast<void(CameraControl::*)(float, float, float)>(&CameraControl::lookAt),
+    "setAspectRatio", &CameraControl::setAspectRatio,
+    "setFieldOfView", &CameraControl::setFieldOfView,
+    "setNearFarPlanes", &CameraControl::setNearFarPlanes,
+    "getCamera", &CameraControl::getCamera
+    );
 
 
 

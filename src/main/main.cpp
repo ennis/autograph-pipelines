@@ -57,7 +57,8 @@ class EditorApplication : public ag::Application {
 public:
   EditorApplication()
       : ag::Application{ag::ivec2{640, 480}}, lua{*gLuaState}, sm{*gLuaState},
-        camctl{CameraSettings{}} {
+        camctl{} 
+  {
     reloadPipeline();
   }
 
@@ -67,8 +68,6 @@ public:
           keyEvent->state == ag::KeyState::Pressed) {
         reloadPipeline();
       }
-
-      // camctl.
     }
   }
 
@@ -77,8 +76,9 @@ public:
     AG_DEBUG("Reloading pipelines");
     lua.require("autograph_bindings",
                 sol::c_call<decltype(&openLuaBindings), &openLuaBindings>);
-    // set shader manager
+    // set script globals
     lua["g_shaderManager"] = &sm;
+    lua["g_mainCameraControl"] = &camctl;
 
     try {
       lua.script_file(getActualPath("resources/scripts/init.lua"));
@@ -95,8 +95,8 @@ public:
     glClearColor(60.f / 255.f, 60.f / 255.f, 168.f / 255.f, 1.0f);
     glClearDepthf(1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    lua["framebufferWidth"] = framebufferSize.x;
-    lua["framebufferHeight"] = framebufferSize.y;
+    lua["g_framebufferWidth"] = framebufferSize.x;
+    lua["g_framebufferHeight"] = framebufferSize.y;
     if (!lastOnRenderFailed) {
       try {
         lua.script("render()");
@@ -118,7 +118,7 @@ private:
   bool lastOnRenderFailed{false};
   sol::state &lua;
   ShaderManager sm;
-  TrackballCamera trackball;
+  CameraControl camctl;
 };
 
 ///////////////////////////////////////////////////////////////

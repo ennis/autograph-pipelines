@@ -1,17 +1,26 @@
 #pragma once
 #include <autograph/Camera.h>
+#include <glm/gtx/rotate_vector.hpp>
 
 namespace ag {
 
-const vec3 CamFront{0.0f, 0.0f, 1.0f};
-const vec3 CamRight{1.0f, 0.0f, 0.0f};
-const vec3 CamUp{0.0f, 1.0f, 0.0f};
+static const vec3 CamFront{0.0f, 0.0f, 1.0f};
+static const vec3 CamRight{1.0f, 0.0f, 0.0f};
+static const vec3 CamUp{0.0f, 1.0f, 0.0f};
 
 /////////////////////////////////////////////////////
 class CameraControl {
 public:
-  CameraControl &zoomIn(float dzoom);
-  CameraControl &setZoom(float zoom);
+  void zoomIn(float dzoom)
+  {
+  	zoomLevel_ += dzoom;
+  }
+
+  void setZoom(float zoom)
+  {
+  	zoomLevel_ = zoom;
+  }
+
   //
   void rotate(float dTheta, float dPhi) {
   	theta_ += dTheta;
@@ -22,8 +31,8 @@ public:
   {
   	const vec3 look = glm::normalize(toCartesian());
     const vec3 worldUp = vec3{0.0f, 1.0f, 0.0f};
-    const vec3 right = cross(look, worldUp);
-    const vec3 up = cross(look, right);
+    const vec3 right = glm::cross(look, worldUp);
+    const vec3 up = glm::cross(look, right);
     target_ = target_ + (right * dx) + (up * dy);
   }
   //
@@ -31,19 +40,37 @@ public:
   {
   	target_ = lookAt;
   }
+  void lookAt(float x, float y, float z)
+  {
+  	target_ = vec3{x,y,z};
+  }
+  void setAspectRatio(float aspect_ratio) 
+  {
+  	aspectRatio_ = aspect_ratio;
+  }
+  void setFieldOfView(float fov) {
+  	fov_ = fov;
+  }
+  void setNearFarPlanes(float nearPlane, float farPlane) {
+  	nearPlane_ = nearPlane;
+  	farPlane_ = farPlane;
+  }
   //
   Camera getCamera() const
   {
   	Camera cam;
   	cam.viewMat = getLookAt();
-  	cam.invViewMat = glm::inverse(cam.viewMat);    
-  	cam.wEye = glm::vec3(glm::inverse(cam.viewMat) *
-                         glm::vec4(0.0f, 0.0f, 0.0f, 1.0f));
+  	cam.invViewMat = glm::inverse(cam.viewMat);        
+  	cam.projMat = glm::scale(vec3{zoomLevel_, zoomLevel_, 1.0f}) *
+                  glm::perspective(fov_, aspectRatio_, nearPlane_, farPlane_);
+    cam.wEye = vec3(glm::inverse(cam.viewMat) *
+                         vec4{0.0f, 0.0f, 0.0f, 1.0f});
+    return cam;
   }
 
 private:
   mat4 getLookAt() const {
-    return glm::lookAt(target + toCartesian(), target, CamUp);
+    return glm::lookAt(target_ + toCartesian(), target_, CamUp);
   }
 
   vec3 toCartesian() const {
@@ -53,19 +80,22 @@ private:
     return vec3{x, y, z};
 }
 
-
+	float fov_{45.0f};
+	float aspectRatio_{1.0f};	// should be screenWidth / screenHeight
+	float nearPlane_{0.001f};
+	float farPlane_{10.0f};
   float zoomLevel_;
   float radius_;
   float theta_;
   float phi_;
-  vec3 target_;
+  vec3 target_{0.0f, 0.0f, 0.0f};
 };
 
 /////////////////////////////////////////////////////
 class Arcball {
 public:
   // Apply an arcball rotation to an object
-  void onMouseDown(mat4& modelMat, int mouseX, int mouseY) 
+  void onMouseDown(int mouseX, int mouseY) 
   {
   	mouseDownX = mouseX;
   	mouseDownY = mouseY;
@@ -81,10 +111,9 @@ public:
       mat3 camera2object = glm::inverse(mat3(cam.viewMat) * mat3(modelMat));
       vec3 axis_in_object_coord = camera2object * axis_in_camera_coord;
       modelMat = glm::rotate(modelMat, angle, axis_in_object_coord);
-      lastMouseX = mouseX;
-      lastMouseY = mouseY;
+      mouseDownX = mouseX;
+      mouseDownY = mouseY;
     }
-    //cam.viewMat = cam.viewMat * modelMat;
   }
 
 private:
@@ -100,127 +129,8 @@ private:
     return P;
   }
 
-  mat4 modelMat;
   int mouseDownX;
   int mouseDownY;
 };
 
-/////////////////////////////////////////////////////
-struct TrackballCamera {
-  TrackballCamera(const CameraSettings &init)
-      : settings{init}, cam{init}, vEye(init.eye) {}
-
-  mat4 getLookAt() {
-    auto lookAt = glm::lookAt(vec3(0, 0, -1), vec3(0, 0, 0), CamUp) *
-                  glm::rotate(glm::rotate((float)cameraRotX, CamRight),
-                              (float)cameraRotY, CamUp);
-    return lookAt;
-  }
-
-  void updatePanVectors() {
-    auto invLookAt = glm::inverse(getLookAt());
-    wCamRight = vec3(invLookAt * vec4(CamRight, 0.0f));
-    wCamUp = vec3(invLookAt * vec4(-CamUp, 0.0f));
-    wCamFront = vec3(invLookAt * vec4(CamFront, 0.0f));
-  }
-
-  void reset() { *this = TrackballCamera{settings}; }
-
-  /**
-   * Get a normalized vector from the center of the virtual ball O to a
-   * point P on the virtual ball surface, such that P is aligned on
-   * screen's (X,Y) coordinates.  If (X,Y) is too far away from the
-   * sphere, return the nearest point on the virtual ball surface.
-   */
-
-  void onMouseMove(double raw_dx, double raw_dy, int cur_mx, int cur_my,
-                   MouseMoveMode mode) {
-    auto dx = settings.sensitivity * raw_dx;
-    auto dy = settings.sensitivity * raw_dy;
-
-    if (mode == MouseMoveMode::Rotate) {
-      auto rot_speed = 0.1;
-      auto twopi = glm::pi<double>() * 2.0;
-      cameraRotX += std::fmod(rot_speed * dy, twopi);
-      cameraRotY += std::fmod(rot_speed * dx, twopi);
-      updatePanVectors();
-    } else if (mode == MouseMoveMode::RotateScene) {
-
-      // rotate scene around origin
-      /*auto rot_speed = 0.1;
-      auto twopi = glm::pi<double>() * 2.0;
-      sceneRotX += std::fmod(rot_speed * dy, twopi);
-      sceneRotY += std::fmod(rot_speed * dx, twopi);
-      updatePanVectors();*/
-
-      if (cur_mx != last_mx || cur_my != last_my) {
-        glm::vec3 va = get_arcball_vector(last_mx, last_my);
-        glm::vec3 vb = get_arcball_vector(cur_mx, cur_my);
-        float angle = std::acos(std::min(1.0f, glm::dot(va, vb)));
-        glm::vec3 axis_in_camera_coord = glm::cross(va, vb);
-        glm::mat3 camera2object =
-            glm::inverse(mat3(cam.viewMat) * mat3(modelMat));
-        glm::vec3 axis_in_object_coord = camera2object * axis_in_camera_coord;
-        modelMat = glm::rotate(modelMat, angle, axis_in_object_coord);
-        last_mx = cur_mx;
-        last_my = cur_my;
-      }
-
-    } else if (mode == MouseMoveMode::Pan) {
-      auto pan_speed = 0.1;
-      vEye += (float)(dx * pan_speed) * wCamRight +
-              (float)(dy * pan_speed) * wCamUp;
-    } else if (mode == MouseMoveMode::Idle) {
-      last_mx = cur_mx;
-      last_my = cur_my;
-    }
-  }
-
-  void onScrollWheel(double delta, ScrollMode scrollMode) {
-    auto scroll = delta * settings.sensitivity;
-    auto scroll_speed = 10.0;
-    if (scrollMode == ScrollMode::MoveForward)
-      vEye += (float)(scroll * scroll_speed) * wCamFront;
-    else
-      zoom *= std::exp2(scroll);
-  }
-
-  Camera getCamera() const {
-    float aspect_ratio = (float)screen_width / (float)screen_height;
-    auto lookAt = getLookAt();
-    cam.mode = Camera::Mode::Perspective;
-    cam.viewMat = lookAt * glm::translate(vEye) *
-                  glm::rotate(glm::rotate((float)sceneRotY, wCamUp),
-                              (float)sceneRotX, wCamRight);
-    cam.projMat = glm::scale(glm::vec3{(float)zoom, (float)zoom, 1.0f}) *
-                  glm::perspective(settings.fieldOfView, aspect_ratio,
-                                   settings.nearPlane, settings.farPlane);
-    cam.wEye = glm::vec3(glm::inverse(cam.viewMat) *
-                         glm::vec4(0.0f, 0.0f, 0.0f, 1.0f));
-    return cam;
-  }
-
-private:
-  CameraSettings settings;
-  Camera cam;
-  bool panning = false;
-  bool rotating = false;
-
-  double cameraRotX = 0.0;
-  double cameraRotY = 0.0;
-  double sceneRotX = 0.0;
-  double sceneRotY = 0.0;
-  double zoom = 1.0;
-
-  int last_mx;
-  int last_my;
-  int screen_width;
-  int screen_height;
-  glm::mat4 modelMat;
-
-  glm::vec3 vEye;
-  glm::vec3 wCamRight;
-  glm::vec3 wCamUp;
-  glm::vec3 wCamFront;
-};
 }

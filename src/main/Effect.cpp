@@ -95,18 +95,20 @@ void DrawPassBuilder::loadFromTable(sol::table config)
 
 	{
 		// viewports		
-		sol::table viewports = config["viewports"];
-		viewports.for_each([this](sol::object key, sol::object value) {
-			assert(key.get_type() == sol::type::number);
-			assert(value.get_type() == sol::type::table);
-			auto index = key.as<int>();
-			auto table = value.as<sol::table>();
-			float x = table.get_or("x", 0.0f);
-			float y = table.get_or("y", 0.0f);
-			float w = table.get_or("w", 0.0f);
-			float h = table.get_or("h", 0.0f);
-			this->setViewport(index, x, y, w, h);
-		});
+		sol::optional<sol::table> viewports = config["viewports"];
+		if (viewports) {
+			viewports->for_each([this](sol::object key, sol::object value) {
+				assert(key.get_type() == sol::type::number);
+				assert(value.get_type() == sol::type::table);
+				auto index = key.as<int>();
+				auto table = value.as<sol::table>();
+				float x = table.get_or("x", 0.0f);
+				float y = table.get_or("y", 0.0f);
+				float w = table.get_or("w", 0.0f);
+				float h = table.get_or("h", 0.0f);
+				this->setViewport(index, x, y, w, h);
+			});
+		}
 	}
 
 	{

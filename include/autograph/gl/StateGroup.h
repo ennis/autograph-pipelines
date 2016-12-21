@@ -129,7 +129,7 @@ struct Uniforms
 	std::array<GLuint, kMaxVertexBufferSlots> vertexBuffers{ { 0 } };
 	std::array<GLintptr, kMaxVertexBufferSlots> vertexBufferOffsets{ { 0 } };
 	std::array<GLsizei, kMaxVertexBufferSlots> vertexBufferStrides{ { 0 } };
-	BufferSlice indexBuffer{ {0 } };
+	BufferSlice indexBuffer{ 0 };
 	GLenum indexBufferType{ 0 };
 };
 
