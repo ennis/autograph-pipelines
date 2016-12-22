@@ -7,6 +7,7 @@
 #include <autograph/Transform.h>
 #include <autograph/Types.h>
 // gl
+#include <autograph/gl/Device.h>
 #include <autograph/gl/Buffer.h>
 #include <autograph/gl/Framebuffer.h>
 #include <autograph/gl/Program.h>
@@ -39,6 +40,8 @@ sol::table openLuaBindings(sol::this_state s) {
   // module["drawMesh"] = &drawMesh;
   // module["get"]
 
+  module["getDefaultFramebuffer"] = &ag::gl::getDefaultFramebuffer;
+
 
   module.new_usertype<gl::Texture>(
       "Texture", "create1D", sol::factories(&gl::Texture::create1D), "create2D",
@@ -64,7 +67,10 @@ sol::table openLuaBindings(sol::this_state s) {
       t.position.y = y;
       t.position.z = z;
     }, 
-    "position", &Transform::position
+    "position", &Transform::position,
+	"setScale", [](Transform& t, float s) {
+		t.scaling = vec3{ s };
+	}
    );
 
   // Scene
@@ -83,7 +89,9 @@ sol::table openLuaBindings(sol::this_state s) {
 
   module.new_usertype<SceneObject>(
       "SceneObject", "id", sol::property(&SceneObject::id), "mesh",
-      &SceneObject::mesh, "transform", &SceneObject::transform);
+      &SceneObject::mesh, "transform", &SceneObject::transform,
+	  "getLocalBoundingBox", &SceneObject::getLocalBoundingBox,
+	  "getApproximateWorldBoundingBox", &SceneObject::getApproximateWorldBoundingBox);
 
   module.new_usertype<Scene>("Scene", sol::call_constructor, sol::constructors<sol::types<>>{}, 
                             "addMesh", &Scene::addMesh,
@@ -172,6 +180,10 @@ sol::table openLuaBindings(sol::this_state s) {
   module.new_usertype<DeferredSceneRenderer::GBuffer>("DeferredGBuffer",
     sol::call_constructor, sol::constructors<sol::types<int,int>>());
 
+  module.new_usertype<WireframeOverlayRenderer>("WireframeOverlayRenderer",
+	  sol::call_constructor, sol::constructors<sol::types<ShaderManager&>>(),
+	  "renderSceneObject", &WireframeOverlayRenderer::renderSceneObject);
+
   // CameraControl
   module.new_usertype<CameraControl>("CameraControl", sol::call_constructor, sol::constructors<sol::types<>>(),
     "zoomIn", &CameraControl::zoomIn,
@@ -182,7 +194,8 @@ sol::table openLuaBindings(sol::this_state s) {
     "setAspectRatio", &CameraControl::setAspectRatio,
     "setFieldOfView", &CameraControl::setFieldOfView,
     "setNearFarPlanes", &CameraControl::setNearFarPlanes,
-    "getCamera", &CameraControl::getCamera
+    "getCamera", &CameraControl::getCamera,
+	  "lookDistance", &CameraControl::lookDistance
     );
 
 

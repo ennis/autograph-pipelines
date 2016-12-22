@@ -91,10 +91,12 @@ public:
 
   void render() override {
     auto framebufferSize = getFramebufferSize();
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glViewport(0, 0, framebufferSize.x, framebufferSize.y);
     glClearColor(60.f / 255.f, 60.f / 255.f, 168.f / 255.f, 1.0f);
-    glClearDepthf(1.0f);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glClearDepth(1.0);
+	glDepthMask(GL_TRUE);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
     lua["g_framebufferWidth"] = framebufferSize.x;
     lua["g_framebufferHeight"] = framebufferSize.y;
     if (!lastOnRenderFailed) {

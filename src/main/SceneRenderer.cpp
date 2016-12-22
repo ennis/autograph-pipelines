@@ -53,16 +53,74 @@ namespace ag
 			objectUniforms.viewMatrix = camera.viewMat;
 			objectUniforms.projMatrix = camera.projMat;
 			objectUniforms.viewProjMatrix = camera.projMat * camera.viewMat;
+
+			//AG_DEBUG("modelMat {},{},{},{}", objectUniforms.modelMatrix[0], objectUniforms.modelMatrix[1], objectUniforms.modelMatrix[2], objectUniforms.modelMatrix[3]);
+			//AG_DEBUG("viewMat {},{},{},{}", camera.viewMat[0], camera.viewMat[1], camera.viewMat[2], camera.viewMat[3]);
+			//AG_DEBUG("projMat {},{},{},{}", camera.projMat[0], camera.projMat[1], camera.projMat[2], camera.projMat[3]);
 			draw(
 				gl::getDefaultFramebuffer(),
 				drawIndexed(GL_TRIANGLES, 0, idxCount, 0),
 				deferredDrawPass->getDrawStates(),
 				vertexBuffer(0, pMesh->getVertexBuffer(), sizeof(Vertex3D)),
 				indexBuffer(pMesh->getIndexBuffer(), GL_UNSIGNED_INT),
-				uniformBuffer(0, uploadFrameData(&objectUniforms, sizeof(objectUniforms), alignof(ObjectUniforms)))
+				uniformBuffer(0, uploadFrameData(&objectUniforms, sizeof(objectUniforms), 128))
 				);
 
 			AG_DEBUG("renderScene, object ID {} mesh {}", obj->id, (void*)obj->mesh);
 		}
 	}
+
+
+	WireframeOverlayRenderer::WireframeOverlayRenderer(ShaderManager& sm)
+	{
+		reloadShaders(sm);
+	}
+
+	WireframeOverlayRenderer::~WireframeOverlayRenderer()
+	{}
+
+	void WireframeOverlayRenderer::reloadShaders(ShaderManager& sm)
+	{
+		AG_DEBUG("WireframeOverlayRenderer::reloadShaders");
+		sm.loadShaderFile("wireframe");
+		wireframeDrawPass = sm.createDrawPass("wireframeOverlay");
+		wireframeNoDepthDrawPass = sm.createDrawPass("wireframeOverlayNoDepth");
+	}
+
+	void WireframeOverlayRenderer::renderSceneObject(gl::Framebuffer& target, Scene& scene, SceneObject& object, Camera& camera, bool depthTest)
+	{
+		// Per-object uniforms
+		struct ObjectUniforms
+		{
+			mat4 modelMatrix;
+			mat4 viewMatrix;
+			mat4 projMatrix;
+			mat4 viewProjMatrix;
+		} objectUniforms;
+
+		objectUniforms.modelMatrix = object.transform.getMatrix();
+		objectUniforms.viewMatrix = camera.viewMat;
+		objectUniforms.projMatrix = camera.projMat;
+		objectUniforms.viewProjMatrix = camera.projMat * camera.viewMat;
+
+		using namespace gl;
+		using namespace gl::bind;
+		auto pMesh = object.mesh;
+		auto vtxCount = pMesh->getVertices().size();
+		auto idxCount = pMesh->getIndices().size();
+
+		draw(
+			target,
+			drawIndexed(GL_TRIANGLES, 0, idxCount, 0),
+			depthTest ? wireframeDrawPass->getDrawStates() : wireframeNoDepthDrawPass->getDrawStates(),
+			vertexBuffer(0, pMesh->getVertexBuffer(), sizeof(Vertex3D)),
+			indexBuffer(pMesh->getIndexBuffer(), GL_UNSIGNED_INT),
+			uniformBuffer(0, uploadFrameData(&objectUniforms, sizeof(objectUniforms), 128))
+		);
+
+
+	}
+
+
 }
+

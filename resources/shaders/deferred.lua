@@ -26,7 +26,8 @@ deferredShader =
 			funcDstRGB = gl.GL_ONE_MINUS_SRC_ALPHA,
 			funcSrcAlpha = gl.GL_ONE,
 			funcDstAlpha = gl.GL_ZERO
-		}
+		},
+		[1] = { enabled = false }
 	},
 	shaderFile = 'deferred.glsl'
 }

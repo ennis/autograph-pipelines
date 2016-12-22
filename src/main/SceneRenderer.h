@@ -52,4 +52,17 @@ namespace ag
 	private:
         std::unique_ptr<DrawPass> deferredDrawPass;
 	};
+
+	class WireframeOverlayRenderer
+	{
+	public:
+		WireframeOverlayRenderer(ShaderManager& sm);
+		~WireframeOverlayRenderer();
+
+		void reloadShaders(ShaderManager& sm);
+		void renderSceneObject(gl::Framebuffer& target, Scene& scene, SceneObject& object, Camera& camera, bool depthTest = true);
+	private:
+		std::unique_ptr<DrawPass> wireframeDrawPass;
+		std::unique_ptr<DrawPass> wireframeNoDepthDrawPass;
+	};
 }

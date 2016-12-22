@@ -11,6 +11,9 @@ namespace ag
 		uint64_t id;
 		Mesh* mesh;
 		Transform transform;
+
+		AABB getLocalBoundingBox() const;
+		AABB getApproximateWorldBoundingBox() const;
 	};
 
 	class Scene 

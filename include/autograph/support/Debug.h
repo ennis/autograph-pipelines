@@ -1,13 +1,42 @@
 #pragma once
+#include <autograph/Types.h>
 #include <autograph/Config.h>
 #include <fmt/format.h>
+#include <fmt/ostream.h>
 
 //
 // Debug & logging utilities
 // Don't include that in public headers please
 //
 
+// formatting operators for vector types
+inline std::ostream& operator<<(std::ostream& os, ag::vec2 v) {
+	os << '<' << v.x << ',' << v.y << '>';
+	return os;
+}
+inline std::ostream& operator<<(std::ostream& os, ag::vec3 v) {
+	os << '<' << v.x << ',' << v.y << ',' << v.z << '>';
+	return os;
+}
+inline std::ostream& operator<<(std::ostream& os, ag::vec4 v) {
+	os << '<' << v.x << ',' << v.y << ',' << v.z << ',' << v.w << '>';
+	return os;
+}
+inline std::ostream& operator<<(std::ostream& os, ag::ivec2 v) {
+	os << '<' << v.x << ',' << v.y << '>';
+	return os;
+}
+inline std::ostream& operator<<(std::ostream& os, ag::ivec3 v) {
+	os << '<' << v.x << ',' << v.y << ',' << v.z << '>';
+	return os;
+}
+inline std::ostream& operator<<(std::ostream& os, ag::ivec4 v) {
+	os << '<' << v.x << ',' << v.y << ',' << v.z << ',' << v.w << '>';
+	return os;
+}
+
 namespace ag {
+
 
 enum class LogLevel { Debug, Warning, Error, Fatal };
 

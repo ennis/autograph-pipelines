@@ -54,12 +54,14 @@ void DrawPassBuilder::loadFromTable(sol::table config)
 			auto index = key.as<int>();
 			auto table = value.as<sol::table>();
 			bs.enabled = table.get_or("enabled", false);
-			bs.modeRGB = table.get_or("modeRGB", GL_FUNC_ADD);
-			bs.modeAlpha = table.get_or("modeAlpha", GL_FUNC_ADD);
-			bs.funcSrcRGB = table.get_or("funcSrcRGB", GL_SRC_ALPHA);
-			bs.funcDstRGB = table.get_or("funcDstRGB", GL_ONE_MINUS_SRC_ALPHA);
-			bs.funcSrcAlpha = table.get_or("funcSrcAlpha", GL_ONE);
-			bs.funcDstAlpha = table.get_or("funcDstAlpha", GL_ZERO);
+			if (bs.enabled) {
+				bs.modeRGB = table.get_or("modeRGB", GL_FUNC_ADD);
+				bs.modeAlpha = table.get_or("modeAlpha", GL_FUNC_ADD);
+				bs.funcSrcRGB = table.get_or("funcSrcRGB", GL_SRC_ALPHA);
+				bs.funcDstRGB = table.get_or("funcDstRGB", GL_ONE_MINUS_SRC_ALPHA);
+				bs.funcSrcAlpha = table.get_or("funcSrcAlpha", GL_ONE);
+				bs.funcDstAlpha = table.get_or("funcDstAlpha", GL_ZERO);
+			}
 			this->setBlendState(index, bs);
 		});
 	}
@@ -83,13 +85,15 @@ void DrawPassBuilder::loadFromTable(sol::table config)
 		dss.depthTestEnable = table.get_or("depthTestEnable", false);
 		dss.depthWriteEnable = table.get_or("depthWriteEnable", false);
 		dss.stencilEnable = table.get_or("stencilEnable", false);
-		dss.stencilFace = table.get_or("stencilFace", GL_FRONT_AND_BACK);
-		dss.stencilFunc = table.get_or("stencilFunc", 0);
-		dss.stencilRef = table.get_or("stencilRef", 0);
-		dss.stencilMask = table.get_or("stencilMask", 0xFFFFFFFF);
-		dss.stencilOpSfail = table.get_or("stencilOpSfail", 0);
-		dss.stencilOpDPFail = table.get_or("stencilOpDPFail", 0);
-		dss.stencilOpDPPass = table.get_or("stencilOpDPPass", 0);
+		if (dss.stencilEnable) {
+			dss.stencilFace = table.get_or("stencilFace", GL_FRONT_AND_BACK);
+			dss.stencilFunc = table.get_or("stencilFunc", 0);
+			dss.stencilRef = table.get_or("stencilRef", 0);
+			dss.stencilMask = table.get_or("stencilMask", 0xFFFFFFFF);
+			dss.stencilOpSfail = table.get_or("stencilOpSfail", 0);
+			dss.stencilOpDPFail = table.get_or("stencilOpDPFail", 0);
+			dss.stencilOpDPPass = table.get_or("stencilOpDPPass", 0);
+		}
 		setDepthStencilState(dss);
 	}
 

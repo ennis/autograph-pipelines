@@ -75,7 +75,7 @@ void Application::run() {
     ImGui_ImplGlfwGL3_NewFrame();
     render();
     ImGui::Render();
-    //ag::gl::endFrame();
+    ag::gl::endFrame();
     glfwSwapBuffers(impl->window);
     glfwPollEvents();
   }
@@ -139,6 +139,7 @@ void Application::initialize(ivec2 initSize) {
   devCfg.init_fb_height = initSize.y;
   devCfg.max_frames_in_flight = 3;
   gl::initialize(devCfg);
+  gl::resizeDefaultFramebuffer(initSize);
 
   // ImGui init
   ImGui_ImplGlfwGL3_Init(impl->window, false);

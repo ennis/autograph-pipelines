@@ -1,6 +1,7 @@
 #pragma once
 #include <autograph/Camera.h>
 #include <glm/gtx/rotate_vector.hpp>
+#include <autograph/support/Debug.h>
 
 namespace ag {
 
@@ -44,6 +45,10 @@ public:
   {
   	target_ = vec3{x,y,z};
   }
+  void lookDistance(float lookDist)
+  {
+	  radius_ = lookDist;
+  }
   void setAspectRatio(float aspect_ratio) 
   {
   	aspectRatio_ = aspect_ratio;
@@ -62,14 +67,19 @@ public:
   	cam.viewMat = getLookAt();
   	cam.invViewMat = glm::inverse(cam.viewMat);        
   	cam.projMat = glm::scale(vec3{zoomLevel_, zoomLevel_, 1.0f}) *
-                  glm::perspective(fov_, aspectRatio_, nearPlane_, farPlane_);
+                  glm::perspective(glm::radians(fov_), aspectRatio_, nearPlane_, farPlane_);
     cam.wEye = vec3(glm::inverse(cam.viewMat) *
                          vec4{0.0f, 0.0f, 0.0f, 1.0f});
+	//AG_DEBUG("modelMat {},{},{},{}", cam.modelMatrix[0], objectUniforms.modelMatrix[1], objectUniforms.modelMatrix[2], objectUniforms.modelMatrix[3]);
+	//AG_DEBUG("fov {} aspectRatio {} nearPlane {} farPlane {}", cam.projMat[0], cam.projMat[1], cam.projMat[2], cam.projMat[3]);
+	//AG_DEBUG("viewMat {},{},{},{}", cam.viewMat[0], cam.viewMat[1], cam.viewMat[2], cam.viewMat[3]);
+	//AG_DEBUG("projMat {},{},{},{}", cam.projMat[0], cam.projMat[1], cam.projMat[2], cam.projMat[3]);
     return cam;
   }
 
 private:
   mat4 getLookAt() const {
+	  //AG_DEBUG("getLookAt: {}, {}", target_ + toCartesian(), target_);
     return glm::lookAt(target_ + toCartesian(), target_, CamUp);
   }
 
@@ -84,10 +94,10 @@ private:
 	float aspectRatio_{1.0f};	// should be screenWidth / screenHeight
 	float nearPlane_{0.001f};
 	float farPlane_{10.0f};
-  float zoomLevel_;
-  float radius_;
-  float theta_;
-  float phi_;
+	float zoomLevel_{ 1.0f };
+	float radius_{ 1.0f };
+	float theta_{ 0.0f };
+	float phi_{ kPiOverTwo<float> };
   vec3 target_{0.0f, 0.0f, 0.0f};
 };
 

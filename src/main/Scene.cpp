@@ -25,4 +25,15 @@ namespace ag {
 		return sceneobj;
 	}
 
+	AABB SceneObject::getLocalBoundingBox() const
+	{
+		return mesh->getAABB();
+	}
+
+	AABB SceneObject::getApproximateWorldBoundingBox() const
+	{
+		AABB meshbb = mesh->getAABB();
+		return meshbb.transform(transform.getMatrix());
+	}
+
 }

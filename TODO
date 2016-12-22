@@ -35,8 +35,8 @@ Minimal system:
 General:
  ☐ Implement cameras @high @minimal_subset
  ☐ Camera control from Lua script @high @minimal_subset
- ☐ Meshes @high @minimal_subset
- ☐ Scenes
+ ✔ Meshes @high @minimal_subset @done (16-12-18 20:53)
+ ✔ Scenes @done (16-12-18 20:53)
  ☐ Load textures from a file
  ☐ Resource management
  ☐ Serialization
@@ -49,10 +49,10 @@ Serialization:
  ☐ Load parameters from Lua script
 
 Autograph:
- ☐ Binders
- ☐ Draw call
+ ✔ Binders @done (16-12-18 20:52)
+ ✔ Draw call @done (16-12-18 20:52)
  ☐ Compute call
- ☐ State group
+ ✔ State group @done (16-12-18 20:52)
 
 Autograph extensions:
  ☐ Shader cache @low
@@ -67,12 +67,12 @@ Effect/pipeline system:
  ✔ Create textures from script @high  @done (16-11-05 16:44)
  ☐ Create compute passes @high 
  ☐ Move into submodule @high
- ☐ Specify draw states @high 
- ☐ Create draw passes @high 
+ ✔ Specify draw states @high  @done (16-12-18 20:52)
+ ✔ Create draw passes @high  @done (16-12-18 20:52)
  ☐ Create screen passes
  ☐ Run screen passes @high @minimal_subset
  ☐ Run compute passes
- ☐ Run draw passes
+ ✔ Run draw passes @done (16-12-18 20:52)
  ☐ Specify and run dependencies of passes 
  ☐ Specify uniforms in script
  ☐ Named uniforms
@@ -80,13 +80,13 @@ Effect/pipeline system:
  ☐ Pass variants: name + parameters
  ☐ Cache passes and compiled shaders (shader cache)
  ☐ Decide if we keep the C API or go with manual registration of functions
- ☐ Create passes, textures in C++ (mirror functionality exposed in scripts)
+ ✔ Create passes, textures in C++ (mirror functionality exposed in scripts) @done (16-12-18 20:52)
  ☐ Techniques
 
 Scenes:
- ☐ Load mesh with assimp
+ ✔ Load mesh with assimp @done (16-12-18 20:53)
  ☐ Scene: hierarchy of transforms and associated visual elements (meshes, particle systems, billboards, etc.)
- ☐ Transform struct
+ ✔ Transform struct @done (16-12-18 20:53)
  ☐ Load scene tree with assimp (hierarchy of transforms with associated meshes)
  ☐ IDMap and IDTable @low 
  ☐ Intrusive lists @low
@@ -136,3 +136,4 @@ Long-term:
  ☐ Live GUI
  ☐ An actual game?
  ☐ Terrain generation
+ 

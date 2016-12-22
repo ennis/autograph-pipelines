@@ -1471,3 +1471,6 @@ Script variable types:
 Proposition: 
 typedef pour std::unique_ptr
 => ag::uptr, ag::unique
+
+Next up:
+Figure out how to control the camera from C++ and Lua

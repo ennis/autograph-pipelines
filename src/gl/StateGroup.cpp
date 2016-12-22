@@ -80,6 +80,11 @@ namespace ag {
 				else
 					glDisable(GL_DEPTH_TEST);
 
+				if (sg.drawStates.depthStencilState.depthWriteEnable)
+					glDepthMask(GL_TRUE);
+				else
+					glDepthMask(GL_FALSE);
+
 				glDepthFunc(sg.drawStates.depthStencilState.depthTestFunc);
 
 				if (sg.drawStates.depthStencilState.stencilEnable) {
