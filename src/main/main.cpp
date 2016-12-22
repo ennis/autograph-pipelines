@@ -68,7 +68,15 @@ public:
           keyEvent->state == ag::KeyState::Pressed) {
         reloadPipeline();
       }
+	  sol::optional<sol::function> keyboardInputFn = lua["keyboardInput"];
+	  if (keyboardInputFn)
+		  (*keyboardInputFn)(keyEvent->code, keyEvent->state);
     }
+	else if (auto curEv = ev.as<ag::CursorEvent>()) {
+		sol::optional<sol::function> mouseInputFn = lua["mouseInput"];
+		if (mouseInputFn)
+			(*mouseInputFn)(curEv->position.x, curEv->position.y);
+	}
   }
 
   void reloadPipeline() {

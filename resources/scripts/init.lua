@@ -7,6 +7,7 @@ local obj = scene:loadMesh(ag.getActualPath('resources/mesh/youmu/youmu.fbx'))
 local sceneRenderer = ag.DeferredSceneRenderer(g_shaderManager)
 local wireframeRenderer = ag.WireframeOverlayRenderer(g_shaderManager)
 local gBuffer = ag.DeferredGBuffer(1280, 720)
+local showWireframe = false
 
 function init() 
 	obj.transform:setPosition(0.0, 0.0, 0.0)
@@ -36,12 +37,34 @@ end
 
 local camSensitivity = 0.1
 
-function input(ev)
+function keyboardInput(key, state)
+	ag.debug('keyboardInput: %i, %i', key, state)
+	if key == 263 and state == 0 then
+		g_mainCameraControl:rotate(-0.1, 0.0)
+	elseif key == 262 and state == 0 then 
+		g_mainCameraControl:rotate(0.1, 0.0)
+	elseif key == 90 and state == 0 then
+		showWireframe = not showWireframe
+	end
+end
+
+function characterInput(char)
+	ag.debug('characterInput: %c', char)
+end
+
+function mouseInput(x, y)
+	ag.debug('mouseInput: %f, %f', x, y)
+end
+
+function mouseButton(button, x, y) 
+	ag.debug('mouseButton: %i, %f, %f', button, x, y)
 end
 
 function render()
 	--ag.debug('render (%ix%i), value=%f', framebufferWidth, framebufferHeight, value0)
 	cam = g_mainCameraControl:getCamera()
 	sceneRenderer:renderScene(gBuffer, scene, cam)
-	wireframeRenderer:renderSceneObject(ag.getDefaultFramebuffer(), scene, obj, cam)
+	if showWireframe then
+		wireframeRenderer:renderSceneObject(ag.getDefaultFramebuffer(), scene, obj, cam)
+	end
 end
