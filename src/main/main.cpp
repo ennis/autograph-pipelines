@@ -19,7 +19,7 @@
 #include "Mesh.h"
 #include "Scene.h"
 #include "SceneRenderer.h"
-#include "TrackballCamera.h"
+#include "CameraControl.h"
 
 using namespace ag;
 
