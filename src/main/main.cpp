@@ -87,6 +87,9 @@ public:
     // set script globals
     lua["g_shaderManager"] = &sm;
     lua["g_mainCameraControl"] = &camctl;
+	auto framebufferSize = getFramebufferSize();
+	lua["g_framebufferWidth"] = framebufferSize.x;
+	lua["g_framebufferHeight"] = framebufferSize.y;
 
     try {
       lua.script_file(getActualPath("resources/scripts/init.lua"));

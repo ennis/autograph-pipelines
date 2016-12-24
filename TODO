@@ -33,8 +33,8 @@ Minimal system:
    autograph/script/Script.h => sol2
 
 General:
- ☐ Implement cameras @high @minimal_subset
- ☐ Camera control from Lua script @high @minimal_subset
+ ✔ Implement cameras @high @minimal_subset @done (16-12-24 14:12)
+ ✔ Camera control from Lua script @high @minimal_subset @done (16-12-24 14:12)
  ✔ Meshes @high @minimal_subset @done (16-12-18 20:53)
  ✔ Scenes @done (16-12-18 20:53)
  ☐ Load textures from a file
@@ -73,7 +73,7 @@ Effect/pipeline system:
  ☐ Run screen passes @high @minimal_subset
  ☐ Run compute passes
  ✔ Run draw passes @done (16-12-18 20:52)
- ☐ Specify and run dependencies of passes 
+ ✘ Specify and run dependencies of passes  @cancelled (16-12-24 14:13)
  ☐ Specify uniforms in script
  ☐ Named uniforms
  ☐ Pass tags (arbitrary values)

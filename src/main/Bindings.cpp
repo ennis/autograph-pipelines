@@ -85,14 +85,16 @@ sol::table openLuaBindings(sol::this_state s) {
 
   module.new_usertype<SceneObject>(
       "SceneObject", "id", sol::property(&SceneObject::id), "mesh",
-      &SceneObject::mesh, "transform", &SceneObject::transform,
+      &SceneObject::mesh, 
+	  "localTransform", &SceneObject::localTransform,
+	  "worldTransform", &SceneObject::worldTransform,
       "getLocalBoundingBox", &SceneObject::getLocalBoundingBox,
       "getApproximateWorldBoundingBox",
       &SceneObject::getApproximateWorldBoundingBox);
 
   module.new_usertype<Scene>("Scene", sol::call_constructor,
                              sol::constructors<sol::types<>>{}, "addMesh",
-                             &Scene::addMesh, "loadMesh", &Scene::loadMesh);
+                             &Scene::addMesh, "loadModel", &Scene::loadModel);
 
   // base types
   // issue: vec2.new will bounce back to the c++ side to call a trivial

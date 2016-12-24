@@ -18,6 +18,8 @@ struct Transform {
   vec3 transformVec(const vec3 &vector) const;
   // transformation d'une normale
   vec3 transformNormal(const vec3 &n) const;
+
+  static Transform fromMatrix(const mat4& matrix);
 };
 
 }

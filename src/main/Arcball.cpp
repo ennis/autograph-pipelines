@@ -1,5 +1,6 @@
 #include "Arcball.h"
 #include <glm/gtx/rotate_vector.hpp>
+#include <autograph/support/Debug.h>
 
 namespace ag
 {

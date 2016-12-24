@@ -1473,4 +1473,5 @@ typedef pour std::unique_ptr
 => ag::uptr, ag::unique
 
 Next up:
-Figure out how to control the camera from C++ and Lua
+OK Figure out how to control the camera from C++ and Lua
+Load multiple objects into a scene from an OBJ and FBX; transform hierarchies

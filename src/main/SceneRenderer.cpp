@@ -44,12 +44,13 @@ namespace ag
 		auto& objects = scene.getObjects();
 		for (auto&& obj : objects) 
 		{
+			auto pMesh = obj->mesh;
+			if (!pMesh) continue;
 			using namespace gl;
 			using namespace gl::bind;
-			auto pMesh = obj->mesh;
-			auto vtxCount = pMesh->getVertices().size();
-			auto idxCount = pMesh->getIndices().size();
-			objectUniforms.modelMatrix = obj->transform.getMatrix();
+			auto vtxCount = pMesh->getVerticesCount();
+			auto idxCount = pMesh->getIndicesCount();
+			objectUniforms.modelMatrix = obj->worldTransform;
 			objectUniforms.viewMatrix = camera.viewMat;
 			objectUniforms.projMatrix = camera.projMat;
 			objectUniforms.viewProjMatrix = camera.projMat * camera.viewMat;
@@ -66,7 +67,7 @@ namespace ag
 				uniformBuffer(0, uploadFrameData(&objectUniforms, sizeof(objectUniforms), 128))
 				);
 
-			AG_DEBUG("renderScene, object ID {} mesh {}", obj->id, (void*)obj->mesh);
+			//AG_DEBUG("renderScene, object ID {} mesh {}", obj->id, (void*)obj->mesh);
 		}
 	}
 
@@ -87,37 +88,43 @@ namespace ag
 		wireframeNoDepthDrawPass = sm.createDrawPass("wireframeOverlayNoDepth");
 	}
 
+	// render one scene object and its children
 	void WireframeOverlayRenderer::renderSceneObject(gl::Framebuffer& target, Scene& scene, SceneObject& object, Camera& camera, bool depthTest)
 	{
-		// Per-object uniforms
-		struct ObjectUniforms
-		{
-			mat4 modelMatrix;
-			mat4 viewMatrix;
-			mat4 projMatrix;
-			mat4 viewProjMatrix;
-		} objectUniforms;
-
-		objectUniforms.modelMatrix = object.transform.getMatrix();
-		objectUniforms.viewMatrix = camera.viewMat;
-		objectUniforms.projMatrix = camera.projMat;
-		objectUniforms.viewProjMatrix = camera.projMat * camera.viewMat;
-
-		using namespace gl;
-		using namespace gl::bind;
 		auto pMesh = object.mesh;
-		auto vtxCount = pMesh->getVertices().size();
-		auto idxCount = pMesh->getIndices().size();
+		
+		if (pMesh) {
+			// Per-object uniforms
+			struct ObjectUniforms
+			{
+				mat4 modelMatrix;
+				mat4 viewMatrix;
+				mat4 projMatrix;
+				mat4 viewProjMatrix;
+			} objectUniforms;
 
-		draw(
-			target,
-			drawIndexed(GL_TRIANGLES, 0, idxCount, 0),
-			depthTest ? wireframeDrawPass->getDrawStates() : wireframeNoDepthDrawPass->getDrawStates(),
-			vertexBuffer(0, pMesh->getVertexBuffer(), sizeof(Vertex3D)),
-			indexBuffer(pMesh->getIndexBuffer(), GL_UNSIGNED_INT),
-			uniformBuffer(0, uploadFrameData(&objectUniforms, sizeof(objectUniforms), 128))
-		);
+			objectUniforms.modelMatrix = object.worldTransform;
+			objectUniforms.viewMatrix = camera.viewMat;
+			objectUniforms.projMatrix = camera.projMat;
+			objectUniforms.viewProjMatrix = camera.projMat * camera.viewMat;
 
+			using namespace gl;
+			using namespace gl::bind;
+			auto vtxCount = pMesh->getVerticesCount();
+			auto idxCount = pMesh->getIndicesCount();
+
+			draw(
+				target,
+				drawIndexed(GL_TRIANGLES, 0, idxCount, 0),
+				depthTest ? wireframeDrawPass->getDrawStates() : wireframeNoDepthDrawPass->getDrawStates(),
+				vertexBuffer(0, pMesh->getVertexBuffer(), sizeof(Vertex3D)),
+				indexBuffer(pMesh->getIndexBuffer(), GL_UNSIGNED_INT),
+				uniformBuffer(0, uploadFrameData(&objectUniforms, sizeof(objectUniforms), 128))
+			);
+		}
+		for (auto c : object.children) {
+			renderSceneObject(target, scene, *c, camera, depthTest);
+		}
 
 	}
 

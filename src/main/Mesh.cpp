@@ -6,6 +6,35 @@
 #include <stdexcept>
 
 namespace ag {
+
+	static AABB calculateBoundingBox(span<Vertex3D> vertices)
+	{
+		AABB aabb;
+		// init AABB to reasonably unreasonable values
+		aabb.xmin = 1000000.0f;
+		aabb.xmax = -1000000.0f;
+		aabb.ymin = 1000000.0f;
+		aabb.ymax = -1000000.0f;
+		aabb.zmin = 1000000.0f;
+		aabb.zmax = -1000000.0f;
+		for (unsigned i = 0; i < vertices.size(); ++i) {
+			auto v = vertices[i];
+			if (aabb.xmin > v.position.x)
+				aabb.xmin = v.position.x;
+			if (aabb.xmax < v.position.x)
+				aabb.xmax = v.position.x;
+			if (aabb.ymin > v.position.y)
+				aabb.ymin = v.position.y;
+			if (aabb.ymax < v.position.y)
+				aabb.ymax = v.position.y;
+			if (aabb.zmin > v.position.z)
+				aabb.zmin = v.position.z;
+			if (aabb.zmax < v.position.z)
+				aabb.zmax = v.position.z;
+		}
+		return aabb;
+	}
+
 Mesh Mesh::loadFromFile(const char *path) {
   Assimp::Importer importer;
 
@@ -23,14 +52,6 @@ Mesh Mesh::loadFromFile(const char *path) {
     return Mesh{};
   }
 
-  AABB aabb;
-  // init AABB to reasonably unreasonable values
-  aabb.xmin = 1000000.0f;
-  aabb.xmax = -1000000.0f;
-  aabb.ymin = 1000000.0f;
-  aabb.ymax = -1000000.0f;
-  aabb.zmin = 1000000.0f;
-  aabb.zmax = -1000000.0f;
 
   // load the first mesh in the file
   std::vector<Vertex3D> vertices;
@@ -41,18 +62,6 @@ Mesh Mesh::loadFromFile(const char *path) {
     indices.resize(mesh->mNumFaces * 3);
     for (unsigned i = 0; i < mesh->mNumVertices; ++i) {
       auto v = mesh->mVertices[i];
-      if (aabb.xmin > v.x)
-        aabb.xmin = v.x;
-      if (aabb.xmax < v.x)
-        aabb.xmax = v.x;
-      if (aabb.ymin > v.y)
-        aabb.ymin = v.y;
-      if (aabb.ymax < v.y)
-        aabb.ymax = v.y;
-      if (aabb.zmin > v.z)
-        aabb.zmin = v.z;
-      if (aabb.zmax < v.z)
-        aabb.zmax = v.z;
       vertices[i].position = vec3{v.x, v.y, v.z};
     }
     if (mesh->mNormals)
@@ -74,19 +83,17 @@ Mesh Mesh::loadFromFile(const char *path) {
     }
   }
 
-  auto vbo = gl::Buffer::create(vertices.size() * sizeof(Vertex3D), gl::BufferUsage::Default, vertices.data());
-  auto ibo = gl::Buffer::create(indices.size() * sizeof(unsigned int), gl::BufferUsage::Default, indices.data());
-
-
   AG_DEBUG("Mesh::loadFromFile {} vertices:{} indices:{}", path, vertices.size(), indices.size());
+  return Mesh{ vertices, indices };
+}
 
-  Mesh m;
-  m.vbo_ = std::move(vbo);
-  m.ibo_ = std::move(ibo);
-  m.vertices_ = std::move(vertices);
-  m.indices_ = std::move(indices);
-  m.aabb_ = std::move(aabb);
-  return m;
+Mesh::Mesh(span<Vertex3D> vertices, span<unsigned int> indices)
+{
+	vbo_ = gl::Buffer::create(vertices.size() * sizeof(Vertex3D), gl::BufferUsage::Default, vertices.data());
+	ibo_ = gl::Buffer::create(indices.size() * sizeof(unsigned int), gl::BufferUsage::Default, indices.data());
+	numVertices_ = vertices.size();
+	numIndices_ = indices.size();
+	aabb_ = calculateBoundingBox(vertices);
 }
 
 }

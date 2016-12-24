@@ -32,26 +32,3 @@ deferredShader =
 	shaderFile = 'deferred.glsl'
 }
 
-
--- One file = one pass => NO
--- One file = multiple passes
--- One file = template for passes
--- 		1. Load shader file in context
---		2. call createShaderPass(shaderId, params)
---			2.1. call a function defined in the shader file that returns a complete state
---		3. get shader!
--- From C++:
--- 		shaderMan.load("resources/shaders/deferred")
---		shaderMan.getPass("deferred")
--- Multi-compile:
--- 		shaderMan.load("resources/shaders/blurCompute")
---		blurHPass = shaderMan.getPass("blurCompute", "BLUR_H")
---		blurVPass = shaderMan.getPass("blurCompute", "BLUR_V")
--- From Lua:
--- require 'shaders/deferred'
--- blurH = loadShaderPass('blurCompute', 'BLUR_H')
-
--- one source => multiple shader passes (one for each combination of keywords)
--- one source => infinite number of shader passes (float constant parameters) 
--- the question boils down to: do we want to be able to run arbitrary code in shader templates
---	VS only preprocessor keywords and simple text replacement

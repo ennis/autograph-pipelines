@@ -17,7 +17,8 @@ struct AABB {
   constexpr float height() const { return ymax - ymin; }
   constexpr float depth() const { return zmax - zmin; }
 
-  AABB transform(const mat4 &t);
+  AABB transform(const mat4 &t) const;
+  AABB& unionWith(const AABB& other);
 };
 
 }

@@ -1,7 +1,7 @@
 #include <autograph/AABB.h>
 
 namespace ag {
-AABB AABB::transform(const mat4 &t) {
+AABB AABB::transform(const mat4 &t) const {
   AABB out{100000.0f, 100000.0f, 100000.0f, -100000.0f, -100000.0f, -100000.0f};
   vec4 vs[8] = {
       t * vec4{xmin, ymin, zmin, 1.0f}, t * vec4{xmin, ymin, zmax, 1.0f},
@@ -26,4 +26,16 @@ AABB AABB::transform(const mat4 &t) {
 
   return out;
 }
+
+AABB& AABB::unionWith(const AABB& other)
+{
+	xmin = glm::min(xmin, other.xmin);
+	xmax = glm::max(xmax, other.xmax);
+	ymin = glm::min(ymin, other.ymin);
+	ymax = glm::max(ymax, other.ymax);
+	zmin = glm::min(zmin, other.zmin);
+	zmax = glm::max(zmax, other.zmax);
+	return *this;
+}
+
 }

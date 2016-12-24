@@ -1,6 +1,5 @@
 #pragma once
 #include <autograph/Camera.h>
-#include <autograph/support/Debug.h>
 
 namespace ag {
 	class Arcball {
