@@ -43,20 +43,26 @@ AG_API inline const GLImplementationLimits &getGLImplementationLimits() {
 AG_API Framebuffer &getDefaultFramebuffer();
 AG_API void initialize(const DeviceConfig &cfg);
 // resize the framebuffer 0 of the current context
-AG_API void resizeDefaultFramebuffer(ivec2 size);
+AG_API void resizeDefaultFramebuffer(int w, int h);
 AG_API BufferSlice uploadFrameData(const void *data, size_t size,
-                                   size_t alignment);
+                                   size_t alignment = -1);
 
 template <typename T>
 inline BufferSlice uploadFrameArray(const T *data, size_t num_elements,
-                                    size_t alignment = alignof(T)) {
+                                    size_t alignment = -1) {
   return uploadFrameData(&data, num_elements * sizeof(T), alignment);
 }
 
 template <typename T, size_t N>
 inline BufferSlice uploadFrameArray(const std::array<T, N> &data,
-                                    size_t alignment = alignof(T)) {
+                                    size_t alignment = -1) {
   return uploadFrameData(data.data(), N * sizeof(T), alignment);
+}
+
+template <typename T, size_t N>
+inline BufferSlice uploadFrameArray( T (&data)[N],
+	size_t alignment = -1) {
+	return uploadFrameData(&data[0], N * sizeof(T), alignment);
 }
 
 AG_API uint64_t getFrameCount();

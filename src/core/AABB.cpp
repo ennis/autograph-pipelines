@@ -1,31 +1,24 @@
 #include <autograph/AABB.h>
 
 namespace ag {
-AABB AABB::transform(const mat4 &t) const {
-  AABB out{100000.0f, 100000.0f, 100000.0f, -100000.0f, -100000.0f, -100000.0f};
-  vec4 vs[8] = {
-      t * vec4{xmin, ymin, zmin, 1.0f}, t * vec4{xmin, ymin, zmax, 1.0f},
-      t * vec4{xmin, ymax, zmin, 1.0f}, t * vec4{xmin, ymax, zmax, 1.0f},
-      t * vec4{xmax, ymin, zmin, 1.0f}, t * vec4{xmax, ymin, zmax, 1.0f},
-      t * vec4{xmax, ymax, zmin, 1.0f}, t * vec4{xmax, ymax, zmax, 1.0f}};
 
-  for (auto &&v : vs) {
-    if (out.xmin > v.x)
-      out.xmin = v.x;
-    if (out.xmax < v.x)
-      out.xmax = v.x;
-    if (out.ymin > v.y)
-      out.ymin = v.y;
-    if (out.ymax < v.y)
-      out.ymax = v.y;
-    if (out.zmin > v.z)
-      out.zmin = v.z;
-    if (out.zmax < v.z)
-      out.zmax = v.z;
+  AABB AABB::transform(const mat4 &m) const
+  {
+	  auto xa = m[0] * xmin;
+	  auto xb = m[0] * xmax;
+
+	  auto ya = m[1] * ymin;
+	  auto yb = m[1] * ymax;
+
+	  auto za = m[2] * zmin;
+	  auto zb = m[2] * zmax;
+
+	  auto min = glm::min(xa, xb) + glm::min(ya, yb) + glm::min(za, zb) + m[3];
+	  auto max = glm::max(xa, xb) + glm::max(ya, yb) + glm::max(za, zb) + m[3];
+
+	  return AABB{ min.x, min.y, min.z, max.x, max.y, max.z };
   }
 
-  return out;
-}
 
 AABB& AABB::unionWith(const AABB& other)
 {

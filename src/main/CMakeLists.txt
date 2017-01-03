@@ -1,23 +1,9 @@
 
 set(SRC main.cpp 
-    Effect.cpp 
-    Mesh.cpp 
-    Scene.cpp
-    SceneRenderer.cpp
-	ShaderManager.cpp
-    Bindings.cpp
-	CameraControl.cpp
-	Arcball.cpp)
+    SceneRenderer.cpp)
 
 set(HEADERS 
-	Arcball.h
-	CameraControl.h
-	Bindings.h
-	Effect.h
-	Mesh.h
-	Scene.h
-	SceneRenderer.h
-	ShaderManager.h)
+	SceneRenderer.h)
 
 add_executable(autograph_main 
     ${SRC} ${HEADERS})

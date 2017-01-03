@@ -36,7 +36,8 @@ layout(location = 0) out vec4 rtNormals;
 layout(location = 1) out vec4 rtDiffuse;
 
 void main() {
-  rtNormals = vec4(Nw0 / 2.0 + vec3(0.5), 1.0f);
+	vec3 Nw = normalize(Nw0);
+  rtNormals = vec4(Nw / 2.0 + vec3(0.5), 1.0f);
   rtDiffuse = vec4(1.0);  // TODO
 }
 

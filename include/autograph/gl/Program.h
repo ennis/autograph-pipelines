@@ -88,9 +88,9 @@ public:
   static Program createCompute(const char *cs_src);
 
   // helper to create a program object from a single-source shader file
-  static Program loadFromFile(
+  /*static Program loadFromFile(
       const char* combined_source_file_path,
-      ShaderStage stages, int numDefines, ShaderPPDefine* pDefines);
+      ShaderStage stages, int numDefines, ShaderPPDefine* pDefines);*/
 
 private:
   GLHandle<ProgramDeleter> obj_;

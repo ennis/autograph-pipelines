@@ -1,6 +1,6 @@
-#include "Scene.h"
-#include "ShaderManager.h"
-#include "Effect.h"
+#pragma once
+#include <autograph/engine/Scene.h>
+#include <autograph/engine/Shader.h>
 #include <autograph/gl/Framebuffer.h>
 #include <autograph/gl/Program.h>
 #include <autograph/gl/Texture.h>
@@ -19,6 +19,8 @@ namespace ag
         public:
             GBuffer() {}
             GBuffer(int width, int height);
+
+			void release();
 
             gl::Texture& getDepthTarget() {
                 return depthStencil;
@@ -43,26 +45,26 @@ namespace ag
             gl::Framebuffer fbo;
         };
 
-        DeferredSceneRenderer(ShaderManager& sm);
+        DeferredSceneRenderer();
         ~DeferredSceneRenderer();
 
-        void reloadShaders(ShaderManager& sm);
+        void reloadShaders();
         void renderScene(GBuffer& targets, Scene& scene, Camera& camera);
 
 	private:
-        std::unique_ptr<DrawPass> deferredDrawPass;
+        DrawPass deferredDrawPass;
 	};
 
 	class WireframeOverlayRenderer
 	{
 	public:
-		WireframeOverlayRenderer(ShaderManager& sm);
+		WireframeOverlayRenderer();
 		~WireframeOverlayRenderer();
 
-		void reloadShaders(ShaderManager& sm);
+		void reloadShaders();
 		void renderSceneObject(gl::Framebuffer& target, Scene& scene, SceneObject& object, Camera& camera, bool depthTest = true);
 	private:
-		std::unique_ptr<DrawPass> wireframeDrawPass;
-		std::unique_ptr<DrawPass> wireframeNoDepthDrawPass;
+		DrawPass wireframeDrawPass;
+		DrawPass wireframeNoDepthDrawPass;
 	};
 }

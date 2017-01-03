@@ -55,6 +55,9 @@ AG_API void popDebugGroup() { glPopDebugGroup(); }
 AG_API BufferSlice uploadFrameData(const void *data, size_t size, size_t alignment) {
   assert(isInitialized());
   BufferSlice out_slice;
+  if (alignment == -1) {
+	  alignment = gGLImplementationLimits.uniform_buffer_alignment;
+  }
   if (!g_default_upload_buffer->upload(data, size, alignment,
                                        getFrameExpirationDate(g_frame_id),
                                        out_slice)) {
@@ -90,12 +93,13 @@ AG_API void initialize(const DeviceConfig &config) {
   setDebugCallback();
   constexpr std::size_t upload_buf_size = 3 * 1024 * 1024;
   g_frame_fence = Fence{0};
+  glGetIntegerv(GL_UNIFORM_BUFFER_OFFSET_ALIGNMENT, &gGLImplementationLimits.uniform_buffer_alignment);
   g_default_upload_buffer = std::make_unique<UploadBuffer>(upload_buf_size);
 }
 
-AG_API void resizeDefaultFramebuffer(ivec2 size) {
+AG_API void resizeDefaultFramebuffer(int w, int h) {
   assert(isInitialized());
-  g_screen_fbo = Framebuffer::createDefault(size);
+  g_screen_fbo = Framebuffer::createDefault(w, h);
 }
 
 AG_API uint64_t getFrameCount() { return g_frame_id; }

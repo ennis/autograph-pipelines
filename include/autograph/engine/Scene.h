@@ -1,35 +1,54 @@
 #pragma once
-
 #include <autograph/Transform.h>
-#include <autograph/Types.h>
-#include <autograph/support/ilist.h>
-#include <autograph/support/ilist_node.h>
+#include "Mesh.h"
+#include <vector>
+#include <memory>
 
-namespace ag {
-struct Visual : public ilist_node<Visual> {
-  uint64_t id;
-  // parent visual
-  Visual *parent;
-  // siblings
-  Visual *prev;
-  Visual *next;
-  // local transform (relative to parent elements)
-  Transform transform;
-  // model to world transform (flattened)
-  mat4 cachedTransform;
-};
+struct aiScene;
+struct aiMesh;
+struct aiNode;
 
-// A container for a hierarchy of visual elements
-class Scene {
-public:
-  // create or add a visual
-  Visual &addVisual(uint64_t id);
-  // get visual or nullptr
-  Visual *getVisual(uint64_t id);
+namespace ag 
+{
+	struct SceneObject 
+	{
+		SceneObject* parent{ nullptr };
+		uint64_t id{ 0 };
+		Mesh* mesh{ nullptr };
+		Transform localTransform;
+		mat4 worldTransform;
+		std::vector<SceneObject*> children;
+		AABB worldBounds;
+		bool hasWorldBounds{ false };
 
-private:
-  // Container for visual nodes
-  // ID->Visual
-  IDMap<Visual> visuals;
-};
+		// includes children
+		AABB getLocalBoundingBox() const;
+		AABB getApproximateWorldBoundingBox() const;
+	};
+
+	class Scene 
+	{
+	public:
+		Scene();
+		void clear();
+
+		auto addObject()->SceneObject&;
+		auto addMesh(Mesh& mesh) -> SceneObject&;
+		auto loadModel(const char* path) -> SceneObject&;
+		void update();
+
+		auto& getObjects() {
+			return sceneObjects_;
+		}
+
+	private:
+		void updateWorldTransformsRecursive(mat4 current, SceneObject& obj);
+		void updateObjectBoundsRecursive(SceneObject& obj);
+		auto importAssimpMesh(const aiScene* scene, int index, Mesh** loadedMeshes) -> Mesh*;
+		auto importAssimpNodeRecursive(const aiScene* scene, aiNode* node, SceneObject* parent, Mesh** loadedMeshes)->SceneObject*;
+		auto makeOwnedMesh(std::unique_ptr<Mesh> pMesh)->Mesh*;
+		SceneObject* rootObj_;
+		std::vector<std::unique_ptr<SceneObject>> sceneObjects_;
+		std::vector<std::unique_ptr<Mesh>> ownedMeshes_;
+	};
 }

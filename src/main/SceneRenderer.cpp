@@ -3,7 +3,7 @@
 #include <autograph/support/Debug.h>
 #include <autograph/gl/Draw.h>
 #include <autograph/gl/Device.h>
-#include "Effect.h"
+#include <autograph/engine/Shader.h>
 
 namespace ag 
 {
@@ -12,22 +12,30 @@ namespace ag
         depthStencil = gl::Texture::create2D(ImageFormat::D32_SFLOAT, width, height);
         diffuse = gl::Texture::create2D(ImageFormat::R8G8B8A8_UNORM, width, height);
         normals = gl::Texture::create2D(ImageFormat::A2R10G10B10_UNORM_PACK32, width, height); // SNORM not supported in OpenGL
-        fbo = gl::Framebuffer::create({&diffuse, &normals}, depthStencil);
+		fbo.setAttachement(GL_COLOR_ATTACHMENT0 + 0, diffuse);
+		fbo.setAttachement(GL_COLOR_ATTACHMENT0 + 1, normals);
+		fbo.setAttachement(GL_DEPTH_ATTACHMENT, depthStencil);
     }
-	
-    DeferredSceneRenderer::DeferredSceneRenderer(ShaderManager& sm)
+
+	void DeferredSceneRenderer::GBuffer::release()
 	{
-		reloadShaders(sm);
+		depthStencil = {};
+		diffuse = {};
+		normals = {};
+		fbo = {};
+	}
+	
+    DeferredSceneRenderer::DeferredSceneRenderer()
+	{
+		reloadShaders();
 	}
 
     DeferredSceneRenderer::~DeferredSceneRenderer()
 	{}
 
-    void DeferredSceneRenderer::reloadShaders(ShaderManager& sm)
+    void DeferredSceneRenderer::reloadShaders()
     {
-        AG_DEBUG("DeferredSceneRenderer::reloadShaders");
-		sm.loadShaderFile("deferred");
-		deferredDrawPass = sm.createDrawPass("deferredShader");
+		deferredDrawPass = DrawPass{ "shaders/deferred:deferredShader" };
     }
 
     void DeferredSceneRenderer::renderScene(GBuffer& targets, Scene& scene, Camera& camera)
@@ -40,6 +48,9 @@ namespace ag
 			mat4 projMatrix;
 			mat4 viewProjMatrix;
 		} objectUniforms;
+
+		gl::clearTexture(targets.getDiffuseTarget(), vec4{ 0.0f,0.0f,0.0f,1.0f });
+		gl::clearDepthTexture(targets.getDepthTarget(), 1.0f);
 
 		auto& objects = scene.getObjects();
 		for (auto&& obj : objects) 
@@ -59,12 +70,12 @@ namespace ag
 			//AG_DEBUG("viewMat {},{},{},{}", camera.viewMat[0], camera.viewMat[1], camera.viewMat[2], camera.viewMat[3]);
 			//AG_DEBUG("projMat {},{},{},{}", camera.projMat[0], camera.projMat[1], camera.projMat[2], camera.projMat[3]);
 			draw(
-				gl::getDefaultFramebuffer(),
+				targets.getFramebuffer(),
 				drawIndexed(GL_TRIANGLES, 0, idxCount, 0),
-				deferredDrawPass->getDrawStates(),
+				deferredDrawPass.getDrawStates(),
 				vertexBuffer(0, pMesh->getVertexBuffer(), sizeof(Vertex3D)),
 				indexBuffer(pMesh->getIndexBuffer(), GL_UNSIGNED_INT),
-				uniformBuffer(0, uploadFrameData(&objectUniforms, sizeof(objectUniforms), 128))
+				uniformBuffer(0, uploadFrameData(&objectUniforms, sizeof(objectUniforms)))
 				);
 
 			//AG_DEBUG("renderScene, object ID {} mesh {}", obj->id, (void*)obj->mesh);
@@ -72,20 +83,18 @@ namespace ag
 	}
 
 
-	WireframeOverlayRenderer::WireframeOverlayRenderer(ShaderManager& sm)
+	WireframeOverlayRenderer::WireframeOverlayRenderer()
 	{
-		reloadShaders(sm);
+		reloadShaders();
 	}
 
 	WireframeOverlayRenderer::~WireframeOverlayRenderer()
 	{}
 
-	void WireframeOverlayRenderer::reloadShaders(ShaderManager& sm)
+	void WireframeOverlayRenderer::reloadShaders()
 	{
-		AG_DEBUG("WireframeOverlayRenderer::reloadShaders");
-		sm.loadShaderFile("wireframe");
-		wireframeDrawPass = sm.createDrawPass("wireframeOverlay");
-		wireframeNoDepthDrawPass = sm.createDrawPass("wireframeOverlayNoDepth");
+		wireframeDrawPass = DrawPass{ "shaders/wireframe:wireframeOverlay" };
+		wireframeNoDepthDrawPass = DrawPass{ "shaders/wireframe:wireframeOverlayNoDepth" };
 	}
 
 	// render one scene object and its children
@@ -116,10 +125,10 @@ namespace ag
 			draw(
 				target,
 				drawIndexed(GL_TRIANGLES, 0, idxCount, 0),
-				depthTest ? wireframeDrawPass->getDrawStates() : wireframeNoDepthDrawPass->getDrawStates(),
+				depthTest ? wireframeDrawPass.getDrawStates() : wireframeNoDepthDrawPass.getDrawStates(),
 				vertexBuffer(0, pMesh->getVertexBuffer(), sizeof(Vertex3D)),
 				indexBuffer(pMesh->getIndexBuffer(), GL_UNSIGNED_INT),
-				uniformBuffer(0, uploadFrameData(&objectUniforms, sizeof(objectUniforms), 128))
+				uniformBuffer(0, uploadFrameData(&objectUniforms, sizeof(objectUniforms)))
 			);
 		}
 		for (auto c : object.children) {

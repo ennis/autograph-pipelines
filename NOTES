@@ -1474,4 +1474,173 @@ typedef pour std::unique_ptr
 
 Next up:
 OK Figure out how to control the camera from C++ and Lua
-Load multiple objects into a scene from an OBJ and FBX; transform hierarchies
+OK Load multiple objects into a scene from an OBJ and FBX; transform hierarchies
+
+Resource management:
+- common entry point for resource loading:
+	e.g. 
+		- rm.getTexture(id)
+		- rm.getShader(id)
+		- rm.getXXX(id)
+		- rm.getBlob(id)
+		- rm.getData(id) -> table
+- query for modifications:
+	- rm.shouldReload(id)
+- (TODO) backends:
+	- registerDirectory
+	- registerArchive
+- (TODO) async loading:
+	- ???
+- raw loading (ignore caches, etc.)
+- actual caching is done in Lua
+	- cache entry: file name, last load timestamp
+- lifetime: unspecified (manual)
+	- once loaded, stays in memory until explicitly released
+- reloading:
+	- 
+
+Meshes -> Mesh cache
+Shaders -> ShaderManager
+Textures -> TextureManager
+Images -> TextureManager
+Data tables -> ResourceCache
+Binary blobs -> ResourceCache
+
+Role 1:
+ - Find/load arbitrary data from an ID
+ 	ID -> Data
+ 	ID -> File path
+ == ResourceManager
+
+Role 2:
+ - Cache already loaded data
+ == ResourceManager
+
+Role 3: 
+ convert raw data to an optimized in-memory representation
+ == TextureManager (TextureLoader), ShaderManager
+
+
+TODO:
+* Move resourceManager role 1 into application (make global)
+* Provide global: findResourcePath(id, allowedExts) [Application.h]
+* Provide global: addResourcePath(path) [Application.h]
+* Provide global: addScriptPath(path) [Application.h]
+* Modules:
+	Graphics [ImageUtils, RenderUtils, etc.]
+	Audio
+	Input
+	Scene2D
+* Avoid free functions like loadTexture(), loadDataTable(), loadShaderPass()
+	-> group them?
+
+* Resource Pools:
+	pool.getTexture('id')
+	pool.getImage('id')
+	pool.getShader('id')
+	pool.getDataTable('id')
+	...
+	pool.release()
+
+* Simplification pass:
+	merge autograph_support in autograph_engine? (No)
+	merge autograph_core in autograph_engine? (No)
+
+	autograph_core => basic types and other stuff that does not require external libs (except glm)
+	autograph_support => OS-specific things and useful data structures (no need for window libs)
+	autograph_engine => Everything else that should be reusable between applications (windows, meshes, etc.)
+
+* control over the main loop
+
+	{
+		Application app;
+		app.addResourceDirectory('...');
+		app.addLuaPackagePath('...');
+	}
+
+* Consistent behavior
+	creating a gl::Texture should fail if there is no active context?
+	OR => create a context automatically?
+	OR => request a context?
+
+* autograph_gl should know if there is an active context
+
+* Simpler, more flexible API
+* Goal: minimize boilerplate
+	- Application global state is created on first use (singleton)
+		- Lua state (private: used by some subsystems)
+		- Resource loader
+		- Shader cache
+	- ag::Window to create a window with an OpenGL context
+	- per-window input
+
+	{
+		// globals start with an uppercase letter
+		ag::AddResourceDirectory(ag::GetActualPath("resources/"));
+
+		// use IDs relative to resource directories instead of full paths 
+		// ShaderPasses use a private Lua context
+		ag::ShaderPass sp{"shaders/deferredRenderer:main"};
+		// Shaders are transparently cached 
+		// Alternative:
+		// ag::ShaderPass sp = ag::LoadShaderPass{"shaders/wireframe:main"};
+
+		// user scripting context
+		// Create a new one, open the default bindings and run the specified script
+		ag::ScriptContext script{"scripts/init"};
+		// NB: ag::ScriptContext inherits from sol::state
+
+		// window creation
+		// Will register an available context to ag::gl
+		ag::Window window{640, 480, "Title"};
+
+		// ag::gl is automatically initialized from an available context
+		ag::gl::Texture tex = ag::gl::Texture::create2D{640, 480};
+
+		// loading an image from a file to an OpenGL texture:
+		auto tex = ag::LoadTexture('img/cavestory/PrtMimi');
+
+		// Resource pool
+		ag::ResourcePool pool;
+		pool.getTexture('img/splash');
+
+		// Data table (inherits from sol::table, all tables are loaded in a private Lua context, but also isolated)
+		ag::DataTable table{'data/level0'};
+
+		// Images
+		ag::Image img{''};
+
+		// render loop
+		window.onRender([&]() {
+
+		});
+
+		window.onInput([&]() {
+
+		}):
+
+	}
+
+	<autograph/engine/ScriptContext.h>
+	<autograph/engine/Shader.h> 
+	<autograph/engine/Application.h> (global state)
+
+
+API:
+
+loadTexture(file) -> Texture
+loadDataTable()
+
+
+
+
+
+FP Camera control:
+- WASD
+- Mouse move
+
+Terrain rendering:
+- base terrain LOD (quadtree?)
+- (Very) large view distance
+- Procedural generation (vegetation, etc.)
+- Object LOD (Trees, rocks)

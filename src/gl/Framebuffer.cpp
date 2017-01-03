@@ -1,65 +1,90 @@
 #include <autograph/gl/Framebuffer.h>
+#include <autograph/gl/Texture.h>
+#include <stdexcept>
 
 namespace ag {
 namespace gl {
 
-void Framebuffer::init() {
-  GLuint fbo;
-  glCreateFramebuffers(1, &fbo);
-  obj_ = fbo;
+Renderbuffer::Renderbuffer(int w, int h, ImageFormat fmt)
+    : width_{w}, height_{h}, fmt_{fmt} {
+  auto &fmtinfo = getGLImageFormatInfo(fmt);
+  GLuint rbuf;
+  glCreateRenderbuffers(1, &rbuf);
+  glNamedRenderbufferStorage(rbuf, fmtinfo.internal_fmt, w, h);
+  obj_ = rbuf;
 }
 
-void bindFramebufferTextures(GLuint fbo,
-                             std::initializer_list<Texture *> color_tex,
-                             unsigned &width, unsigned &height) {
+void Framebuffer::initialize() {}
+
+Framebuffer::Framebuffer(std::initializer_list<Texture *> colorTargets_,
+                         Texture *depthTarget_) {
   int index = 0;
-  width = 0;
-  height = 0;
-  for (auto tex : color_tex) {
-    glNamedFramebufferTexture(fbo, GL_COLOR_ATTACHMENT0 + index, tex->object(),
-                              0);
+  for (auto tex : colorTargets_) {
+    if (tex)
+      setAttachement(GL_COLOR_ATTACHMENT0 + index, *tex);
     ++index;
-    if (((width != 0) && (width != tex->width())) ||
-        ((height != 0) && (height != tex->height())))
-      throw std::logic_error(
-          "The dimensions of the framebuffer attachements do not match");
-    else {
-      width = tex->width();
-      height = tex->height();
-    }
   }
-
-  static const GLenum drawBuffers[8] = {
-      GL_COLOR_ATTACHMENT0,     GL_COLOR_ATTACHMENT0 + 1,
-      GL_COLOR_ATTACHMENT0 + 2, GL_COLOR_ATTACHMENT0 + 3,
-      GL_COLOR_ATTACHMENT0 + 4, GL_COLOR_ATTACHMENT0 + 5,
-      GL_COLOR_ATTACHMENT0 + 6, GL_COLOR_ATTACHMENT0 + 7};
-  glNamedFramebufferDrawBuffers(fbo, static_cast<GLsizei>(color_tex.size()),
-                                drawBuffers);
+  if (depthTarget_) {
+    setAttachement(GL_DEPTH_ATTACHMENT, *depthTarget_);
+  }
 }
 
-Framebuffer Framebuffer::create(std::initializer_list<Texture *> color_tex) {
+void Framebuffer::setAttachement(GLenum attachement, GLuint tex) {
+  ensureInitialized();
+  glNamedFramebufferTexture(obj_.get(), attachement, tex, 0);
+}
+
+void Framebuffer::setAttachement(GLenum attachement, Texture &tex) {
+  checkDimensions(tex.width(), tex.height());
+  setAttachement(attachement, tex.object());
+}
+
+void Framebuffer::checkDimensions(int w, int h) {
+  if (((width_ != 0) && (width_ != w)) || ((height_ != 0) && (height_ != h)))
+    throw std::logic_error(
+        "The dimensions of the framebuffer attachements do not match");
+  else {
+    width_ = w;
+    height_ = h;
+  }
+}
+
+void Framebuffer::setRenderbufferAttachement(GLenum attachement,
+                                             Renderbuffer &renderbuffer) {
+  checkDimensions(renderbuffer.width(), renderbuffer.height());
+  ensureInitialized();
+  glNamedFramebufferRenderbuffer(obj_.get(), attachement, GL_RENDERBUFFER,
+                                 renderbuffer.object());
+}
+
+void Framebuffer::ensureInitialized() {
+  if (!obj_) {
+    GLuint fbo;
+    glCreateFramebuffers(1, &fbo);
+    obj_ = fbo;
+    static const GLenum drawBuffers[8] = {
+        GL_COLOR_ATTACHMENT0,     GL_COLOR_ATTACHMENT0 + 1,
+        GL_COLOR_ATTACHMENT0 + 2, GL_COLOR_ATTACHMENT0 + 3,
+        GL_COLOR_ATTACHMENT0 + 4, GL_COLOR_ATTACHMENT0 + 5,
+        GL_COLOR_ATTACHMENT0 + 6, GL_COLOR_ATTACHMENT0 + 7};
+    // do this once
+    glNamedFramebufferDrawBuffers(fbo, 8, drawBuffers);
+  }
+}
+
+Framebuffer Framebuffer::createDefault(int w, int h) {
   Framebuffer out;
-  out.init();
-  bindFramebufferTextures(out.object(), color_tex, out.width_, out.height_);
+  out.width_ = w;
+  out.height_ = h;
   return out;
 }
 
-Framebuffer Framebuffer::create(std::initializer_list<Texture *> color_tex,
-                                Texture &depth_tex) {
-  Framebuffer out;
-  out.init();
-  bindFramebufferTextures(out.object(), color_tex, out.width_, out.height_);
-  glNamedFramebufferTexture(out.object(), GL_DEPTH_ATTACHMENT,
-                            depth_tex.object(), 0);
-  return out;
+bool Framebuffer::ensureComplete() {
+  return checkStatus() == GL_FRAMEBUFFER_COMPLETE;
 }
 
-Framebuffer Framebuffer::createDefault(glm::ivec2 size) {
-  Framebuffer out;
-  out.width_ = static_cast<unsigned>(size.x);
-  out.height_ = static_cast<unsigned>(size.y);
-  return out;
+GLenum Framebuffer::checkStatus() {
+  return glCheckNamedFramebufferStatus(obj_.get(), GL_DRAW_FRAMEBUFFER);
 }
 }
 }

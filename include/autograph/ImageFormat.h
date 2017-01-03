@@ -1,6 +1,5 @@
 #pragma once
 #include <autograph/Config.h>
-#include <array>
 #include <cstdint>
 #include <cstdlib>
 
@@ -17,6 +16,10 @@ enum class ImageFormat {
   D32_SFLOAT,
   A2R10G10B10_UNORM_PACK32,
   A2R10G10B10_SNORM_PACK32,
+  R8_SRGB,
+  R8G8_SRGB,
+  R8G8B8_SRGB,
+  R8G8B8A8_SRGB,
   Max
 };
 

@@ -32,7 +32,7 @@ namespace ag
 		}
 
 
-		////////////////////////// draw (no resources)
+		////////////////////////// draw
 
 		template <typename DrawCommand, typename... Arguments>
 		void draw(
@@ -55,28 +55,28 @@ namespace ag
 			drawCommand(sg);
 		}
 
-		/*
-		inline void clear(Framebuffer& fb, const glm::vec4& color) {
+		
+		inline void clear(Framebuffer& fb, const vec4& color) {
 		  glClearNamedFramebufferfv(fb.object(), GL_COLOR, 0, &color[0]);
 		}
 
-		inline void clear(Texture& tex, const glm::vec4& color) {
+		inline void clearTexture(Texture& tex, const vec4& color) {
 		  glClearTexImage(tex.object(), 0, GL_RGBA, GL_FLOAT, &color[0]);
 		}
 
-		inline void clear_depth(Framebuffer& fb,
+		inline void clearDepth(Framebuffer& fb,
 						float depth) {
 		  glClearNamedFramebufferfv(fb.object(), GL_DEPTH, 0, &depth);
 		}
 
-		inline void clear_depth(Texture& tex, float depth) {
+		inline void clearDepthTexture(Texture& tex, float depth) {
 		  glClearTexImage(tex.object(), 0, GL_DEPTH_COMPONENT, GL_FLOAT, &depth);
 		}
 
-		inline void clear_integer(Texture& tex, const glm::ivec4& color) {
+		inline void clearInteger(Texture& tex, const ivec4& color) {
 		  glClearTexImage(tex.object(), 0, GL_RGBA_INTEGER, GL_UNSIGNED_INT,
 			  &color[0]);
-		}*/
+		}
 
 	}
 }

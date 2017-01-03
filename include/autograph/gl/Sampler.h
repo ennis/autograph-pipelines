@@ -20,7 +20,6 @@ class Sampler {
 public:
   Sampler() {}
   Sampler(const SamplerDesc &desc) : desc_{desc} {}
-  ~Sampler() {}
 
   GLuint object() {
     if (!obj_)

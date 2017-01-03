@@ -1,4 +1,5 @@
 #include <autograph/ImageFormat.h>
+#include <array>
 
 namespace ag {
 /*
@@ -30,6 +31,10 @@ std::array<ImageFormatInfo, static_cast<std::size_t>(ImageFormat::Max)>
         {"D32_SFLOAT", 4, 1},              // depth32_float
         {"A2R10G10B10_UNORM_PACK32", 4, 4},
 {"A2R10G10B10_SNORM_PACK32", 4, 4},
+{ "R8_SRGB", 1, 1 },
+{ "R8G8_SRGB", 2, 2 },
+{ "R8G8B8_SRGB", 3, 3 },
+{ "R8G8B8A8_SRGB", 4, 4 }
     }};
 
 AG_API const ImageFormatInfo &getImageFormatInfo(ImageFormat fmt) {

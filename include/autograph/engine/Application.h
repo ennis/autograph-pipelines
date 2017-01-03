@@ -1,40 +1,10 @@
 #pragma once
 #include <autograph/Types.h>
-#include <autograph/engine/Observable.h>
-#include <autograph/engine/Input.h>
+#include <autograph/support/Span.h>
 
-struct GLFWwindow;
-//class GrContext;
-class SkSurface;
-
-namespace ag 
+namespace ag
 {
-//////////////////////////////////////////////
-class AG_API Application
-{
-public:
-	Application(ivec2 initSize);
-	~Application();
-
-	virtual void resize(ivec2 size);
-	virtual void render();
-	virtual void onInputEvent(InputEvent& ev);
-	ivec2 getFramebufferSize();
-	ivec2 getWindowSize();
-	GLFWwindow* getWindow() const;
-	SkSurface* getSkSurface();
-	Subscription& getSubscription();
-	void run();
-
-private:
-	void initialize(ivec2 initSize);
-	void terminate();
-	void handleWindowSizeChanged(ivec2 newSize);
-	void createSkiaSurface(ivec2 size);
-	struct Impl;
-	std::unique_ptr<Impl> impl; 
-
-	static void appWindowSizeChanged(GLFWwindow* window, int width, int height);
-};
-
+	AG_API std::string FindResourceFile(const char* id, span<const char*> allowedExtensions);
+	AG_API void AddResourceDirectory(std::string fullPath);
+	AG_API ag::span<const std::string> GetResourceDirectories();
 }

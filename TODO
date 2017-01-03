@@ -20,7 +20,7 @@ Minimal system:
      loadTextureFloat(..., bool srgb_input) => ...
      loadImageFloat(..., bool srgb_input) => ...
  ☐ Qt widgets
- ☐ Effect scripts
+ ✘ Effect scripts @cancelled (16-12-30 19:08)
    autograph/fx/Effect.h => sol2
    autograph/fx/Pass.h
  ☐ Visual tree (transform hierarchy)
@@ -38,6 +38,7 @@ General:
  ✔ Meshes @high @minimal_subset @done (16-12-18 20:53)
  ✔ Scenes @done (16-12-18 20:53)
  ☐ Load textures from a file
+ ☐ Filter unsupported formats for texture loading
  ☐ Resource management
  ☐ Serialization
  ☐ Hot reload

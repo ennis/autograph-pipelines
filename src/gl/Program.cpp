@@ -1,5 +1,4 @@
 #include <autograph/gl/Program.h>
-#include <autograph/gl/ShaderPreprocessor.h>
 #include <autograph/support/Debug.h>
 #include <cstring>
 #include <iostream>
@@ -156,7 +155,7 @@ Program Program::create(const char *vs_src, const char *fs_src,
   return prog;
 }
 
-auto makeDefineStrings(int numDefines, ShaderPPDefine* pDefines,
+/*auto makeDefineStrings(int numDefines, ShaderPPDefine* pDefines,
                        std::vector<std::string> &out_str) {
   std::vector<const char *> c_strings;
   for (int i = 0; i < numDefines; ++i)
@@ -172,10 +171,10 @@ auto makeDefineStrings(int numDefines, ShaderPPDefine* pDefines,
     c_strings.push_back(d.c_str());
   }
   return c_strings;
-}
+}*/
 
 // helper to create a program object from a single-source shader file
-Program Program::loadFromFile(
+/*Program Program::loadFromFile(
     const char* combined_source_file_path,
     ShaderStage stages, int numDefines, ShaderPPDefine* pDefines) {
   // std::clog << "Loading graphics pipeline: " << src.source_or_file_path <<
@@ -220,6 +219,6 @@ Program Program::loadFromFile(
                          gs_src.size() ? gs_src.c_str() : nullptr,
                          tcs_src.size() ? tcs_src.c_str() : nullptr,
                          tes_src.size() ? tes_src.c_str() : nullptr);
-}
+}*/
 }
 }
