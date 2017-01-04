@@ -9,13 +9,6 @@
 
 namespace ag
 {
-	static void windowSizeChanged(GLFWwindow* window, int width, int height)
-	{
-		auto userptr = glfwGetWindowUserPointer(window);
-		if (userptr)
-			static_cast<Window*>(userptr)->onWindowSizeChanged(width, height);
-	}
-
 	// GLFW event handlers
 	void Window::MouseButtonHandler(GLFWwindow *window, int button, int action, int mods) {
 		auto userptr = glfwGetWindowUserPointer(window);
@@ -54,35 +47,66 @@ namespace ag
 			static_cast<Window*>(userptr)->charHandler(codepoint);
 	}
 
+	void Window::WindowSizeHandler(GLFWwindow *window, int width, int height)
+	{
+		auto userptr = glfwGetWindowUserPointer(window);
+		if (userptr)
+			static_cast<Window*>(userptr)->windowSizeHandler(width, height);
+	}
 
 	void Window::mouseButtonHandler(int button, int action, int mods)
 	{
-
+		Event ev{ EventType::MouseButton };
+		ev.mouseButton.button = button;
+		ev.mouseButton.action = (action == GLFW_PRESS) ? ButtonState::Pressed : ButtonState::Released;
+		eventFunc_(*this, ev);
 	}
 
 	void Window::cursorPosHandler(double xpos, double ypos)
 	{
-
+		Event ev{ EventType::Cursor };
+		ev.cursor.xFloat = xpos;
+		ev.cursor.yFloat = ypos;
+		ev.cursor.x = (int)xpos;
+		ev.cursor.y = (int)ypos;
+		eventFunc_(*this, ev);
 	}
 
 	void Window::cursorEnterHandler(int entered)
 	{
-
+		Event ev{ entered ? EventType::CursorEnter : EventType::CursorExit };
+		eventFunc_(*this, ev);
 	}
 
 	void Window::scrollHandler(double xoffset, double yoffset)
 	{
-
+		Event ev{ EventType::MouseScroll };
+		ev.scroll.dx = xoffset;
+		ev.scroll.dy = yoffset;
+		eventFunc_(*this, ev);
 	}
 
 	void Window::keyHandler(int key, int scancode, int action, int mods)
 	{
-
+		Event ev{ EventType::Key };
+		ev.key.action = (action == GLFW_PRESS) ? KeyState::Pressed : (action == GLFW_REPEAT ? KeyState::Repeat : KeyState::Released);
+		ev.key.code = scancode;
+		eventFunc_(*this, ev);
 	}
 
 	void Window::charHandler(unsigned int codepoint)
 	{
+		Event ev{ EventType::Text };
+		ev.text.codepoint = codepoint;
+		eventFunc_(*this, ev);
+	}
 
+	void Window::windowSizeHandler(int width, int height)
+	{
+		Event ev{ EventType::WindowResize };
+		ev.resize.width = width;
+		ev.resize.height = height;
+		eventFunc_(*this, ev);
 	}
 
 	Window::Window(int w, int h, const char * title)
@@ -112,7 +136,13 @@ namespace ag
 				"Application failed to initialize (ogl_LoadFunctions)");
 		}
 
-		glfwSetWindowSizeCallback(window_, windowSizeChanged);
+		// set event handlers
+		glfwSetWindowSizeCallback(window_, WindowSizeHandler);
+		glfwSetCursorEnterCallback(window_, CursorEnterHandler);
+		glfwSetMouseButtonCallback(window_, MouseButtonHandler);
+		glfwSetCursorPosCallback(window_, CursorPosHandler);
+		glfwSetCharCallback(window_, CharHandler);
+		glfwSetKeyCallback(window_, KeyHandler);
 
 		// autograph init
 		gl::DeviceConfig devCfg;
@@ -166,10 +196,5 @@ namespace ag
 
 	void Window::close() {
 		glfwSetWindowShouldClose(window_, 1);
-	}
-
-	void Window::onWindowSizeChanged(int width, int height)
-	{
-		//resizeFunc_(*this, width, height);
 	}
 }

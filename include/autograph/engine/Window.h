@@ -8,9 +8,11 @@ namespace ag
 {
 	//////////////////////////////////////////////
 	enum class EventType {
-		MouseButton,
+		MouseButton = 0,
 		MouseMove,
 		Cursor,
+		CursorEnter,
+		CursorExit,
 		MouseScroll,
 		Key,
 		Text,
@@ -18,6 +20,10 @@ namespace ag
 		StylusProperties,
 		WindowResize
 	};
+
+	//////////////////////////////////////////////
+	struct CursorEnterEvent {};
+	struct CursorExitEvent {};
 
 	//////////////////////////////////////////////
 	struct WindowResizeEvent
@@ -30,7 +36,7 @@ namespace ag
 	struct MouseButtonEvent
 	{
 		int button;
-		ButtonState state;
+		ButtonState action;
 	};
 
 	//////////////////////////////////////////////
@@ -39,6 +45,8 @@ namespace ag
 		// in client units (pixels)
 		int x;
 		int y;
+		double xFloat;
+		double yFloat;
 	};
 
 	//////////////////////////////////////////////
@@ -59,7 +67,7 @@ namespace ag
 	struct KeyEvent
 	{
 		uint32_t code;
-		KeyState state;
+		KeyState action;
 	};
 
 	//////////////////////////////////////////////
@@ -100,6 +108,8 @@ namespace ag
 			StylusProximityEvent stylusProximity;
 			StylusPropertiesEvent stylusProperties;
 			WindowResizeEvent resize;
+			CursorEnterEvent cursorEnter;
+			CursorExitEvent cursorExit;
 		};
 	};
 
@@ -122,9 +132,7 @@ namespace ag
 		}
 		// will end show()
 		void close();
-
 		void show();
-		void onWindowSizeChanged(int width, int height);
 
 	private:
 		void mouseButtonHandler(int button, int action, int mods);
@@ -133,6 +141,7 @@ namespace ag
 		void scrollHandler(double xoffset, double yoffset);
 		void keyHandler(int key, int scancode, int action, int mods);
 		void charHandler(unsigned int codepoint);
+		void windowSizeHandler(int width, int height);
 
 		static void MouseButtonHandler(GLFWwindow *window, int button, int action, int mods);
 		static void CursorPosHandler(GLFWwindow *window, double xpos, double ypos);
@@ -140,6 +149,7 @@ namespace ag
 		static void ScrollHandler(GLFWwindow *window, double xoffset, double yoffset);
 		static void KeyHandler(GLFWwindow *window, int key, int scancode, int action, int mods);
 		static void CharHandler(GLFWwindow *window, unsigned int codepoint);
+		static void WindowSizeHandler(GLFWwindow *window, int width, int height);
 
 		std::function<void(Window&)> renderFunc_; 
 		std::function<void(Window&, const Event&)> eventFunc_;

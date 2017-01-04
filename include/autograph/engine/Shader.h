@@ -58,7 +58,7 @@ public:
 	template <typename ...Args>
 	DrawPass(const char* id, Args&&... args)
 	{
-		auto deftable = detail::ensureShaderLuaStateInitialized().create_table_with(std::forward<Args>(defines)...);
+		auto deftable = detail::ensureShaderLuaStateInitialized().create_table_with(std::forward<Args>(args)...);
 		initialize(id, deftable);
 	}
 

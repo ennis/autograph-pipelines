@@ -31,6 +31,20 @@ autograph.ImageFormat = {
   R8G8B8A8_SRGB = 14
 }
 
+autograph.EventType = {
+    MouseButton = 0,
+    MouseMove = 1,
+    Cursor = 2,
+    CursorEnter = 3,
+    CursorExit = 4,
+    MouseScroll = 5,
+    Key = 6,
+    Text = 7,
+    StylusProximity = 8,
+    StylusProperties = 9,
+    WindowResize = 10
+}
+
 local function readToString(filepath)
     local f = io.open(filepath, "rb")
     local content = f:read("*all")

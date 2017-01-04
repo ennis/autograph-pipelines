@@ -60,30 +60,22 @@ end
 
 local camSensitivity = 0.1
 
-function keyboardInput(key, state)
-	ag.debug('keyboardInput: %i, %i', key, state)
-	if key == 263 and state == 0 then
-		cameraControl:rotate(-0.1, 0.0)
-	elseif key == 262 and state == 0 then 
-		cameraControl:rotate(0.1, 0.0)
-	elseif key == 90 and state == 0 then
-		showWireframe = not showWireframe
-	elseif key == 79 and state == 0 then
-		wireframeOpaque = not wireframeOpaque
+-- event
+function onEvent(ev)
+	if ev.type == autograph.EventType.Key then
+		ag.debug('Event %i %i', ev.code, ev.action)
+		if ev.code == 333 and ev.action == 0 then
+			cameraControl:rotate(-0.1, 0.0)
+		elseif ev.code == 331 and ev.action == 0 then 
+			cameraControl:rotate(0.1, 0.0)
+		elseif ev.code == 44 and ev.action == 0 then
+			showWireframe = not showWireframe
+		elseif ev.code == 24 and ev.action == 0 then
+			wireframeOpaque = not wireframeOpaque
+		end
 	end
 end
 
-function characterInput(char)
-	ag.debug('characterInput: %c', char)
-end
-
-function mouseInput(x, y)
-	ag.debug('mouseInput: %f, %f', x, y)
-end
-
-function mouseButton(button, x, y) 
-	ag.debug('mouseButton: %i, %f, %f', button, x, y)
-end
 
 -- called when the frame is being rendered
 function render()

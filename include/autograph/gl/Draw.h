@@ -6,7 +6,7 @@ namespace ag
 	namespace gl
 	{
 
-		auto drawArrays(
+		inline auto drawArrays(
 			GLenum primitiveType,
 			uint32_t first,
 			uint32_t count)
@@ -16,7 +16,7 @@ namespace ag
 			};
 		}
 
-		auto drawIndexed(
+		inline auto drawIndexed(
 			GLenum primitiveType,
 			uint32_t first,
 			uint32_t count,

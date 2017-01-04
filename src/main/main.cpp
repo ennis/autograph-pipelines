@@ -46,6 +46,58 @@ void drawMesh(Mesh &mesh, DrawPass *drawPass, sol::table args) {
 	});
 }
 
+sol::table eventToLua(sol::state& L, const ag::Event& ev)
+{
+	auto table = L.create_table();
+	table["type"] = ev.type;
+	switch (ev.type)
+	{
+	case ag::EventType::MouseButton:
+		table["button"] = ev.mouseButton.button;
+		table["action"] = ev.mouseButton.action;
+		break;
+	case ag::EventType::MouseMove:
+		table["dx"] = ev.mouseMove.dx;
+		table["dy"] = ev.mouseMove.dy;
+		break;
+	case ag::EventType::Cursor:
+		table["x"] = ev.cursor.x;
+		table["y"] = ev.cursor.y;
+		break;
+	case ag::EventType::CursorEnter:
+		break;
+	case ag::EventType::CursorExit:
+		break;
+	case ag::EventType::MouseScroll:
+		table["dx"] = ev.scroll.dx;
+		table["dy"] = ev.scroll.dy;
+		break;
+	case ag::EventType::Key:
+		table["code"] = ev.key.code;
+		table["action"] = ev.key.action;
+		break;
+	case ag::EventType::Text:
+	{
+		// VS BUG (with char32_t)
+		std::wstring_convert<std::codecvt_utf8<unsigned int>, unsigned int> cvt;
+		table["string"] = cvt.to_bytes(ev.text.codepoint);
+	}
+	case ag::EventType::StylusProximity:
+		// TODO
+		break;
+	case ag::EventType::StylusProperties:
+		// TODO
+		break;
+	case ag::EventType::WindowResize:
+		table["width"] = ev.resize.width;
+		table["height"] = ev.resize.height;
+		break;
+	default:
+		break;
+	}
+	return table;
+}
+
 ///////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////
 // MAIN
@@ -134,6 +186,11 @@ int main(int argc, char *argv[]) {
 	});*/
 
 	w.onEvent([&](ag::Window& win, const ag::Event& ev) {
+
+		sol::object eventFn = lua["onEvent"];
+		if (eventFn.is<sol::function>())
+			eventFn.as<sol::function>()(eventToLua(lua, ev));
+
 		/*if (auto keyEvent = ev->as<ag::KeyEvent>()) {
 			if (keyEvent->code == GLFW_KEY_F5 &&
 				keyEvent->state == ag::KeyState::Pressed) {
@@ -147,9 +204,6 @@ int main(int argc, char *argv[]) {
 			else if (keyEvent->code == GLFW_KEY_BACKSPACE && keyEvent->state == ag::KeyState::Pressed) {
 				reset();
 			}
-			sol::optional<sol::function> keyboardInputFn = lua["keyboardInput"];
-			if (keyboardInputFn)
-				(*keyboardInputFn)(keyEvent->code, keyEvent->state);
 		}
 		else if (auto curEv = ev->as<ag::CursorEvent>()) {
 			sol::optional<sol::function> mouseInputFn = lua["mouseInput"];

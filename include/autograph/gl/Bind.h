@@ -16,14 +16,14 @@ namespace gl {
 namespace bind {
 
 #define UNIFORM_VECN(ty, value_ty, fn)                                         \
-  auto uniform_##ty(const char *name, value_ty v) {                            \
+  inline auto uniform_##ty(const char *name, value_ty v) {                            \
     return [=](StateGroup &sg) {                                               \
       int loc = glGetUniformLocation(sg.drawStates.program, name);             \
       if (loc != -1)                                                           \
         fn(loc, 1, &v[0]);                                                     \
     };                                                                         \
   }                                                                            \
-  auto uniform_##ty(int loc, value_ty v) {                                     \
+  inline auto uniform_##ty(int loc, value_ty v) {                                     \
     return [=](StateGroup &sg) { fn(loc, 1, &v[0]); };                         \
   }
 
@@ -36,7 +36,7 @@ UNIFORM_VECN(ivec4, ivec4, glUniform4iv)
 #undef UNIFORM_VECN
 
 #define UNIFORM_MATRIX_NXN(nxn)                                                \
-  auto uniform_mat##nxn(const char *name, const mat##nxn &v,                   \
+  inline auto uniform_mat##nxn(const char *name, const mat##nxn &v,                   \
                         bool transpose = false) {                              \
     return [=](StateGroup &sg) {                                               \
       int loc = glGetUniformLocation(sg.drawStates.program, name);             \
@@ -44,7 +44,7 @@ UNIFORM_VECN(ivec4, ivec4, glUniform4iv)
         glUniformMatrix##nxn##fv(loc, 1, transpose, &v[0][0]);                 \
     };                                                                         \
   }                                                                            \
-  auto uniform_mat##nxn(int loc, const mat##nxn &v, bool transpose = false) {  \
+  inline auto uniform_mat##nxn(int loc, const mat##nxn &v, bool transpose = false) {  \
     return [=](StateGroup &sg) {                                               \
       glUniformMatrix##nxn##fv(loc, 1, transpose, &v[0][0]);                   \
     };                                                                         \
@@ -56,7 +56,7 @@ UNIFORM_MATRIX_NXN(2)
 UNIFORM_MATRIX_NXN(3x4)
 #undef UNIFORM_MATRIX_NXN
 
-auto texture(int unit, const Texture &tex, Sampler &sampler) {
+inline auto texture(int unit, const Texture &tex, Sampler &sampler) {
   return
       [ unit, obj = tex.object(), sobj = sampler.object() ](StateGroup & sg) {
     sg.uniforms.textures[unit] = obj;
@@ -64,13 +64,13 @@ auto texture(int unit, const Texture &tex, Sampler &sampler) {
   };
 }
 
-auto image(int unit, const Texture &tex) {
+inline auto image(int unit, const Texture &tex) {
   return [ unit, obj = tex.object() ](StateGroup & sg) {
     sg.uniforms.images[unit] = obj;
   };
 }
 
-auto uniformBuffer(int slot, BufferSlice buf) {
+inline auto uniformBuffer(int slot, BufferSlice buf) {
 	return [=](StateGroup &sg) {
 		sg.uniforms.uniformBuffers[slot] = buf.obj;
 		sg.uniforms.uniformBufferOffsets[slot] = buf.offset;
@@ -78,7 +78,7 @@ auto uniformBuffer(int slot, BufferSlice buf) {
 	};
 }
 
-auto vertexBuffer(int slot, BufferSlice buf, int stride) {
+inline auto vertexBuffer(int slot, BufferSlice buf, int stride) {
   return [=](StateGroup &sg) {
     sg.uniforms.vertexBuffers[slot] = buf.obj;
     sg.uniforms.vertexBufferOffsets[slot] = buf.offset;
@@ -86,20 +86,20 @@ auto vertexBuffer(int slot, BufferSlice buf, int stride) {
   };
 }
 
-auto indexBuffer(BufferSlice buf, GLenum type) {
+inline auto indexBuffer(BufferSlice buf, GLenum type) {
 	return [=](StateGroup &sg) {
 		sg.uniforms.indexBuffer = buf;
 		sg.uniforms.indexBufferType = type;
 	};
 }
 
-auto program(const Program &prog) {
+inline auto program(const Program &prog) {
   return [obj = prog.object()](StateGroup & sg) {
     sg.drawStates.program = obj;
   };
 }
 
-auto framebuffer(const Framebuffer &fbo) {
+inline auto framebuffer(const Framebuffer &fbo) {
   return [ obj = fbo.object(), w = fbo.width(), h = fbo.height() ](StateGroup &
                                                                    sg) {
     glBindFramebuffer(GL_DRAW_FRAMEBUFFER, obj);
@@ -108,31 +108,31 @@ auto framebuffer(const Framebuffer &fbo) {
   };
 }
 
-auto vertexArray(const VertexArray &vao) {
+inline auto vertexArray(const VertexArray &vao) {
   return [obj = vao.object()](StateGroup & sg) {
     sg.drawStates.vertexArray = obj;
   };
 }
 
-auto viewport(const Viewport &vp) {
+inline auto viewport(const Viewport &vp) {
   return [=](StateGroup &sg) { sg.drawStates.viewports[0] = vp; };
 }
 
-auto viewport(int index, const Viewport &vp) {
+inline auto viewport(int index, const Viewport &vp) {
   return [=](StateGroup &sg) { sg.drawStates.viewports[index] = vp; };
 }
 
-auto blendState(int index, const BlendState &bs) {
+inline auto blendState(int index, const BlendState &bs) {
   return
       [index, &bs](StateGroup &sg) { sg.drawStates.blendStates[index] = bs; };
 }
 
-auto depthStencilState(int index, const DepthStencilState &dss) {
+inline auto depthStencilState(int index, const DepthStencilState &dss) {
   return
       [index, &dss](StateGroup &sg) { sg.drawStates.depthStencilState = dss; };
 }
 
-auto rasterizerState(int index, const RasterizerState &rs) {
+inline auto rasterizerState(int index, const RasterizerState &rs) {
   return [index, &rs](StateGroup &sg) { sg.drawStates.rasterizerState = rs; };
 }
 }
