@@ -134,6 +134,7 @@ int main(int argc, char *argv[]) {
 	bool lastOnRenderFailed = false; 
 	
 	auto tex = loadTexture("img/cavestory/PrtMimi");
+	RenderUtils utils;
 
 	// from Lua:
 	// ag.getTexture('img/cavestory/PrtMimi', ImageFormat.R8G8B8A8_SRGB)
@@ -179,6 +180,8 @@ int main(int argc, char *argv[]) {
 				lastOnRenderFailed = true;
 			}
 		}
+		utils.drawSprite(gl::getDefaultFramebuffer(), 0.0f, 0.0f, tex.width(), tex.height(), tex);
+
 	});
 
 	/*w.onResize([&](ag::Window& win, int w, int h) {

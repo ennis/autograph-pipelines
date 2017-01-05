@@ -160,9 +160,6 @@ Texture Texture::Create2DMultisample(ImageFormat fmt, int w, int h, Samples ms)
 		glCreateTextures(GL_TEXTURE_2D, 1, &tex_obj);
 		glTextureStorage2D(tex_obj, 1, glfmt.internal_fmt, w, h);
 	}
-	glTextureParameteri(tex_obj, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-	glTextureParameteri(tex_obj, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-	glTextureParameteri(tex_obj, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
 	tex.obj_ = tex_obj;
 	return tex;
 }
