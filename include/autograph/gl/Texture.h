@@ -11,20 +11,14 @@ struct TextureDeleter {
 	void operator()(GLuint tex_obj);
 };
 
-enum class TextureDimension {
-  Texture1D,
-  Texture2D,
-  Texture3D,
-  TextureCube,
-  Texture2DArray
-};
-
 class AG_API Texture {
 public:
   Texture() = default;
   Texture(const ImageDesc &desc);
+
   Texture(Texture&& rhs) = default;
   Texture& operator=(Texture&& rhs) = default;
+
   ~Texture();
 
   //====================================
@@ -58,8 +52,23 @@ public:
 
 private:
   GLHandle<TextureDeleter> obj_;
+  int numSamples_{0};
   ImageDesc desc_;
 };
+
+/*
+class AG_API Texture2D : public Texture
+{
+public:
+    Texture2D(ImageFormat fmt, int w, int h, int numMipmaps);
+
+private:
+};
+
+class AG_API Texture2DMultisample : public Texture
+{
+
+};*/
 
 struct GLFormatInfo {
   GLenum internal_fmt;

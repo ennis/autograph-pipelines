@@ -75,7 +75,7 @@ namespace ag
 				deferredDrawPass.getDrawStates(),
 				vertexBuffer(0, pMesh->getVertexBuffer(), sizeof(Vertex3D)),
 				indexBuffer(pMesh->getIndexBuffer(), GL_UNSIGNED_INT),
-				uniformBuffer(0, uploadFrameData(&objectUniforms, sizeof(objectUniforms)))
+                uniformBuffer(0, uploadFrameData(&objectUniforms, sizeof(objectUniforms)))
 				);
 
 			//AG_DEBUG("renderScene, object ID {} mesh {}", obj->id, (void*)obj->mesh);

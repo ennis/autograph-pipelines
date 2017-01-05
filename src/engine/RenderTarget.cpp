@@ -3,7 +3,13 @@
 namespace ag {
 RenderTarget::RenderTarget(
     int w, int h, std::initializer_list<ImageFormat> colorFormats,
-    variant<DepthRenderbuffer, DepthTexture, NoDepth> depthFormat) {
+    variant<DepthRenderbuffer, DepthTexture, NoDepth> depthFormat,
+    variant<Multisample, NoMultisample> multisampling) 
+{
+  if (auto ms = multisampling.target<Multisample>()) {
+    // TODO
+    numSamples_ = ms->numSamples;
+  }
   if (auto renderbuffer = depthFormat.target<DepthRenderbuffer>()) {
     depthTarget_ = gl::Renderbuffer{w, h, renderbuffer->fmt};
     fbo_.setRenderbufferAttachement(GL_DEPTH_ATTACHMENT,

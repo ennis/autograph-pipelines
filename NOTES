@@ -1617,7 +1617,7 @@ TODO:
 
 		window.onInput([&]() {
 
-		}):
+		});
 
 	}
 
@@ -1632,7 +1632,15 @@ loadTexture(file) -> Texture
 loadDataTable()
 
 
+RenderTargets:
+	should support multisampling
+	(multisampled image formats?)
 
+Image files:
+	{
+		ag::Image img {"..."};
+		img.getTexture() -> gl::Texture;
+	}
 
 
 FP Camera control:
