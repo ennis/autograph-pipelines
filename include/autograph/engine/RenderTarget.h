@@ -10,12 +10,11 @@ public:
 	struct DepthRenderbuffer { ImageFormat fmt; };
 	struct DepthTexture { ImageFormat fmt; };
 	struct NoDepth {}; 
-  struct Multisample { int numSamples; };
-  struct NoMultisample {};
+  struct Samples { int count; };
 
   RenderTarget(int w, int h, std::initializer_list<ImageFormat> colorFormats,
                variant<DepthRenderbuffer, DepthTexture, NoDepth> depthFormat,
-               variant<Multisample, NoMultisample> multisampling = NoMultisample{});
+	  Samples samples = Samples{0});
 
   void resize(int w, int h);
 

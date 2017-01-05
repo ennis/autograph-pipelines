@@ -9,9 +9,9 @@ namespace ag
 {
     DeferredSceneRenderer::GBuffer::GBuffer(int width, int height)
     {
-        depthStencil = gl::Texture::create2D(ImageFormat::D32_SFLOAT, width, height);
-        diffuse = gl::Texture::create2D(ImageFormat::R8G8B8A8_UNORM, width, height);
-        normals = gl::Texture::create2D(ImageFormat::A2R10G10B10_UNORM_PACK32, width, height); // SNORM not supported in OpenGL
+        depthStencil = gl::Texture::Create2D(ImageFormat::D32_SFLOAT, width, height);
+        diffuse = gl::Texture::Create2D(ImageFormat::R8G8B8A8_UNORM, width, height);
+        normals = gl::Texture::Create2D(ImageFormat::A2R10G10B10_UNORM_PACK32, width, height); // SNORM not supported in OpenGL
 		fbo.setAttachement(GL_COLOR_ATTACHMENT0 + 0, diffuse);
 		fbo.setAttachement(GL_COLOR_ATTACHMENT0 + 1, normals);
 		fbo.setAttachement(GL_DEPTH_ATTACHMENT, depthStencil);

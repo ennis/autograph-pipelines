@@ -5,11 +5,14 @@
 namespace ag {
 namespace gl {
 
-Renderbuffer::Renderbuffer(int w, int h, ImageFormat fmt)
+Renderbuffer::Renderbuffer(int w, int h, ImageFormat fmt, Samples samples)
     : width_{w}, height_{h}, fmt_{fmt} {
   auto &fmtinfo = getGLImageFormatInfo(fmt);
   GLuint rbuf;
   glCreateRenderbuffers(1, &rbuf);
+  if (samples.count)
+	  glNamedRenderbufferStorageMultisample(rbuf, samples.count, fmtinfo.internal_fmt, w, h);
+  else
   glNamedRenderbufferStorage(rbuf, fmtinfo.internal_fmt, w, h);
   obj_ = rbuf;
 }

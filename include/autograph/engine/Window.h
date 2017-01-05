@@ -66,7 +66,8 @@ namespace ag
 	//////////////////////////////////////////////
 	struct KeyEvent
 	{
-		uint32_t code;
+		int key;
+		int scancode;
 		KeyState action;
 	};
 

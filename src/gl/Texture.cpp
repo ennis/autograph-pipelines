@@ -49,36 +49,10 @@ const GLFormatInfo &getGLImageFormatInfo(ImageFormat fmt) {
   }
 }
 
-Texture::Texture(const ImageDesc &desc) : desc_{desc}
+
+/*Texture::Texture(const ImageDesc &desc) : desc_{desc}
 {
-  assert(desc.numMipmaps > 0);
-  GLuint tex_obj;
-  const auto &glfmt = getGLImageFormatInfo(desc.format);
-  switch (desc.dimensions) {
-  case ImageDimensions::Image1D:
-    glCreateTextures(GL_TEXTURE_1D, 1, &tex_obj);
-    glTextureStorage1D(tex_obj, desc.numMipmaps, glfmt.internal_fmt,
-                       desc.width);
-    break;
-  case ImageDimensions::Image2D:
-    glCreateTextures(GL_TEXTURE_2D, 1, &tex_obj);
-    glTextureStorage2D(tex_obj, desc.numMipmaps, glfmt.internal_fmt, desc.width,
-                       desc.height);
-    break;
-  case ImageDimensions::Image3D:
-    glCreateTextures(GL_TEXTURE_3D, 1, &tex_obj);
-    glTextureStorage3D(tex_obj, desc.numMipmaps, glfmt.internal_fmt, desc.width,
-                       desc.height, desc.depth);
-    break;
-  default:
-    throw std::logic_error("Unsupported texture type");
-  }
-  // set sensible defaults
-  glTextureParameteri(tex_obj, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-  glTextureParameteri(tex_obj, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-  glTextureParameteri(tex_obj, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
-  obj_ = GLHandle<TextureDeleter>{tex_obj};
-}
+}*/
 
 Texture::~Texture()
 {
@@ -126,27 +100,91 @@ glm::vec4 Texture::texelFetch(glm::ivec3 coords, int mip_level) {
   return out;
 }
 
-Texture Texture::create1D(ImageFormat fmt, int w, int numMipmaps) {
-  ImageDesc d;
-  d.dimensions = ImageDimensions::Image1D;
-  d.format = fmt;
-  d.width = w;
-  d.height = 1;
-  d.depth = 1;
-  d.numMipmaps = numMipmaps;
-  return Texture{d};
+Texture Texture::Create1D(ImageFormat fmt, int w, MipMaps mipMaps) {
+  Texture tex;
+  tex.desc_.dimensions = ImageDimensions::Image1D;
+  tex.desc_.format = fmt;
+  tex.desc_.width = w;
+  tex.desc_.height = 1;
+  tex.desc_.depth = 1;
+  tex.desc_.numMipmaps = mipMaps.count;
+  const auto &glfmt = getGLImageFormatInfo(fmt);
+  GLuint tex_obj;
+glCreateTextures(GL_TEXTURE_1D, 1, &tex_obj);
+glTextureStorage1D(tex_obj, mipMaps.count, glfmt.internal_fmt,	w);
+// set sensible defaults
+glTextureParameteri(tex_obj, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+glTextureParameteri(tex_obj, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+glTextureParameteri(tex_obj, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+tex.obj_ = tex_obj;
+  return tex;
 }
 
-Texture Texture::create2D(ImageFormat fmt, int w, int h,
-	int numMipmaps) {
-  ImageDesc d;
-  d.dimensions = ImageDimensions::Image2D;
-  d.format = fmt;
-  d.width = w;
-  d.height = h;
-  d.depth = 1;
-  d.numMipmaps = numMipmaps;
-  return Texture{d};
+Texture Texture::Create2D(ImageFormat fmt, int w, int h, MipMaps mipMaps) 
+{
+	Texture tex;
+  tex.desc_.dimensions = ImageDimensions::Image2D;
+  tex.desc_.format = fmt;
+  tex.desc_.width = w;
+  tex.desc_.height = h;
+  tex.desc_.depth = 1;
+  tex.desc_.numMipmaps = mipMaps.count;
+  const auto &glfmt = getGLImageFormatInfo(fmt);
+  GLuint tex_obj;
+   glCreateTextures(GL_TEXTURE_2D, 1, &tex_obj);
+	glTextureStorage2D(tex_obj, mipMaps.count, glfmt.internal_fmt, w, h);
+	glTextureParameteri(tex_obj, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTextureParameteri(tex_obj, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	glTextureParameteri(tex_obj, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+  tex.obj_ = tex_obj;
+  return tex;
+}
+
+Texture Texture::Create2DMultisample(ImageFormat fmt, int w, int h, Samples ms)
+{
+	Texture tex;
+	tex.desc_.dimensions = ImageDimensions::Image2D;
+	tex.desc_.format = fmt;
+	tex.desc_.width = w;
+	tex.desc_.height = h;
+	tex.desc_.depth = 1;
+	tex.desc_.numMipmaps = 1;
+	const auto &glfmt = getGLImageFormatInfo(fmt);
+	GLuint tex_obj;
+	if (ms.count != 0)
+	{
+		glCreateTextures(GL_TEXTURE_2D_MULTISAMPLE, 1, &tex_obj);
+		glTextureStorage2DMultisample(tex_obj, ms.count, glfmt.internal_fmt, w, h, true);
+	}
+	else {
+		glCreateTextures(GL_TEXTURE_2D, 1, &tex_obj);
+		glTextureStorage2D(tex_obj, 1, glfmt.internal_fmt, w, h);
+	}
+	glTextureParameteri(tex_obj, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTextureParameteri(tex_obj, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	glTextureParameteri(tex_obj, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+	tex.obj_ = tex_obj;
+	return tex;
+}
+
+Texture Texture::Create3D(ImageFormat fmt, int w, int h, int d, MipMaps mipMaps)
+{
+	Texture tex;
+	tex.desc_.dimensions = ImageDimensions::Image2D;
+	tex.desc_.format = fmt;
+	tex.desc_.width = w;
+	tex.desc_.height = h;
+	tex.desc_.depth = d;
+	tex.desc_.numMipmaps = mipMaps.count;
+	const auto &glfmt = getGLImageFormatInfo(fmt);
+	GLuint tex_obj;
+	glCreateTextures(GL_TEXTURE_3D, 1, &tex_obj);
+	glTextureStorage3D(tex_obj, 1, glfmt.internal_fmt, w, h, d);
+	glTextureParameteri(tex_obj, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTextureParameteri(tex_obj, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	glTextureParameteri(tex_obj, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+	tex.obj_ = tex_obj;
+	return tex;
 }
 
 void Texture::reset()

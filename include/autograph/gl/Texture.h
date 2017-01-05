@@ -14,7 +14,6 @@ struct TextureDeleter {
 class AG_API Texture {
 public:
   Texture() = default;
-  Texture(const ImageDesc &desc);
 
   Texture(Texture&& rhs) = default;
   Texture& operator=(Texture&& rhs) = default;
@@ -44,11 +43,15 @@ public:
 	  int height, int mipLevel = 0);
   vec4 texelFetch(ivec3 coords, int mip_level = 0);
 
+  struct MipMaps { int count; };
+  struct Samples { int count; };
+
   //====================================
   // Constructors
-  static Texture create1D(ImageFormat fmt, int w, int numMipmaps = 1);
-  static Texture create2D(ImageFormat fmt, int w, int h,
-	  int numMipmaps = 1);
+  static Texture Create1D(ImageFormat fmt, int w, MipMaps mipMaps = MipMaps{ 1 });
+  static Texture Create2D(ImageFormat fmt, int w, int h, MipMaps mipMaps = MipMaps{ 1 });
+  static Texture Create2DMultisample(ImageFormat fmt, int w, int h, Samples ms = Samples{ 0 });
+  static Texture Create3D(ImageFormat fmt, int w, int h, int d, MipMaps mipMaps = MipMaps{ 1 });
 
 private:
   GLHandle<TextureDeleter> obj_;
@@ -56,19 +59,6 @@ private:
   ImageDesc desc_;
 };
 
-/*
-class AG_API Texture2D : public Texture
-{
-public:
-    Texture2D(ImageFormat fmt, int w, int h, int numMipmaps);
-
-private:
-};
-
-class AG_API Texture2DMultisample : public Texture
-{
-
-};*/
 
 struct GLFormatInfo {
   GLenum internal_fmt;

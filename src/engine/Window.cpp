@@ -90,7 +90,8 @@ namespace ag
 	{
 		Event ev{ EventType::Key };
 		ev.key.action = (action == GLFW_PRESS) ? KeyState::Pressed : (action == GLFW_REPEAT ? KeyState::Repeat : KeyState::Released);
-		ev.key.code = scancode;
+		ev.key.scancode = scancode;
+		ev.key.key = key;
 		eventFunc_(*this, ev);
 	}
 

@@ -49,16 +49,13 @@ AG_API Image loadImageByPath(const char *path, ImageFormat targetFormat) {
 }
 
 AG_API gl::Texture loadTextureByPath(const char *path,
-                                     ImageFormat targetFormat) {
-  ImageDesc desc;
+                                     ImageFormat targetFormat) 
+{
   int comp;
-  auto data = loadImageByPathRaw(path, desc.width, desc.height, comp, 4);
-  desc.depth = 1;
-  desc.format = targetFormat;
-  desc.numMipmaps = 1;
-  desc.dimensions = ImageDimensions::Image2D;
-  auto tex = gl::Texture{desc};
-  glTextureSubImage2D(tex.object(), 0, 0, 0, desc.width, desc.height, GL_RGBA,
+  int w, h;
+  auto data = loadImageByPathRaw(path, w, h, comp, 4);
+  auto tex = gl::Texture::Create2D(targetFormat, w, h);
+  glTextureSubImage2D(tex.object(), 0, 0, 0, w, h, GL_RGBA,
                       GL_UNSIGNED_INT_8_8_8_8_REV, data.get());
   return tex;
 }

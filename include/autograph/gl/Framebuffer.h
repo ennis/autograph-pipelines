@@ -13,8 +13,9 @@ struct RenderbufferDeleter {
 
 class AG_API Renderbuffer {
 public:
+	struct Samples { int count; };
   Renderbuffer() = default;
-  Renderbuffer(int w, int h, ImageFormat fmt);
+  Renderbuffer(int w, int h, ImageFormat fmt, Samples samples = Samples{ 0 });
 
   auto object() { return obj_.get(); }
   auto width() const { return width_; }
@@ -67,8 +68,8 @@ private:
   void ensureInitialized();
   void initialize();
   void bindFramebufferTextures();
-  int width_;
-  int height_;
+  int width_{ 0 };
+  int height_{ 0 };
   GLHandle<FramebufferDeleter> obj_;
 };
 }

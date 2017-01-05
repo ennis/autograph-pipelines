@@ -15,6 +15,8 @@ local imgCaveMimi = ag.getTexture('img/cavestory/PrtMimi')
 local imgCaveFall = ag.getTexture('img/cavestory/PrtFall')
 local imgCaveSand = ag.getTexture('img/cavestory/PrtSand')
 
+local texTest = ag.Texture.Create2DMultisample(ag.ImageFormat.R8G8B8A8_UNORM, 512, 512, 8)
+
 --local arcball = ag.Arcball()
 
 -- called when the script is loaded or reloaded
@@ -64,13 +66,13 @@ local camSensitivity = 0.1
 function onEvent(ev)
 	if ev.type == autograph.EventType.Key then
 		ag.debug('Event %i %i', ev.code, ev.action)
-		if ev.code == 333 and ev.action == 0 then
+		if ev.code == ag.KEY_LEFT and ev.action == 0 then
 			cameraControl:rotate(-0.1, 0.0)
-		elseif ev.code == 331 and ev.action == 0 then 
+		elseif ev.code == ag.KEY_RIGHT and ev.action == 0 then 
 			cameraControl:rotate(0.1, 0.0)
-		elseif ev.code == 44 and ev.action == 0 then
+		elseif ev.code == ag.KEY_W and ev.action == 0 then
 			showWireframe = not showWireframe
-		elseif ev.code == 24 and ev.action == 0 then
+		elseif ev.code == ag.KEY_O and ev.action == 0 then
 			wireframeOpaque = not wireframeOpaque
 		end
 	end

@@ -73,7 +73,7 @@ sol::table eventToLua(sol::state& L, const ag::Event& ev)
 		table["dy"] = ev.scroll.dy;
 		break;
 	case ag::EventType::Key:
-		table["code"] = ev.key.code;
+		table["key"] = ev.key.key;
 		table["action"] = ev.key.action;
 		break;
 	case ag::EventType::Text:
@@ -190,7 +190,6 @@ int main(int argc, char *argv[]) {
 	});*/
 
 	w.onEvent([&](ag::Window& win, const ag::Event& ev) {
-
 		sol::object eventFn = lua["onEvent"];
 		if (eventFn.is<sol::function>())
 			eventFn.as<sol::function>()(eventToLua(lua, ev));
