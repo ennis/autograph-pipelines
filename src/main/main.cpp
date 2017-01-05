@@ -79,7 +79,11 @@ sol::table eventToLua(sol::state& L, const ag::Event& ev)
 	case ag::EventType::Text:
 	{
 		// VS BUG (with char32_t)
+#if defined(_MSC_VER)
 		std::wstring_convert<std::codecvt_utf8<unsigned int>, unsigned int> cvt;
+#else
+        std::wstring_convert<std::codecvt_utf8<char32_t>, char32_t> cvt;
+#endif
 		table["string"] = cvt.to_bytes(ev.text.codepoint);
 	}
 	case ag::EventType::StylusProximity:
