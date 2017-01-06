@@ -13,6 +13,7 @@ set(SRC
 	Mesh.cpp
 	ScriptContext.cpp
 	RenderTarget.cpp
+	ResourcePool.cpp
 	Window.cpp
 )
 	

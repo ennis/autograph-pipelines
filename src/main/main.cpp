@@ -24,6 +24,7 @@
 #include <autograph/engine/Window.h>
 #include <autograph/engine/ScriptContext.h>
 #include <autograph/engine/RenderTarget.h>
+#include <autograph/engine/ResourcePool.h>
 #include "SceneRenderer.h"
 
 using namespace ag;
@@ -132,6 +133,13 @@ int main(int argc, char *argv[]) {
 	bool initOk = false;
 	bool reloadOk = false;
 	bool lastOnRenderFailed = false; 
+
+	/*ResourcePool pool;
+	auto tex1 = pool.get<gl::Texture>("img/cavestory/PrtMimi");
+	auto tex2 = pool.get<gl::Texture>("img/cavestory/PrtMimi");
+	assert(tex1 == tex2);
+	auto tex3 = pool.get<gl::Texture>("img/cavestory/PrtCave");
+	assert(tex3 != tex1);*/
 	
 	auto tex = loadTexture("img/cavestory/PrtMimi");
 	RenderUtils utils;

@@ -3,6 +3,7 @@
 #include <memory>
 #include <autograph/support/Optional.h>
 #include "ResourceManager.h"
+#include <autograph/engine/ResourcePool.h>
 
 namespace ag
 {
@@ -11,6 +12,7 @@ namespace ag
 		ImageDesc desc;
 		std::unique_ptr<uint8_t[]> data;
 	};
+
 	
 	//
 	// Loads an image resource in main memory
@@ -26,4 +28,28 @@ namespace ag
 	// Helpers
 	AG_API gl::Texture loadTexture(const char* id, ImageFormat targetFormat = ImageFormat::R8G8B8A8_SRGB);
 	AG_API Image loadImage(const char* id, ImageFormat targetFormat = ImageFormat::R8G8B8A8_SRGB);
+
+	///////////////////////////////////////////////////
+	struct TextureResource : public Resource
+	{
+		virtual ~TextureResource()
+		{}
+
+		gl::Texture tex;
+	};
+
+	template <>
+	struct ResourceTraits<gl::Texture>
+	{
+		static std::unique_ptr<Resource> load(const char* id)
+		{
+			auto ptr = std::make_unique<TextureResource>();
+			ptr->tex = loadTexture(id);
+			return ptr;
+		}
+
+		static gl::Texture* getPtr(Resource& res) {
+			return &static_cast<TextureResource&>(res).tex;
+		}
+	};
 }
