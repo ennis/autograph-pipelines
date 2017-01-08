@@ -48,10 +48,10 @@ public:
 
   //====================================
   // Constructors
-  static Texture Create1D(ImageFormat fmt, int w, MipMaps mipMaps = MipMaps{ 1 });
-  static Texture Create2D(ImageFormat fmt, int w, int h, MipMaps mipMaps = MipMaps{ 1 });
-  static Texture Create2DMultisample(ImageFormat fmt, int w, int h, Samples ms = Samples{ 0 });
-  static Texture Create3D(ImageFormat fmt, int w, int h, int d, MipMaps mipMaps = MipMaps{ 1 });
+  static Texture create1D(ImageFormat fmt, int w, MipMaps mipMaps = MipMaps{ 1 });
+  static Texture create2D(ImageFormat fmt, int w, int h, MipMaps mipMaps = MipMaps{ 1 });
+  static Texture create2DMultisample(ImageFormat fmt, int w, int h, Samples ms = Samples{ 0 });
+  static Texture create3D(ImageFormat fmt, int w, int h, int d, MipMaps mipMaps = MipMaps{ 1 });
 
 private:
   GLHandle<TextureDeleter> obj_;

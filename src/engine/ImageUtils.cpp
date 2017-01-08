@@ -1,5 +1,5 @@
-#include <autograph/engine/ImageUtils.h>
 #include <autograph/engine/Application.h>
+#include <autograph/engine/ImageUtils.h>
 #include <autograph/support/Debug.h>
 
 static void *stbi_realloc_sized(void *ptr, size_t oldsz, size_t newsz) {
@@ -49,12 +49,11 @@ AG_API Image loadImageByPath(const char *path, ImageFormat targetFormat) {
 }
 
 AG_API gl::Texture loadTextureByPath(const char *path,
-                                     ImageFormat targetFormat) 
-{
+                                     ImageFormat targetFormat) {
   int comp;
   int w, h;
   auto data = loadImageByPathRaw(path, w, h, comp, 4);
-  auto tex = gl::Texture::Create2D(targetFormat, w, h);
+  auto tex = gl::Texture::create2D(targetFormat, w, h);
   glTextureSubImage2D(tex.object(), 0, 0, 0, w, h, GL_RGBA,
                       GL_UNSIGNED_INT_8_8_8_8_REV, data.get());
   return tex;
@@ -63,15 +62,13 @@ AG_API gl::Texture loadTextureByPath(const char *path,
 static const char *allowedImageExtensions[] = {".png", ".jpeg", ".bmp", ".jpg",
                                                ".tga"};
 
-AG_API gl::Texture loadTexture(const char *id,
-                               ImageFormat targetFormat) {
-  return loadTextureByPath(
-      FindResourceFile(id, allowedImageExtensions).c_str(), targetFormat);
+AG_API gl::Texture loadTexture(const char *id, ImageFormat targetFormat) {
+  return loadTextureByPath(findResourceFile(id, allowedImageExtensions).c_str(),
+                           targetFormat);
 }
 
-AG_API Image loadImage(const char *id,
-                       ImageFormat targetFormat) {
-  return loadImageByPath(
-	  FindResourceFile(id, allowedImageExtensions).c_str(), targetFormat);
+AG_API Image loadImage(const char *id, ImageFormat targetFormat) {
+  return loadImageByPath(findResourceFile(id, allowedImageExtensions).c_str(),
+                         targetFormat);
 }
 }

@@ -14,9 +14,9 @@ struct BufferSlice {
 
 //////////////////////////////////////////////
 enum class BufferUsage {
-  Upload,        // CPU-visible, write-only
+  Upload,  // CPU-visible, write-only
   Default, // GPU-visible, cannot be accessed by the CPU
-  Readback       // CPU-visible, read-only
+  Readback // CPU-visible, read-only
 };
 
 //////////////////////////////////////////////
@@ -27,24 +27,18 @@ struct BufferDeleter {
 class Buffer {
 public:
   Buffer() = default;
-  Buffer(size_t byteSize, BufferUsage usage, GLuint obj)
-      : usage_{usage}, byte_size_{byteSize}, obj_{obj} {}
+  Buffer(size_t byteSize, BufferUsage usage, const void *initial_data = nullptr);
 
   GLuint object() const { return obj_.get(); }
   BufferUsage getUsage() const { return usage_; }
   size_t size() const { return byte_size_; }
   void *map(size_t offset, size_t size);
-  BufferSlice asSlice() const {
-    return BufferSlice{obj_.get(), 0, byte_size_};
-  }
-
-  static Buffer create(size_t byteSize, BufferUsage usage,
-                       const void *initial_data = nullptr);
+  BufferSlice asSlice() const { return BufferSlice{obj_.get(), 0, byte_size_}; }
 
 private:
   BufferUsage usage_ = BufferUsage::Default;
   size_t byte_size_ = 0;
   GLHandle<BufferDeleter> obj_;
 };
-
-}}
+}
+}

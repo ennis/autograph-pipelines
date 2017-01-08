@@ -60,9 +60,8 @@ inline BufferSlice uploadFrameArray(const std::array<T, N> &data,
 }
 
 template <typename T, size_t N>
-inline BufferSlice uploadFrameArray( T (&data)[N],
-	size_t alignment = -1) {
-	return uploadFrameData(&data[0], N * sizeof(T), alignment);
+inline BufferSlice uploadFrameArray(T (&data)[N], size_t alignment = -1) {
+  return uploadFrameData(&data[0], N * sizeof(T), alignment);
 }
 
 AG_API uint64_t getFrameCount();

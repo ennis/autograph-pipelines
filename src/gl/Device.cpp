@@ -16,8 +16,8 @@ namespace {
 void APIENTRY debugCallback(GLenum source, GLenum type, GLuint id,
                             GLenum severity, GLsizei length, const GLubyte *msg,
                             void *data) {
-  if (severity != GL_DEBUG_SEVERITY_LOW &&
-      severity != GL_DEBUG_SEVERITY_NOTIFICATION)
+  //if (severity != GL_DEBUG_SEVERITY_LOW &&
+     // severity != GL_DEBUG_SEVERITY_NOTIFICATION)
       AG_DEBUG("GL: {}", msg);
 }
 
@@ -91,7 +91,7 @@ AG_API void initialize(const DeviceConfig &config) {
   // g_screen_fbo.width = config.init_fb_width;
   // g_screen_fbo.height = config.init_fb_height;
   setDebugCallback();
-  constexpr std::size_t upload_buf_size = 3 * 1024 * 1024;
+  constexpr std::size_t upload_buf_size = 3*1024*1024 ;
   g_frame_fence = Fence{0};
   glGetIntegerv(GL_UNIFORM_BUFFER_OFFSET_ALIGNMENT, &gGLImplementationLimits.uniform_buffer_alignment);
   g_default_upload_buffer = std::make_unique<UploadBuffer>(upload_buf_size);

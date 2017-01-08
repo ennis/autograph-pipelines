@@ -66,13 +66,16 @@ void Texture::upload(void *src, int mipLevel) {
   case ImageDimensions::Image1D:
     glTextureSubImage1D(obj_.get(), mipLevel, 0, desc_.width,
                         gl_fmt.external_fmt, gl_fmt.type, src);
+	break;
   case ImageDimensions::Image2D:
     glTextureSubImage2D(obj_.get(), mipLevel, 0, 0, desc_.width, desc_.height,
                         gl_fmt.external_fmt, gl_fmt.type, src);
+	break;
   case ImageDimensions::Image3D:
     glTextureSubImage3D(obj_.get(), mipLevel, 0, 0, 0, desc_.width,
                         desc_.height, desc_.depth, gl_fmt.external_fmt,
                         gl_fmt.type, src);
+	break;
   }
 }
 
@@ -100,7 +103,7 @@ glm::vec4 Texture::texelFetch(glm::ivec3 coords, int mip_level) {
   return out;
 }
 
-Texture Texture::Create1D(ImageFormat fmt, int w, MipMaps mipMaps) {
+Texture Texture::create1D(ImageFormat fmt, int w, MipMaps mipMaps) {
   Texture tex;
   tex.desc_.dimensions = ImageDimensions::Image1D;
   tex.desc_.format = fmt;
@@ -120,7 +123,7 @@ tex.obj_ = tex_obj;
   return tex;
 }
 
-Texture Texture::Create2D(ImageFormat fmt, int w, int h, MipMaps mipMaps) 
+Texture Texture::create2D(ImageFormat fmt, int w, int h, MipMaps mipMaps) 
 {
 	Texture tex;
   tex.desc_.dimensions = ImageDimensions::Image2D;
@@ -140,7 +143,7 @@ Texture Texture::Create2D(ImageFormat fmt, int w, int h, MipMaps mipMaps)
   return tex;
 }
 
-Texture Texture::Create2DMultisample(ImageFormat fmt, int w, int h, Samples ms)
+Texture Texture::create2DMultisample(ImageFormat fmt, int w, int h, Samples ms)
 {
 	Texture tex;
 	tex.desc_.dimensions = ImageDimensions::Image2D;
@@ -164,7 +167,7 @@ Texture Texture::Create2DMultisample(ImageFormat fmt, int w, int h, Samples ms)
 	return tex;
 }
 
-Texture Texture::Create3D(ImageFormat fmt, int w, int h, int d, MipMaps mipMaps)
+Texture Texture::create3D(ImageFormat fmt, int w, int h, int d, MipMaps mipMaps)
 {
 	Texture tex;
 	tex.desc_.dimensions = ImageDimensions::Image2D;

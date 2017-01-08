@@ -6,6 +6,7 @@
 #include <autograph/gl/Sampler.h>
 #include <autograph/gl/Texture.h>
 #include <autograph/gl/VertexArray.h>
+#include <autograph/gl/Bind.h>
 #include <autograph/engine/Application.h>
 #include <autograph/engine/ScriptContext.h>
 #include <autograph/support/Optional.h>
@@ -61,6 +62,8 @@ public:
 		auto deftable = detail::ensureShaderLuaStateInitialized().create_table_with(std::forward<Args>(args)...);
 		initialize(id, deftable);
 	}
+
+	void operator()(gl::StateGroup& stateGroup);
 
 	void initialize(const char *shaderId, sol::table table);
 

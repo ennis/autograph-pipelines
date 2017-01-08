@@ -6,7 +6,7 @@ namespace ag {
 namespace gl {
 // A ring buffer, used in the implementation of upload buffers
 UploadBuffer::UploadBuffer(size_t size)
-    : buffer_{Buffer::create(size, BufferUsage::Upload)}, write_ptr(0),
+    : buffer_{size, BufferUsage::Upload}, write_ptr(0),
       begin_ptr(0), used(0) {
   mapped_region = buffer_.map(0, size);
 }

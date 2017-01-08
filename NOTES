@@ -1652,3 +1652,34 @@ Terrain rendering:
 - (Very) large view distance
 - Procedural generation (vegetation, etc.)
 - Object LOD (Trees, rocks)
+
+
+Suggestion: templated Mesh type
+and some standard vertex types
+
+template <typename T, bool indexed>
+class Mesh 
+{
+public:
+	// if not indexed
+	Mesh(std::vector<T>);
+	Mesh(span<T>);
+	// if indexed
+	Mesh(std::vector<T>, std::vector<unsigned>);
+
+	// getVertexCount()
+	// getIndexCount()
+	// getVertexBuffer()
+	// getIndexBuffer()
+};
+
+using Mesh3D = Mesh<Vertex3D>;
+using Mesh2D = Mesh<Vertex2D>;
+
+// For generic operations on meshes:
+// VertexTraits<T>
+
+*** Suggestion: Drawables
+	=> just add an operator()(StateGroup& sg);
+
+	//draw()

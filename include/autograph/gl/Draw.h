@@ -12,6 +12,7 @@ namespace ag
 			uint32_t count)
 		{
 			return [=](StateGroup& sg) {
+				bindStateGroup(sg);
 				glDrawArrays(primitiveType, first, count);
 			};
 		}
@@ -24,6 +25,7 @@ namespace ag
 		{
 			return [=](StateGroup& sg)
 			{
+				bindStateGroup(sg);
 				auto indexStride = (sg.uniforms.indexBufferType == GL_UNSIGNED_SHORT) ? 2 : 4;
 				glDrawElementsBaseVertex(
 					primitiveType, count, sg.uniforms.indexBufferType,
@@ -34,24 +36,23 @@ namespace ag
 
 		////////////////////////// draw
 
-		template <typename DrawCommand, typename... Arguments>
+		template <typename DrawCommand, typename Shader, typename... Arguments>
 		void draw(
 			Framebuffer& fbo,
-			const DrawCommand& drawCommand,
-			const DrawStates& drawStates,
+			DrawCommand& drawCommand,
+			Shader& shader,
 			Arguments&&... args)
 		{
 			StateGroup sg;
 			sg.mask = StateGroupMask::All;
 			// 1. bind program & draw states (~= pipeline state)
-			sg.drawStates = drawStates;
+			shader(sg);
 			// 1.1. bind framebuffer
 			bind::framebuffer(fbo)(sg);
 			// 2. bind dynamic args
 			auto dummy = { (args(sg), 0)... };
-			// 3. bind state group to pipeline
-			bindStateGroup(sg);
-			// 4. call render command
+			// 3. call render command
+			// The render command is in charge of binding the state group to the pipeline
 			drawCommand(sg);
 		}
 

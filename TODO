@@ -37,12 +37,22 @@ General:
  ✔ Camera control from Lua script @high @minimal_subset @done (16-12-24 14:12)
  ✔ Meshes @high @minimal_subset @done (16-12-18 20:53)
  ✔ Scenes @done (16-12-18 20:53)
- ☐ Load textures from a file
+ ✔ Load textures from a file @done (17-01-07 17:08)
  ☐ Filter unsupported formats for texture loading
- ☐ Resource management
+ ✔ Resource management @done (17-01-07 17:08)
  ☐ Serialization
  ☐ Hot reload
-
+ ✔ template Mesh<T> types @done (17-01-08 14:39)
+   make it a gl::Drawable
+ ✔ VertexTraits for generic vertex manipulation @done (17-01-08 14:39)
+ ☐ gl::Texture API rework
+   ☐ upload(): allow flexible formats for input pixel data
+     current one is extremely unsafe
+ ☐ gl::Buffer: constructor
+ ☐ binders: default samplers for texture bindings
+ ✔ fix weird tearing bug @done (17-01-08 14:39)
+   Was Vsync?
+   
 Serialization:
  ☐ Save scene 
  ☐ Load scene
@@ -80,7 +90,7 @@ Effect/pipeline system:
  ☐ Pass tags (arbitrary values)
  ☐ Pass variants: name + parameters
  ☐ Cache passes and compiled shaders (shader cache)
- ☐ Decide if we keep the C API or go with manual registration of functions
+ ✔ Decide if we keep the C API or go with manual registration of functions @done (17-01-07 17:10)
  ✔ Create passes, textures in C++ (mirror functionality exposed in scripts) @done (16-12-18 20:52)
  ☐ Techniques
 

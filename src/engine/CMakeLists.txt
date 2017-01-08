@@ -15,6 +15,7 @@ set(SRC
 	RenderTarget.cpp
 	ResourcePool.cpp
 	Window.cpp
+	MathUtils.cpp
 )
 	
 add_library(autograph_engine STATIC ${SRC} )

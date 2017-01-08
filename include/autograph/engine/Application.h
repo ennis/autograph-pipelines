@@ -4,7 +4,7 @@
 
 namespace ag
 {
-	AG_API std::string FindResourceFile(const char* id, span<const char*> allowedExtensions);
-	AG_API void AddResourceDirectory(std::string fullPath);
-	AG_API ag::span<const std::string> GetResourceDirectories();
+	AG_API std::string findResourceFile(const char* id, span<const char*> allowedExtensions);
+	AG_API void addResourceDirectory(std::string fullPath);
+	AG_API ag::span<const std::string> getResourceDirectories();
 }

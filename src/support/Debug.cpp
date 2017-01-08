@@ -19,12 +19,11 @@ namespace ag {
 		result_type state_{};
 
 	public:
-		constexpr
-			basic_fnv1a() noexcept : state_{ OffsetBasis }
+		basic_fnv1a() noexcept : state_{ OffsetBasis }
 		{
 		}
 
-		constexpr void
+		void
 			update(const void *const data, const std::size_t size) noexcept
 		{
 			const auto cdata = static_cast<const unsigned char *>(data);
@@ -37,7 +36,7 @@ namespace ag {
 			this->state_ = acc;
 		}
 
-		constexpr result_type
+		result_type
 			digest() const noexcept
 		{
 			return this->state_;
@@ -52,7 +51,7 @@ namespace ag {
 		UINT64_C(14695981039346656037),
 		UINT64_C(1099511628211)>;
 
-	constexpr std::size_t
+	inline std::size_t
 		hash_bytes(const void *const data, const std::size_t size) noexcept
 	{
 		auto hashfn = fnv1a_64{};

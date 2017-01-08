@@ -13,13 +13,13 @@ RenderTarget::RenderTarget(
     fbo_.setRenderbufferAttachement(GL_DEPTH_ATTACHMENT,
                                     *depthTarget_.target<Renderbuffer>());
   } else if (auto depthtex = depthFormat.target<DepthTexture>()) {
-	  depthTarget_ = Texture::Create2DMultisample(depthtex->fmt, w, h, Texture::Samples{ samples.count });
+	  depthTarget_ = Texture::create2DMultisample(depthtex->fmt, w, h, Texture::Samples{ samples.count });
     fbo_.setAttachement(GL_DEPTH_ATTACHMENT,
                         *depthTarget_.target<Texture>());
   }
   int index = 0;
   for (auto fmt : colorFormats) {
-    colorTargets_.push_back(Texture::Create2DMultisample(fmt, w, h, Texture::Samples{ samples.count }));
+    colorTargets_.push_back(Texture::create2DMultisample(fmt, w, h, Texture::Samples{ samples.count }));
     fbo_.setAttachement(GL_COLOR_ATTACHMENT0 + index, colorTargets_[index]);
     ++index;
   }
@@ -32,13 +32,13 @@ void RenderTarget::resize(int w, int h) {
     fbo_.setRenderbufferAttachement(GL_DEPTH_ATTACHMENT,
                                     *depthTarget_.target<Renderbuffer>());
   } else if (auto depthtex = depthTarget_.target<Texture>()) {
-	  depthTarget_ = gl::Texture::Create2DMultisample(depthtex->format(), w, h, Texture::Samples{ numSamples_ });
+	  depthTarget_ = gl::Texture::create2DMultisample(depthtex->format(), w, h, Texture::Samples{ numSamples_ });
     fbo_.setAttachement(GL_DEPTH_ATTACHMENT,
                         *depthTarget_.target<Texture>());
   }
   for (int index = 0; index < static_cast<int>(colorTargets_.size()); index++) {
     colorTargets_[index] =
-		gl::Texture::Create2DMultisample(colorTargets_[index].format(), w, h, Texture::Samples{ numSamples_ });
+		gl::Texture::create2DMultisample(colorTargets_[index].format(), w, h, Texture::Samples{ numSamples_ });
     fbo_.setAttachement(GL_COLOR_ATTACHMENT0 + index, colorTargets_[index]);
   }
 }

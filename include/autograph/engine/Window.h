@@ -124,8 +124,9 @@ namespace ag
 		ivec2 getFramebufferSize();
 		ivec2 getWindowSize();
 		ivec2 getCursorPosition();
+		KeyState getKey(int key);
 
-		void onRender(std::function<void(Window&)> renderFunc) {
+		void onRender(std::function<void(Window&, double)> renderFunc) {
 			renderFunc_ = std::move(renderFunc);
 		}
 		void onEvent(std::function<void(Window&, const Event&)> eventFunc) {
@@ -152,7 +153,7 @@ namespace ag
 		static void CharHandler(GLFWwindow *window, unsigned int codepoint);
 		static void WindowSizeHandler(GLFWwindow *window, int width, int height);
 
-		std::function<void(Window&)> renderFunc_; 
+		std::function<void(Window&, double)> renderFunc_;
 		std::function<void(Window&, const Event&)> eventFunc_;
 		GLFWwindow* window_;
 	};

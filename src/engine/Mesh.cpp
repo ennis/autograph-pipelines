@@ -7,34 +7,7 @@
 
 namespace ag {
 
-	static AABB calculateBoundingBox(span<Vertex3D> vertices)
-	{
-		AABB aabb;
-		// init AABB to reasonably unreasonable values
-		aabb.xmin = 1000000.0f;
-		aabb.xmax = -1000000.0f;
-		aabb.ymin = 1000000.0f;
-		aabb.ymax = -1000000.0f;
-		aabb.zmin = 1000000.0f;
-		aabb.zmax = -1000000.0f;
-		for (unsigned i = 0; i < vertices.size(); ++i) {
-			auto v = vertices[i];
-			if (aabb.xmin > v.position.x)
-				aabb.xmin = v.position.x;
-			if (aabb.xmax < v.position.x)
-				aabb.xmax = v.position.x;
-			if (aabb.ymin > v.position.y)
-				aabb.ymin = v.position.y;
-			if (aabb.ymax < v.position.y)
-				aabb.ymax = v.position.y;
-			if (aabb.zmin > v.position.z)
-				aabb.zmin = v.position.z;
-			if (aabb.zmax < v.position.z)
-				aabb.zmax = v.position.z;
-		}
-		return aabb;
-	}
-
+	/*
 Mesh Mesh::loadFromFile(const char *path) {
   Assimp::Importer importer;
 
@@ -85,15 +58,6 @@ Mesh Mesh::loadFromFile(const char *path) {
 
   AG_DEBUG("Mesh::loadFromFile {} vertices:{} indices:{}", path, vertices.size(), indices.size());
   return Mesh{ vertices, indices };
-}
-
-Mesh::Mesh(span<Vertex3D> vertices, span<unsigned int> indices)
-{
-	vbo_ = gl::Buffer::create(vertices.size() * sizeof(Vertex3D), gl::BufferUsage::Default, vertices.data());
-	ibo_ = gl::Buffer::create(indices.size() * sizeof(unsigned int), gl::BufferUsage::Default, indices.data());
-	numVertices_ = vertices.size();
-	numIndices_ = indices.size();
-	aabb_ = calculateBoundingBox(vertices);
-}
+}*/
 
 }

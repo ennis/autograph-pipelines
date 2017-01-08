@@ -1,6 +1,7 @@
 
 set(SRC main.cpp 
-    SceneRenderer.cpp)
+    SceneRenderer.cpp
+	Scene2D.cpp)
 
 set(HEADERS 
 	SceneRenderer.h)

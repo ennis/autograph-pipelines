@@ -199,52 +199,48 @@ void DrawPassBuilder::setDepthStencilState(const gl::DepthStencilState &ds) {
 }
 
 //////////////////////////////////////////////
-namespace detail
-{
-	ScriptContext& ensureShaderLuaStateInitialized()
-	{
-		static ScriptContext sc;
-		static bool initialized = false;
-		if (!initialized) {
-			sc.script("require 'shader_utils'");	// Load shader utils
-			initialized = true;
-		}
-		return sc;
-	}
+namespace detail {
+ScriptContext &ensureShaderLuaStateInitialized() {
+  static ScriptContext sc;
+  static bool initialized = false;
+  if (!initialized) {
+    sc.script("require 'shader_utils'"); // Load shader utils
+    initialized = true;
+  }
+  return sc;
+}
 }
 
 //////////////////////////////////////////////
 static void loadShaderFile(const char *shaderId) {
-	auto& L = detail::ensureShaderLuaStateInitialized();
-	AG_DEBUG("loadShaderFile: {}", shaderId);
-	L.script(std::string{ "require '" } +shaderId + "'");
+  auto &L = detail::ensureShaderLuaStateInitialized();
+  AG_DEBUG("loadShaderFile: {}", shaderId);
+  L.script(std::string{"require '"} + shaderId + "'");
 }
 
 /////////////////////////////////////////////////
-void DrawPass::initialize(const char *shaderId, sol::table table)
-{
-	auto &L = detail::ensureShaderLuaStateInitialized();
-	std::string shaderIdStr{ shaderId };
-	auto p = shaderIdStr.find_last_of(':');
-	if (p == std::string::npos) {
-		return;
-	}
-	auto shaderFileId = shaderIdStr.substr(0, p);
-	auto passId = shaderIdStr.substr(p + 1);
-	AG_DEBUG("createDrawPassInternal: {}", shaderId);
-	loadShaderFile(shaderFileId.c_str());
-	try {
-		auto config = L["shader_utils"]["createShaderFromTemplate"](passId, table);
-		DrawPassBuilder builder;
-		builder.loadFromTable(config);
-		// move construct into this
-		// TODO this is hackish
-		*this = std::move(*builder.makeDrawPass());
-	}
-	catch (sol::error &e) {
-		errorMessage("Error loading shader pass {}:\n\t{}", passId, e.what());
-		throw;
-	}
+void DrawPass::initialize(const char *shaderId, sol::table table) {
+  auto &L = detail::ensureShaderLuaStateInitialized();
+  std::string shaderIdStr{shaderId};
+  auto p = shaderIdStr.find_last_of(':');
+  if (p == std::string::npos) {
+    return;
+  }
+  auto shaderFileId = shaderIdStr.substr(0, p);
+  auto passId = shaderIdStr.substr(p + 1);
+  AG_DEBUG("createDrawPassInternal: {}", shaderId);
+  loadShaderFile(shaderFileId.c_str());
+  try {
+    auto config = L["shader_utils"]["createShaderFromTemplate"](passId, table);
+    DrawPassBuilder builder;
+    builder.loadFromTable(config);
+    // move construct into this
+    // TODO this is hackish
+    *this = std::move(*builder.makeDrawPass());
+  } catch (sol::error &e) {
+    errorMessage("Error loading shader pass {}:\n\t{}", passId, e.what());
+    throw;
+  }
 }
 
 /////////////////////////////////////////////////
@@ -261,6 +257,7 @@ void DrawPass::compile() {
   drawStates_.vertexArray = vao_.object();
 }
 
-
-
+void DrawPass::operator()(gl::StateGroup &stateGroup) {
+  stateGroup.drawStates = drawStates_;
+}
 }

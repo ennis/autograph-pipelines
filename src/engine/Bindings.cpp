@@ -50,16 +50,17 @@ sol::table openLuaBindings(sol::this_state s) {
   module["clearDepthTexture"] = &ag::gl::clearDepthTexture;
 
   module.new_usertype<gl::Texture>(
-      "Texture", "Create1D",
+      "Texture", "create1D",
       sol::factories([](ImageFormat fmt, int w, int numMips) {
-        return gl::Texture::Create1D(fmt, w, gl::Texture::MipMaps{numMips});
+        return gl::Texture::create1D(fmt, w, gl::Texture::MipMaps{numMips});
       }),
-      "Create2D", sol::factories([](ImageFormat fmt, int w, int h, int numMips) {
-        return gl::Texture::Create2D(fmt, w, h, gl::Texture::MipMaps{numMips});
+      "create2D",
+      sol::factories([](ImageFormat fmt, int w, int h, int numMips) {
+        return gl::Texture::create2D(fmt, w, h, gl::Texture::MipMaps{numMips});
       }),
-      "Create2DMultisample",
+      "create2DMultisample",
       sol::factories([](ImageFormat fmt, int w, int h, int samples) {
-        return gl::Texture::Create2DMultisample(fmt, w, h,
+        return gl::Texture::create2DMultisample(fmt, w, h,
                                                 gl::Texture::Samples{samples});
       }),
       "width", sol::property(&gl::Texture::width), "height",
@@ -67,8 +68,7 @@ sol::table openLuaBindings(sol::this_state s) {
       sol::property(&gl::Texture::format), "object",
       sol::property(&gl::Texture::object), "reset", &gl::Texture::reset);
 
-  module.new_usertype<gl::Buffer>("Buffer", "create",
-                                  sol::factories(&gl::Buffer::create));
+  module.new_usertype<gl::Buffer>("Buffer", sol::call_constructor, sol::constructors<sol::types<size_t, gl::BufferUsage>>{});
 
   // Camera
   module.new_usertype<Frustum>("Frustum");
@@ -95,9 +95,7 @@ sol::table openLuaBindings(sol::this_state s) {
       &AABB::ymax, "zmin", &AABB::zmin, "zmax", &AABB::zmax, "width",
       &AABB::width, "height", &AABB::height, "depth", &AABB::depth);
 
-  module.new_usertype<Mesh>("Mesh", "loadFromFile",
-                            sol::factories(&Mesh::loadFromFile), "AABB",
-                            sol::property(&Mesh::getAABB));
+  module.new_usertype<Mesh3D>("Mesh3D");
 
   module.new_usertype<SceneObject>(
       "SceneObject", "id", sol::property(&SceneObject::id), "mesh",

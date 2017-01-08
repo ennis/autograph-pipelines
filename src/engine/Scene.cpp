@@ -1,9 +1,9 @@
-#include <autograph/engine/Scene.h>
 #include <assimp/Importer.hpp>
 #include <assimp/ProgressHandler.hpp>
 #include <assimp/postprocess.h>
 #include <assimp/scene.h>
 #include <autograph/engine/Application.h>
+#include <autograph/engine/Scene.h>
 #include <autograph/support/Debug.h>
 
 namespace ag {
@@ -25,14 +25,14 @@ auto Scene::addObject() -> SceneObject & {
   return *ptr;
 }
 
-SceneObject &Scene::addMesh(Mesh &mesh) {
+SceneObject &Scene::addMesh(Mesh3D &mesh) {
   auto &obj = addObject();
   obj.mesh = &mesh;
   obj.id = 0;
   return obj;
 }
 
-auto Scene::makeOwnedMesh(std::unique_ptr<Mesh> pMesh) -> Mesh * {
+auto Scene::makeOwnedMesh(std::unique_ptr<Mesh3D> pMesh) -> Mesh3D * {
   auto ptr = pMesh.get();
   ownedMeshes_.push_back(std::move(pMesh));
   return ptr;
@@ -43,7 +43,7 @@ static const char *allowedMeshExtensions[] = {".dae", ".fbx", ".obj", ".3ds"};
 SceneObject &Scene::loadModel(const char *id) {
   Assimp::Importer importer;
 
-  auto actualPath = FindResourceFile(id, allowedMeshExtensions);
+  auto actualPath = findResourceFile(id, allowedMeshExtensions);
 
   const aiScene *scene = importer.ReadFile(
       actualPath.c_str(),
@@ -58,7 +58,7 @@ SceneObject &Scene::loadModel(const char *id) {
     throw std::runtime_error("failed to load scene");
   }
 
-  std::vector<Mesh *> loadedMeshes{scene->mNumMeshes, nullptr};
+  std::vector<Mesh3D *> loadedMeshes{scene->mNumMeshes, nullptr};
   auto ptr = importAssimpNodeRecursive(scene, scene->mRootNode, rootObj_,
                                        loadedMeshes.data());
   rootObj_->children.push_back(ptr);
@@ -68,7 +68,7 @@ SceneObject &Scene::loadModel(const char *id) {
 }
 
 auto Scene::importAssimpMesh(const aiScene *scene, int index,
-                             Mesh **loadedMeshes) -> Mesh * {
+                             Mesh3D **loadedMeshes) -> Mesh3D * {
   if (auto ptr = loadedMeshes[index])
     return ptr;
   auto mesh = scene->mMeshes[index];
@@ -98,12 +98,12 @@ auto Scene::importAssimpMesh(const aiScene *scene, int index,
     indices[i * 3 + 2] = mesh->mFaces[i].mIndices[2];
   }
   return loadedMeshes[index] =
-             makeOwnedMesh(std::make_unique<Mesh>(vertices, indices));
+             makeOwnedMesh(std::make_unique<Mesh3D>(vertices, indices));
 }
 
 auto Scene::importAssimpNodeRecursive(const aiScene *scene, aiNode *node,
-                                      SceneObject *parent, Mesh **loadedMeshes)
-    -> SceneObject * {
+                                      SceneObject *parent,
+                                      Mesh3D **loadedMeshes) -> SceneObject * {
   auto &thisNode = addObject();
   thisNode.parent = parent;
   aiVector3D scaling;
@@ -122,12 +122,14 @@ auto Scene::importAssimpNodeRecursive(const aiScene *scene, aiNode *node,
   thisNode.localTransform.scaling.z = scaling.z;
   if (node->mNumMeshes == 1) {
     thisNode.mesh = importAssimpMesh(scene, node->mMeshes[0], loadedMeshes);
+    thisNode.localBounds = GetMeshAABB(*thisNode.mesh);
   } else if (node->mNumMeshes > 1) {
     for (unsigned i = 0; i < node->mNumMeshes; ++i) {
       // create sub-objects for the meshes
       auto &subObj = addObject();
       subObj.parent = &thisNode;
       subObj.mesh = importAssimpMesh(scene, node->mMeshes[i], loadedMeshes);
+      subObj.localBounds = GetMeshAABB(*subObj.mesh);
       thisNode.children.push_back(&subObj);
     }
   }
@@ -173,7 +175,7 @@ void Scene::updateWorldTransformsRecursive(mat4 current, SceneObject &obj) {
 
 AABB SceneObject::getLocalBoundingBox() const {
   if (mesh)
-    return mesh->getAABB().transform(localTransform.getMatrix());
+    return localBounds;
   else
     return AABB{};
 }

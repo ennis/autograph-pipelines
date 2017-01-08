@@ -4,11 +4,11 @@
 namespace ag {
 namespace gl {
 struct SamplerDesc {
-  GLenum addrU;
-  GLenum addrV;
-  GLenum addrW;
-  GLenum minFilter;
-  GLenum magFilter;
+  GLenum addrU{ GL_REPEAT };
+  GLenum addrV{ GL_REPEAT };
+  GLenum addrW{ GL_REPEAT };
+  GLenum minFilter{ GL_NEAREST };
+  GLenum magFilter{ GL_NEAREST };
 };
 
 struct SamplerDeleter {

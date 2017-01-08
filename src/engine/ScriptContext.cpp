@@ -1,41 +1,38 @@
-#include <autograph/engine/ScriptContext.h>
 #include "Bindings.h"
 #include <autograph/engine/Application.h>
+#include <autograph/engine/ScriptContext.h>
 #include <vector>
 
 std::vector<std::string> globalPackagePaths;
 
-namespace ag
-{
+namespace ag {
 
-ScriptContext::ScriptContext()
-{
-	// open required libraries
-	open_libraries(sol::lib::base, sol::lib::package, sol::lib::debug,
-		sol::lib::string, sol::lib::io, sol::lib::math,
-		sol::lib::coroutine, sol::lib::os, sol::lib::table);
+ScriptContext::ScriptContext() {
+  // open required libraries
+  open_libraries(sol::lib::base, sol::lib::package, sol::lib::debug,
+                 sol::lib::string, sol::lib::io, sol::lib::math,
+                 sol::lib::coroutine, sol::lib::os, sol::lib::table);
 
-	// register application resource paths
-	for (auto& resPath : GetResourceDirectories()) {
-		addPackagePath((resPath + "?.lua").c_str());
-		addPackagePath((resPath + "scripts/?.lua").c_str());
-	}
+  // register application resource paths
+  for (auto &resPath : getResourceDirectories()) {
+    addPackagePath((resPath + "?.lua").c_str());
+    addPackagePath((resPath + "scripts/?.lua").c_str());
+  }
 
-	// load bindings and helper module
-	require("autograph_bindings", sol::c_call<decltype(&detail::openLuaBindings), &detail::openLuaBindings>);
-	script("require 'autograph'");
+  // load bindings and helper module
+  require("autograph_bindings", sol::c_call<decltype(&detail::openLuaBindings),
+                                            &detail::openLuaBindings>);
+  script("require 'autograph'");
 }
 
-void ScriptContext::addPackagePath(const char* path)
-{
-	std::string package_path = (*this)["package"]["path"];
-	(*this)["package"]["path"] =
-		package_path + (!package_path.empty() ? ";" : "") + path;
+void ScriptContext::addPackagePath(const char *path) {
+  std::string package_path = (*this)["package"]["path"];
+  (*this)["package"]["path"] =
+      package_path + (!package_path.empty() ? ";" : "") + path;
 }
 
-void ScriptContext::unloadModules()
-{
-	script(R"(
+void ScriptContext::unloadModules() {
+  script(R"(
 		for k,v in pairs(package.loaded) do
 			print("Unloading package " .. k)
 			package.loaded[k] = nil
@@ -43,9 +40,13 @@ void ScriptContext::unloadModules()
 		)");
 }
 
-ScriptContext::ScriptContext(const char * initScript) : ScriptContext{}
-{
-	script(std::string{ "require '" } + initScript + "'");
+ScriptContext::ScriptContext(const char *initScript) : ScriptContext{} {
+  script(std::string{"require '"} + initScript + "'");
 }
 
+sol::table ScriptContext::scriptFile(const char *id) {
+  static const char *extensions[] = {".lua"};
+  auto path = findResourceFile(id, extensions);
+  return script_file(path);
+}
 }

@@ -29,8 +29,8 @@ void RenderUtils::drawSprite(gl::Framebuffer &target, float targetX0,
     float tx;
     float ty;
   };
-  float w = target.width();
-  float h = target.height();
+  float w = (float)target.width();
+  float h = (float)target.height();
 
   Vertex2D quad[6] = {
       {2.0f * targetX0 / w - 1.0f, 2.0f * targetY0 / h - 1.0f, srcX0, srcY0 },
@@ -45,7 +45,7 @@ void RenderUtils::drawSprite(gl::Framebuffer &target, float targetX0,
   using namespace gl;
   using namespace gl::bind;
 
-  draw(target, drawArrays(GL_TRIANGLES, 0, 6), drawSpritePass.getDrawStates(),
+  draw(target, drawArrays(GL_TRIANGLES, 0, 6), drawSpritePass,
        texture(0, src, samplerNearest),
        vertexBuffer(0, vbuf, sizeof(Vertex2D)));
 }

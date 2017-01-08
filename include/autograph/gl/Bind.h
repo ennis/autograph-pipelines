@@ -16,14 +16,14 @@ namespace gl {
 namespace bind {
 
 #define UNIFORM_VECN(ty, value_ty, fn)                                         \
-  inline auto uniform_##ty(const char *name, value_ty v) {                            \
+  inline auto uniform_##ty(const char *name, value_ty v) {                     \
     return [=](StateGroup &sg) {                                               \
       int loc = glGetUniformLocation(sg.drawStates.program, name);             \
       if (loc != -1)                                                           \
         fn(loc, 1, &v[0]);                                                     \
     };                                                                         \
   }                                                                            \
-  inline auto uniform_##ty(int loc, value_ty v) {                                     \
+  inline auto uniform_##ty(int loc, value_ty v) {                              \
     return [=](StateGroup &sg) { fn(loc, 1, &v[0]); };                         \
   }
 
@@ -36,15 +36,16 @@ UNIFORM_VECN(ivec4, ivec4, glUniform4iv)
 #undef UNIFORM_VECN
 
 #define UNIFORM_MATRIX_NXN(nxn)                                                \
-  inline auto uniform_mat##nxn(const char *name, const mat##nxn &v,                   \
-                        bool transpose = false) {                              \
+  inline auto uniform_mat##nxn(const char *name, const mat##nxn &v,            \
+                               bool transpose = false) {                       \
     return [=](StateGroup &sg) {                                               \
       int loc = glGetUniformLocation(sg.drawStates.program, name);             \
       if (loc != -1)                                                           \
         glUniformMatrix##nxn##fv(loc, 1, transpose, &v[0][0]);                 \
     };                                                                         \
   }                                                                            \
-  inline auto uniform_mat##nxn(int loc, const mat##nxn &v, bool transpose = false) {  \
+  inline auto uniform_mat##nxn(int loc, const mat##nxn &v,                     \
+                               bool transpose = false) {                       \
     return [=](StateGroup &sg) {                                               \
       glUniformMatrix##nxn##fv(loc, 1, transpose, &v[0][0]);                   \
     };                                                                         \
@@ -71,11 +72,11 @@ inline auto image(int unit, const Texture &tex) {
 }
 
 inline auto uniformBuffer(int slot, BufferSlice buf) {
-	return [=](StateGroup &sg) {
-		sg.uniforms.uniformBuffers[slot] = buf.obj;
-		sg.uniforms.uniformBufferOffsets[slot] = buf.offset;
-		sg.uniforms.uniformBufferSizes[slot] = buf.size;
-	};
+  return [=](StateGroup &sg) {
+    sg.uniforms.uniformBuffers[slot] = buf.obj;
+    sg.uniforms.uniformBufferOffsets[slot] = buf.offset;
+    sg.uniforms.uniformBufferSizes[slot] = buf.size;
+  };
 }
 
 inline auto vertexBuffer(int slot, BufferSlice buf, int stride) {
@@ -87,10 +88,10 @@ inline auto vertexBuffer(int slot, BufferSlice buf, int stride) {
 }
 
 inline auto indexBuffer(BufferSlice buf, GLenum type) {
-	return [=](StateGroup &sg) {
-		sg.uniforms.indexBuffer = buf;
-		sg.uniforms.indexBufferType = type;
-	};
+  return [=](StateGroup &sg) {
+    sg.uniforms.indexBuffer = buf;
+    sg.uniforms.indexBufferType = type;
+  };
 }
 
 inline auto program(const Program &prog) {
@@ -100,8 +101,8 @@ inline auto program(const Program &prog) {
 }
 
 inline auto framebuffer(const Framebuffer &fbo) {
-  return [ obj = fbo.object(), w = fbo.width(), h = fbo.height() ](StateGroup &
-                                                                   sg) {
+  return [ obj = fbo.object(), w = fbo.width(),
+           h = fbo.height() ](StateGroup & sg) {
     glBindFramebuffer(GL_DRAW_FRAMEBUFFER, obj);
     // initialize the default viewport
     sg.drawStates.viewports[0] = gl::Viewport{0.0f, 0.0f, (float)w, (float)h};
