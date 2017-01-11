@@ -15,6 +15,7 @@ set(SRC
 	RenderTarget.cpp
 	ResourcePool.cpp
 	Window.cpp
+	WindowStylusWin32.cpp
 	MathUtils.cpp
 )
 	

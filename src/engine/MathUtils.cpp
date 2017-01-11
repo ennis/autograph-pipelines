@@ -3,9 +3,9 @@
 
 namespace ag {
 
-  vec2 diskRandom()
+  vec2 diskRandom(float radius)
   {
-	  return glm::diskRand(1.0f);
+	  return glm::diskRand(radius);
   }
 
 }

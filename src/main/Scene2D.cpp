@@ -106,6 +106,11 @@ namespace ag
 		return Mesh2DTex{std::move(vertices), std::move(indices)};
 	}
 
+	void Scene2D::render(gl::Framebuffer& screen, float viewX, float viewY, float viewWidth, float viewHeight)
+	{
+		render(screen, Viewport{ viewX, viewY, viewWidth, viewHeight });
+	}
+
 	void Scene2D::render(gl::Framebuffer& screen, const Viewport& viewport)
 	{
 		// screen size in tiles

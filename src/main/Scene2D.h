@@ -39,6 +39,7 @@ namespace ag
 		Scene2D();
 
 		void loadTilemap(const char* id);
+		void render(gl::Framebuffer& screen, float viewX, float viewY, float viewWidth, float viewHeight);
 		void render(gl::Framebuffer& screen, const Viewport& viewport);
 
 	private:

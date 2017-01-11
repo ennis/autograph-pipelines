@@ -3,6 +3,7 @@
 #include <autograph/engine/Input.h>
 
 struct GLFWwindow;
+struct GLFWpointerevent;
 
 namespace ag
 {
@@ -18,7 +19,12 @@ namespace ag
 		Text,
 		StylusProximity,
 		StylusProperties,
-		WindowResize
+		WindowResize,
+		PointerEnter,
+		PointerDown,
+		PointerUp,
+		PointerMove,
+		PointerLeave
 	};
 
 	//////////////////////////////////////////////
@@ -92,6 +98,25 @@ namespace ag
 		double tilt;
 	};
 
+	//////////////////////////////////////////////
+	struct PointerInfo
+	{
+		int id;
+		int type;
+		int button;
+		uint32_t buttons;
+		double x;
+		double y;
+		int mask;
+		double pressure;	// == 0.0 if stylus not touching
+		double tiltX;
+		double tiltY;
+	};
+
+	struct PointerEvent
+	{
+		PointerInfo info;
+	};
 
 	// Window events
 	// ripoff of SFML event class
@@ -111,6 +136,7 @@ namespace ag
 			WindowResizeEvent resize;
 			CursorEnterEvent cursorEnter;
 			CursorExitEvent cursorExit;
+			PointerEvent pointer;
 		};
 	};
 
@@ -124,7 +150,7 @@ namespace ag
 		ivec2 getFramebufferSize();
 		ivec2 getWindowSize();
 		ivec2 getCursorPosition();
-		KeyState getKey(int key);
+		KeyState getKey(int key);	
 
 		void onRender(std::function<void(Window&, double)> renderFunc) {
 			renderFunc_ = std::move(renderFunc);
@@ -144,6 +170,7 @@ namespace ag
 		void keyHandler(int key, int scancode, int action, int mods);
 		void charHandler(unsigned int codepoint);
 		void windowSizeHandler(int width, int height);
+		void pointerEventHandler(const GLFWpointerevent*);
 
 		static void MouseButtonHandler(GLFWwindow *window, int button, int action, int mods);
 		static void CursorPosHandler(GLFWwindow *window, double xpos, double ypos);
@@ -152,6 +179,9 @@ namespace ag
 		static void KeyHandler(GLFWwindow *window, int key, int scancode, int action, int mods);
 		static void CharHandler(GLFWwindow *window, unsigned int codepoint);
 		static void WindowSizeHandler(GLFWwindow *window, int width, int height);
+		static void PointerEventHandler(GLFWwindow *window, const GLFWpointerevent*);
+
+		void updateStylusInfo();
 
 		std::function<void(Window&, double)> renderFunc_;
 		std::function<void(Window&, const Event&)> eventFunc_;
