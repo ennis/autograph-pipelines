@@ -29,7 +29,6 @@
 #include <autograph/engine/Window.h>
 #include <autograph/engine/MathUtils.h>
 
-#include <Windows.h>
 
 using namespace ag;
 

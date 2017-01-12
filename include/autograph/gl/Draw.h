@@ -39,8 +39,8 @@ namespace ag
 		template <typename DrawCommand, typename Shader, typename... Arguments>
 		void draw(
 			Framebuffer& fbo,
-			DrawCommand& drawCommand,
-			Shader& shader,
+                        DrawCommand&& drawCommand,
+                        Shader&& shader,
 			Arguments&&... args)
 		{
 			StateGroup sg;
