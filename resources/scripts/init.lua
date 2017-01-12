@@ -10,6 +10,7 @@ local showWireframe = showWireframe or false
 local wireframeOpaque = wireframeOpaque or false
 local cameraControl = cameraControl or ag.CameraControl()
 local renderUtils = renderUtils or ag.RenderUtils()
+local scene2D = scene2D or Scene2D()
 
 local imgCaveMimi = ag.getTexture('img/cavestory/PrtMimi')
 local imgCaveFall = ag.getTexture('img/cavestory/PrtFall')

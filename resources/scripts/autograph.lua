@@ -45,6 +45,12 @@ autograph.EventType = {
     WindowResize = 10
 }
 
+autograph.KeyState = {
+    Pressed=0, 
+    Released=1, 
+    Repeat=2
+}
+
 autograph.KEY_SPACE=              32
 autograph.KEY_APOSTROPHE=         39  
 autograph.KEY_COMMA=              44 

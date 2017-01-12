@@ -19,6 +19,7 @@
 #include <autograph/engine/Arcball.h>
 #include <autograph/engine/CameraControl.h>
 #include <autograph/engine/ImageUtils.h>
+#include <autograph/engine/MathUtils.h>
 #include <autograph/engine/Mesh.h>
 #include <autograph/engine/RenderTarget.h>
 #include <autograph/engine/RenderUtils.h>
@@ -27,8 +28,8 @@
 #include <autograph/engine/ScriptContext.h>
 #include <autograph/engine/Shader.h>
 #include <autograph/engine/Window.h>
-#include <autograph/engine/MathUtils.h>
 
+#include <glm/gtc/random.hpp>
 
 using namespace ag;
 
@@ -51,6 +52,82 @@ std::string pathCombine(std::string a, std::string b) {
         });
 }*/
 
+/////////////////////////////////////////////////////////////
+template <typename T> T evalJitter(T ref, T jitter) {
+  return ref + glm::linearRand(-jitter, jitter);
+}
+
+/////////////////////////////////////////////////////////////
+// Converts a sequence of mouse position samples to
+// a sequence of splat positions
+// Also handles smoothing
+class BrushPathBuilder {
+public:
+  struct Params {
+    float spacing;
+    float spacingJitter;
+  };
+
+  struct Point {
+    bool first;
+    float x;
+    float y;
+    float prevX;
+    float prevY;
+  };
+
+  // call this when the mouse has moved
+  // returns how many splats were added as a result of the mouse movement
+  int addPoint(const Params &params, float x, float y,
+               std::function<void(Point)> f)
+  {
+    auto spacing = evalJitter(params.spacing, params.spacingJitter);
+    if (spacing < 0.1f)
+      spacing = 0.1f;
+
+    if (pointerPositions_.empty()) {
+      pointerPositions_.push_back(vec2{x, y});
+      splatPositions_.push_back(vec2{x, y});
+      f(Point{true, x, y, 0.0f, 0.0f});
+      return 1;
+    } else {
+      auto Plast = pointerPositions_.back();
+      vec2 Pmouse{x, y};
+      vec2 Pcur = glm::mix(Plast, Pmouse, 0.5); // smoothing
+      auto length = glm::distance(Plast, Pcur);
+      auto slack = pathLength_;
+      pathLength_ += length;
+      auto pos = spacing - slack;
+      int n = 0;
+      auto Pprev = splatPositions_.back();
+      while (pathLength_ > spacing) {
+        auto P = glm::mix(Plast, Pcur, (length > 0.01f) ? pos / length : 0.0f);
+		splatPositions_.push_back(P);
+        f(Point{false, P.x, P.y, Pprev.x, Pprev.y});
+        Pprev = P;
+        ++n;
+        pathLength_ -= spacing;
+        pos += spacing;
+      }
+      pointerPositions_.push_back(Pmouse);
+	  return n;
+    }
+  }
+
+  void clear()
+  {
+	  pointerPositions_.clear();
+	  splatPositions_.clear();
+	  pathLength_ = 0.0f;
+  }
+
+private:
+  std::vector<vec2> pointerPositions_;
+  std::vector<vec2> splatPositions_;
+  float pathLength_{0.0f};
+};
+
+/////////////////////////////////////////////////////////////
 sol::table eventToLua(sol::state &L, const ag::Event &ev) {
   auto table = L.create_table();
   table["type"] = ev.type;
@@ -130,39 +207,23 @@ int main(int argc, char *argv[]) {
       "WireframeOverlayRenderer", sol::call_constructor,
       sol::constructors<sol::types<>>(), "renderSceneObject",
       &WireframeOverlayRenderer::renderSceneObject);
+  lua.new_usertype<Scene2D>(
+      "Scene2D", sol::call_constructor, sol::constructors<sol::types<>>(),
+      "loadTilemap", &Scene2D::loadTilemap, "render",
+      static_cast<void (Scene2D::*)(gl::Framebuffer &, float, float, float,
+                                    float)>(&Scene2D::render));
 
   bool initOk = false;
   bool reloadOk = false;
   bool lastOnRenderFailed = false;
-
-  /*ResourcePool pool;
-  auto tex1 = pool.get<gl::Texture>("img/cavestory/PrtMimi");
-  auto tex2 = pool.get<gl::Texture>("img/cavestory/PrtMimi");
-  assert(tex1 == tex2);
-  auto tex3 = pool.get<gl::Texture>("img/cavestory/PrtCave");
-  assert(tex3 != tex1);*/
-
-  // Loading a data table
-  // in scripts you should just do require 'data/level0'
-  // TODO: BasicScriptContext for tasks that do not require Bindings
-  ag::ScriptContext table{"data/level0"};
-  // AG_DEBUG("Data: {}", table["level"][0].get<int>());
-
-  auto tex = loadTexture("img/cavestory/PrtMimi");
-  RenderUtils utils;
-
-  Scene2D scene2D;
-  scene2D.loadTilemap("data/level1");
-
-  // from Lua:
-  // ag.getTexture('img/cavestory/PrtMimi', ImageFormat.R8G8B8A8_SRGB)
 
   // call init
   auto init = [&]() {
     try {
       lua["screenWidth"] = 640;
       lua["screenHeight"] = 480;
-      lua.script("require 'init'");
+      lua["window"] = &w;
+      lua.script("require 'init2d'");
       lua.script("init()");
       initOk = true;
     } catch (sol::error &e) {
@@ -183,6 +244,9 @@ int main(int argc, char *argv[]) {
   double viewY = 0.0f;
   float shakeScale = 1.0f;
 
+  Scene2D scene2D;
+  scene2D.loadTilemap("data/level1");
+
   w.onRender([&](ag::Window &win, double dt) {
     auto framebufferSize = win.getFramebufferSize();
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -194,40 +258,29 @@ int main(int argc, char *argv[]) {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
     if (!lastOnRenderFailed) {
       try {
-        lua.script("render()");
+        //AG_DEBUG("Frame");
+        //lua["render"](dt);
       } catch (sol::error &e) {
         errorMessage("Error running render():\n\t{}", e.what());
         errorMessage("Please fix the script and reload (F5 key)");
         lastOnRenderFailed = true;
       }
     }
-    // utils.drawSprite(gl::getDefaultFramebuffer(), 0.0f, 0.0f, tex.width(),
-    // tex.height(), tex);
 
     // speed in pixels/sec
-    double speed = 600.0;
+    /**/
 
-    if (w.getKey(GLFW_KEY_LEFT) == KeyState::Pressed) {
-      viewX -= speed * dt;
-    } else if (w.getKey(GLFW_KEY_RIGHT) == KeyState::Pressed) {
-      viewX += speed * dt;
-    } else if (w.getKey(GLFW_KEY_UP) == KeyState::Pressed) {
-      viewY -= speed * dt;
-    } else if (w.getKey(GLFW_KEY_DOWN) == KeyState::Pressed) {
-      viewY += speed * dt;
+    vec2 offset;
+
+    // screen shake
+    if (w.getKey(GLFW_KEY_SPACE) == KeyState::Pressed) {
+            offset = shakeScale*diskRandom();
+            shakeScale += 0.1f;
     }
-
-	vec2 offset;
-
-	// screen shake 
-	if (w.getKey(GLFW_KEY_SPACE) == KeyState::Pressed) {
-		offset = shakeScale*diskRandom();
-		shakeScale += 0.1f;
-	}
-	else {
-		shakeScale = 1.0f;
-		offset = vec2{ 0.0f };
-	}
+    else {
+            shakeScale = 1.0f;
+            offset = vec2{ 0.0f };
+    }
 
     Scene2D::Viewport vp;
     vp.x = (float)std::floor(viewX+offset.x);
@@ -237,10 +290,55 @@ int main(int argc, char *argv[]) {
     scene2D.render(gl::getDefaultFramebuffer(), vp);
   });
 
+  bool inStroke = false;
+  BrushPathBuilder brushPathBuilder;
+  BrushPathBuilder::Params brushPathBuilderParams;
+  brushPathBuilderParams.spacing = 1.0f;
+  float origX;
+  float origY;
+  float origViewX;
+  float origViewY;
+
   w.onEvent([&](ag::Window &win, const ag::Event &ev) {
     sol::object eventFn = lua["onEvent"];
     if (eventFn.is<sol::function>())
       eventFn.as<sol::function>()(eventToLua(lua, ev));
+    if (ev.type == EventType::Key) {
+      if (ev.key.action == KeyState::Pressed && ev.key.key == GLFW_KEY_F5) {
+        reset();
+      } else if (ev.key.action == KeyState::Pressed &&
+                 ev.key.key == GLFW_KEY_F4) {
+        lua.unloadModules();
+        init();
+      }
+    } 
+	else if (ev.type == EventType::PointerDown) {
+		inStroke = true;
+		brushPathBuilder.addPoint(brushPathBuilderParams, ev.pointer.info.x, ev.pointer.info.y, [&](BrushPathBuilder::Point p) {
+			AG_DEBUG("Point {},{} (BEGIN)", p.x, p.y);
+			origX = p.x;
+			origY = p.y;
+			origViewX = viewX;
+			origViewY = viewY;
+		});
+	}
+	else if (ev.type == EventType::PointerUp) {
+		inStroke = false;
+		brushPathBuilder.clear();
+	}
+	else if (ev.type == EventType::PointerMove) {
+		if (inStroke) {
+			brushPathBuilder.addPoint(brushPathBuilderParams, ev.pointer.info.x, ev.pointer.info.y, [&](BrushPathBuilder::Point p) {
+				//AG_DEBUG("Point {},{}", p.x, p.y);
+				viewX = origViewX - 0.5f*(p.x - origX);
+				viewY = origViewY - 0.5f*(p.y - origY);
+			});
+		}
+	}
+      /*AG_DEBUG("pointer({}, type {}, mask{}): button {} pos {},{} pressure {}",
+               ev.pointer.info.id, ev.pointer.info.type, ev.pointer.info.mask,
+               ev.pointer.info.button, ev.pointer.info.x, ev.pointer.info.y,
+               ev.pointer.info.pressure);*/
   });
 
   w.show();

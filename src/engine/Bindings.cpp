@@ -22,6 +22,8 @@
 #include <autograph/engine/RenderUtils.h>
 #include <autograph/engine/Scene.h>
 #include <autograph/engine/Shader.h>
+#include <autograph/engine/Window.h>
+#include <autograph/engine/MathUtils.h>
 // imgui
 #include "imgui.h"
 
@@ -48,6 +50,7 @@ sol::table openLuaBindings(sol::this_state s) {
   module["getDefaultFramebuffer"] = &ag::gl::getDefaultFramebuffer;
   module["clearDepth"] = &ag::gl::clearDepth;
   module["clearDepthTexture"] = &ag::gl::clearDepthTexture;
+  module["diskRandom"] = [](float r) { auto p = diskRandom(r); return std::make_tuple(p.x, p.y); };
 
   module.new_usertype<gl::Texture>(
       "Texture", "create1D",
@@ -221,24 +224,13 @@ sol::table openLuaBindings(sol::this_state s) {
     rawLogMessage(LogLevel::Error, str);
   };
 
-  // DeferredSceneRenderer
-  /* module.new_usertype<DeferredSceneRenderer>(
-               "DeferredSceneRenderer", sol::call_constructor,
-               sol::constructors<sol::types<ShaderManager &>>(), "renderScene",
-               &DeferredSceneRenderer::renderScene);
-       module.new_usertype<DeferredSceneRenderer::GBuffer>(
-               "DeferredGBuffer", sol::call_constructor,
-               sol::constructors<sol::types<int, int>>(), "release",
-               &DeferredSceneRenderer::GBuffer::release, "diffuseColor",
-               sol::property(&DeferredSceneRenderer::GBuffer::getDiffuseTarget),
-     "depth",
-               sol::property(&DeferredSceneRenderer::GBuffer::getDepthTarget));
-
-       module.new_usertype<WireframeOverlayRenderer>(
-               "WireframeOverlayRenderer", sol::call_constructor,
-               sol::constructors<sol::types<ShaderManager &>>(),
-     "renderSceneObject",
-               &WireframeOverlayRenderer::renderSceneObject);*/
+  module.new_usertype<Window>("Window", sol::call_constructor, sol::constructors<sol::types<int, int, const char*>>{},
+	  "getFramebufferSize", [](Window& w) { auto size = w.getFramebufferSize(); return std::make_tuple(size.x, size.y); },
+	  "getCursorPosition", [](Window& w) { auto pos = w.getCursorPosition(); return std::make_tuple(pos.x, pos.y); },
+	  "getWindowSize", [](Window& w) { auto size = w.getWindowSize(); return std::make_tuple(size.x, size.y); },
+	  "getKey", &Window::getKey, 
+	  "close", &Window::close
+	  );
 
   // CameraControl
   module.new_usertype<CameraControl>(

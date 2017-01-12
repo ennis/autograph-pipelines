@@ -26,7 +26,7 @@ enum class ButtonState { Pressed, Released };
  * @ingroup input
  * 
  */
-enum class KeyState { Pressed, Released, Repeat };
+enum class KeyState { Pressed=0, Released, Repeat };
 
 
 //////////////////////////////////////////////

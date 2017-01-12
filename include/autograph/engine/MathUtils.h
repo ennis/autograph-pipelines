@@ -3,6 +3,6 @@
 
 namespace ag {
 
-  vec2 diskRandom();
+  vec2 diskRandom(float radius = 1.0f);
 
 }

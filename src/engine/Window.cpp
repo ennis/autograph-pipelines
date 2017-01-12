@@ -6,6 +6,10 @@
 #include <GLFW/glfw3.h>
 #include <imgui.h>
 #include <imgui_impl_glfw_gl3.h>
+#ifdef WIN32
+#define GLFW_EXPOSE_NATIVE_WIN32
+#include <GLFW/glfw3native.h>
+#endif
 
 namespace ag {
 // GLFW event handlers
@@ -51,6 +55,13 @@ void Window::WindowSizeHandler(GLFWwindow *window, int width, int height) {
   auto userptr = glfwGetWindowUserPointer(window);
   if (userptr)
     static_cast<Window *>(userptr)->windowSizeHandler(width, height);
+}
+
+void Window::PointerEventHandler(GLFWwindow *window, const GLFWpointerevent* pointerEvent)
+{
+	auto userptr = glfwGetWindowUserPointer(window);
+	if (userptr)
+		static_cast<Window *>(userptr)->pointerEventHandler(pointerEvent);
 }
 
 void Window::mouseButtonHandler(int button, int action, int mods) {
@@ -106,6 +117,31 @@ void Window::windowSizeHandler(int width, int height) {
   eventFunc_(*this, ev);
 }
 
+
+void Window::pointerEventHandler(const GLFWpointerevent* pointerevent)
+{
+	EventType type = EventType::PointerMove;
+	switch (pointerevent->action) {
+	case 1: type = EventType::PointerUp;  break;
+	case 2: type = EventType::PointerDown; break;
+	case 3: type = EventType::PointerEnter; break;
+	case 4: type = EventType::PointerLeave; break;
+	case 5: type = EventType::PointerMove; break;
+	};
+	Event ev{ type };
+	ev.pointer.info.button = pointerevent->button;
+	ev.pointer.info.buttons = pointerevent->buttons;
+	ev.pointer.info.id = pointerevent->id;
+	ev.pointer.info.mask = pointerevent->mask;
+	ev.pointer.info.type = pointerevent->type;
+	ev.pointer.info.x = pointerevent->x;
+	ev.pointer.info.y = pointerevent->y;
+	ev.pointer.info.pressure = pointerevent->pressure;
+	ev.pointer.info.tiltX = pointerevent->tiltX;
+	ev.pointer.info.tiltY = pointerevent->tiltY;
+	eventFunc_(*this, ev);
+}
+
 KeyState Window::getKey(int key) {
   auto state = glfwGetKey(window_, key);
   return (state == GLFW_PRESS) ? KeyState::Pressed : KeyState::Released;
@@ -145,6 +181,7 @@ Window::Window(int w, int h, const char *title) {
   glfwSetCursorPosCallback(window_, CursorPosHandler);
   glfwSetCharCallback(window_, CharHandler);
   glfwSetKeyCallback(window_, KeyHandler);
+  glfwSetPointerEventCallback(window_, PointerEventHandler);
 
   // autograph init
   gl::DeviceConfig devCfg;
@@ -156,6 +193,10 @@ Window::Window(int w, int h, const char *title) {
 
   // ImGui init
   ImGui_ImplGlfwGL3_Init(window_, false);
+
+#ifdef WIN32
+  EnableMouseInPointer(true);
+#endif
 }
 
 Window::~Window() {
@@ -181,21 +222,48 @@ ivec2 Window::getWindowSize() {
   return ivec2{w, h};
 }
 
+
 void Window::show() {
-  double tlast = glfwGetTime();
-  while (!glfwWindowShouldClose(window_)) {
-    // ImGui_ImplGlfwGL3_NewFrame();
-    auto framebufferSize = getFramebufferSize();
-    ag::gl::resizeDefaultFramebuffer(framebufferSize.x, framebufferSize.y);
-    double t = glfwGetTime();
-    double dt = t - tlast;
-    tlast = t;
-    renderFunc_(*this, dt);
-    // ImGui::Render();
-    ag::gl::endFrame();
-    glfwSwapBuffers(window_);
-    glfwPollEvents();
-  }
+	double tlast = glfwGetTime();
+	while (!glfwWindowShouldClose(window_)) {
+		updateStylusInfo();
+		// ImGui_ImplGlfwGL3_NewFrame();
+		auto framebufferSize = getFramebufferSize();
+		ag::gl::resizeDefaultFramebuffer(framebufferSize.x, framebufferSize.y);
+		double t = glfwGetTime();
+		double dt = t - tlast;
+		tlast = t;
+		renderFunc_(*this, dt);
+		// ImGui::Render();
+		ag::gl::endFrame();
+		glfwSwapBuffers(window_);
+		glfwPollEvents();
+	}
+}
+
+void Window::updateStylusInfo()
+{
+#ifdef WIN32
+	/*UINT32 entriesCount{ 0 };
+	if (!GetPointerPenInfoHistory(1, &entriesCount, nullptr)) {
+		AG_DEBUG("GetPointerPenInfoHistory failed");
+		fmt::report_windows_error(GetLastError(), "GetPointerPenInfoHistory failed");
+		return;
+	}
+	AG_DEBUG("GetPointerPenInfoHistory entriesCount {}", entriesCount);
+	std::vector<POINTER_PEN_INFO> penInfos(entriesCount);
+	GetPointerPenInfoHistory(1, &entriesCount, penInfos.data());
+	for (int i = entriesCount-1; i >= 0; --i) {
+		auto &penInfo = penInfos[i];
+		AG_DEBUG("penFlags {} penMask {} pressure {} pointerInfo.ptPixelLocation {},{} ",
+			penInfo.penFlags, 
+			penInfo.penMask, 
+			penInfo.pressure, 
+			penInfo.pointerInfo.ptPixelLocation.x, 
+			penInfo.pointerInfo.ptPixelLocation.y);
+	}*/
+#endif
+
 }
 
 void Window::close() { glfwSetWindowShouldClose(window_, 1); }
