@@ -139,37 +139,23 @@ sol::table openLuaBindings(sol::this_state s) {
       &ivec4::y, "z", &ivec4::z, "w", &ivec4::w);
 
   // DrawPass
-  module.new_usertype<DrawPassBuilder>(
-      "DrawPassBuilder", sol::call_constructor,
-      sol::constructors<sol::types<>>{}, "bindTexture",
-      [](DrawPassBuilder &dp, int index, gl::Texture &tex) {
-        dp.bindTexture(index, tex.object());
-      },
-      "bindTextureImage",
-      [](DrawPassBuilder &dp, int index, gl::Texture &tex) {
-        dp.bindTextureImage(index, tex.object());
-      },
-      "bindSampler",
-      [](DrawPassBuilder &dp, int index, gl::Sampler &sampler) {
-        dp.bindSampler(index, sampler.object());
-      },
-      //"bindUniformBuffer", [](DrawPassBuilder& dp, int index, gl::Sampler&
-      // sampler) { dp.bindSampler(index, sampler.object()); },
-      //"bindShaderStorageBuffer", &DrawPassBuilder::bindShaderStorageBuffer,
+  module.new_usertype<Shader>(
+      "Shader", sol::call_constructor,
+      sol::constructors<sol::types<>>{},
       "setColorBuffer",
-      [](DrawPassBuilder &dp, int index, gl::Texture &tex) {
-        dp.bindColorBuffer(index, tex.object());
+      [](Shader &shader, int index, gl::Texture &tex) {
+		  shader.bindColorBuffer(index, tex.object());
       },
       "setDepthBuffer",
-      [](DrawPassBuilder &dp, gl::Texture *tex) {
+      [](Shader &shader, gl::Texture *tex) {
         if (tex)
-          dp.bindDepthBuffer(tex->object());
+			shader.bindDepthBuffer(tex->object());
         else
-          dp.bindDepthBuffer(0);
+			shader.bindDepthBuffer(0);
       },
-      "setVertexShader", &DrawPassBuilder::setVertexShader, "setFragmentShader",
-      &DrawPassBuilder::setFragmentShader, "setBlendState",
-      [](DrawPassBuilder &dp, int index, sol::table table) {
+      "setVertexShader", &Shader::setVertexShader, "setFragmentShader",
+      &Shader::setFragmentShader, "setBlendState",
+      [](Shader &shader, int index, sol::table table) {
         gl::BlendState bs;
         bs.enabled = table.get_or("enabled", false);
         bs.modeRGB = table.get_or("modeRGB", GL_FUNC_ADD);
@@ -178,10 +164,10 @@ sol::table openLuaBindings(sol::this_state s) {
         bs.funcDstRGB = table.get_or("funcDstRGB", GL_ONE_MINUS_SRC_ALPHA);
         bs.funcSrcAlpha = table.get_or("funcSrcAlpha", GL_ONE);
         bs.funcDstAlpha = table.get_or("funcDstAlpha", GL_ZERO);
-        dp.setBlendState(index, bs);
+		shader.setBlendState(index, bs);
       },
       "setRasterizerState",
-      [](DrawPassBuilder &dp, sol::table table) {
+      [](Shader &shader, sol::table table) {
         gl::RasterizerState rs;
         rs.fillMode = table.get_or("fillMode", GL_FILL);
         rs.cullMode = table.get_or("cullMode", GL_NONE);
@@ -190,10 +176,10 @@ sol::table openLuaBindings(sol::this_state s) {
         rs.slopeScaledDepthBias = table.get_or("slopeScaledDepthBias", 1.0f);
         rs.depthClipEnable = table.get_or("depthClipEnable", false);
         rs.scissorEnable = table.get_or("scissorEnable", false);
-        dp.setRasterizerState(rs);
+		shader.setRasterizerState(rs);
       },
       "setDepthStencilState",
-      [](DrawPassBuilder &dp, sol::table table) {
+      [](Shader &shader, sol::table table) {
         gl::DepthStencilState dss;
         dss.depthTestEnable = table.get_or("depthTestEnable", false);
         dss.depthWriteEnable = table.get_or("depthWriteEnable", false);
@@ -205,13 +191,10 @@ sol::table openLuaBindings(sol::this_state s) {
         dss.stencilOpSfail = table.get_or("stencilOpSfail", 0);
         dss.stencilOpDPFail = table.get_or("stencilOpDPFail", 0);
         dss.stencilOpDPPass = table.get_or("stencilOpDPPass", 0);
-        dp.setDepthStencilState(dss);
+		shader.setDepthStencilState(dss);
       },
-      "setViewport", &DrawPassBuilder::setViewport, "makeDrawPass",
-      &DrawPassBuilder::makeDrawPass);
+      "setViewport", &Shader::setViewport);
 
-  module.new_usertype<DrawPass>("DrawPass", sol::call_constructor,
-                                &DrawPass::initialize);
 
   // stuff
   module["debugMessage"] = [](const char *str) {

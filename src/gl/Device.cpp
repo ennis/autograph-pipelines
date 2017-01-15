@@ -16,8 +16,8 @@ namespace {
 void APIENTRY debugCallback(GLenum source, GLenum type, GLuint id,
                             GLenum severity, GLsizei length, const GLubyte *msg,
                             void *data) {
-  //if (severity != GL_DEBUG_SEVERITY_LOW &&
-     // severity != GL_DEBUG_SEVERITY_NOTIFICATION)
+  if (severity != GL_DEBUG_SEVERITY_LOW &&
+      severity != GL_DEBUG_SEVERITY_NOTIFICATION)
       AG_DEBUG("GL: {}", msg);
 }
 

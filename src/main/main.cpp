@@ -5,17 +5,23 @@
 #include <string>
 #include <unordered_map>
 
-#include <autograph/engine/Application.h>
-#include <autograph/engine/Input.h>
+#include <imgui.h>
+
+#include <glm/gtc/random.hpp>
+#include <glm/gtc/packing.hpp>
+
 #include <autograph/gl/Device.h>
 #include <autograph/gl/Framebuffer.h>
 #include <autograph/gl/Program.h>
 #include <autograph/gl/Texture.h>
+#include <autograph/gl/Draw.h>
+
 #include <autograph/support/Debug.h>
 #include <autograph/support/ProjectRoot.h>
+#include <autograph/support/FileDialog.h>
 
-#include "Scene2D.h"
-#include "SceneRenderer.h"
+#include <autograph/engine/Application.h>
+#include <autograph/engine/Input.h>
 #include <autograph/engine/Arcball.h>
 #include <autograph/engine/CameraControl.h>
 #include <autograph/engine/ImageUtils.h>
@@ -28,8 +34,10 @@
 #include <autograph/engine/ScriptContext.h>
 #include <autograph/engine/Shader.h>
 #include <autograph/engine/Window.h>
+#include <autograph/engine/Meta.h>
 
-#include <glm/gtc/random.hpp>
+#include "Scene2D.h"
+#include "SceneRenderer.h"
 
 using namespace ag;
 
@@ -61,7 +69,7 @@ template <typename T> T evalJitter(T ref, T jitter) {
 // Converts a sequence of mouse position samples to
 // a sequence of splat positions
 // Also handles smoothing
-class BrushPathBuilder {
+class AG_API BrushPathBuilder {
 public:
   struct Params {
     float spacing;
@@ -79,8 +87,7 @@ public:
   // call this when the mouse has moved
   // returns how many splats were added as a result of the mouse movement
   int addPoint(const Params &params, float x, float y,
-               std::function<void(Point)> f)
-  {
+               std::function<void(Point)> f) {
     auto spacing = evalJitter(params.spacing, params.spacingJitter);
     if (spacing < 0.1f)
       spacing = 0.1f;
@@ -102,7 +109,7 @@ public:
       auto Pprev = splatPositions_.back();
       while (pathLength_ > spacing) {
         auto P = glm::mix(Plast, Pcur, (length > 0.01f) ? pos / length : 0.0f);
-		splatPositions_.push_back(P);
+        splatPositions_.push_back(P);
         f(Point{false, P.x, P.y, Pprev.x, Pprev.y});
         Pprev = P;
         ++n;
@@ -110,15 +117,14 @@ public:
         pos += spacing;
       }
       pointerPositions_.push_back(Pmouse);
-	  return n;
+      return n;
     }
   }
 
-  void clear()
-  {
-	  pointerPositions_.clear();
-	  splatPositions_.clear();
-	  pathLength_ = 0.0f;
+  void clear() {
+    pointerPositions_.clear();
+    splatPositions_.clear();
+    pathLength_ = 0.0f;
   }
 
 private:
@@ -127,58 +133,160 @@ private:
   float pathLength_{0.0f};
 };
 
+// Augmented painting canvas
+struct Canvas {
+  Canvas(int width, int height) {
+    // Normals (from camera)
+    // Palette coeffs: need 12 coeffs (normalized uint16_t, packed in two
+    // R32G32B32A32 textures)
+    // Color flat reference positions: two texcoords (normalized uint16_ts)
+
+    GBuffers =
+        RenderTarget{width,
+                     height,
+                     {ag::ImageFormat::R16G16B16A16_SFLOAT},
+                     RenderTarget::DepthTexture{ag::ImageFormat::D32_SFLOAT}};
+
+    canvasBuffers = RenderTarget{width,
+                                  height,
+                                  {
+                                      ag::ImageFormat::R32G32B32A32_UINT,
+                                      ag::ImageFormat::R32G32B32A32_UINT,
+                                  },
+                                  RenderTarget::NoDepth{}};
+
+    // final color: R16G16A16B16 float
+    finalColor = RenderTarget{width,
+                               height,
+                               {ag::ImageFormat::R16G16B16A16_SFLOAT},
+                               RenderTarget::NoDepth{}};
+  }
+
+  RenderTarget GBuffers;
+  RenderTarget canvasBuffers;
+  RenderTarget finalColor;
+};
+
+class CanvasRenderer
+{
+public:
+	void renderCanvas(Canvas& canvas);
+
+private:
+};
+
+void pointerEventToLua(sol::table &tbl, const PointerInfo &info) {
+  tbl["button"] = info.button;
+  tbl["buttons"] = info.buttons;
+  tbl["id"] = info.id;
+  tbl["mask"] = info.mask;
+  tbl["type"] = info.type;
+  tbl["x"] = info.x;
+  tbl["y"] = info.y;
+  tbl["pressure"] = info.pressure;
+  tbl["tiltX"] = info.tiltX;
+  tbl["tiltY"] = info.tiltY;
+}
+
 /////////////////////////////////////////////////////////////
 sol::table eventToLua(sol::state &L, const ag::Event &ev) {
-  auto table = L.create_table();
-  table["type"] = ev.type;
+  // auto table = L.create_table();
+  sol::function makeInstance = L["autograph"]["makeClassInstance"];
   switch (ev.type) {
-  case ag::EventType::MouseButton:
+  case ag::EventType::MouseButton: {
+    sol::table table = makeInstance("MouseButtonEvent");
+    table["type"] = ev.type;
     table["button"] = ev.mouseButton.button;
     table["action"] = ev.mouseButton.action;
-    break;
-  case ag::EventType::MouseMove:
+    return table;
+  }
+  case ag::EventType::MouseMove: {
+    sol::table table = makeInstance("MouseMoveEvent");
     table["dx"] = ev.mouseMove.dx;
     table["dy"] = ev.mouseMove.dy;
-    break;
-  case ag::EventType::Cursor:
+    return table;
+  }
+  case ag::EventType::Cursor: {
+    sol::table table = makeInstance("CursorEvent");
     table["x"] = ev.cursor.x;
     table["y"] = ev.cursor.y;
-    break;
-  case ag::EventType::CursorEnter:
-    break;
-  case ag::EventType::CursorExit:
-    break;
-  case ag::EventType::MouseScroll:
+    return table;
+  }
+  case ag::EventType::CursorEnter: {
+    sol::table table = makeInstance("CursorEnterEvent");
+    return table;
+  }
+  case ag::EventType::CursorExit: {
+    sol::table table = makeInstance("CursorExitEvent");
+    return table;
+  }
+  case ag::EventType::MouseScroll: {
+    sol::table table = makeInstance("MouseScrollEvent");
     table["dx"] = ev.scroll.dx;
     table["dy"] = ev.scroll.dy;
-    break;
-  case ag::EventType::Key:
+    return table;
+  }
+  case ag::EventType::Key: {
+    sol::table table = makeInstance("KeyEvent");
     table["key"] = ev.key.key;
     table["action"] = ev.key.action;
-    break;
+    return table;
+  }
   case ag::EventType::Text: {
 // VS BUG (with char32_t)
 #if defined(_MSC_VER)
     std::wstring_convert<std::codecvt_utf8<unsigned int>, unsigned int> cvt;
 #else
     std::wstring_convert<std::codecvt_utf8<char32_t>, char32_t> cvt;
-#endif
+#endif {
+    sol::table table = makeInstance("TextEvent");
     table["string"] = cvt.to_bytes(ev.text.codepoint);
+    return table;
   }
-  case ag::EventType::StylusProximity:
+  case ag::EventType::StylusProximity: {
+    sol::table table = makeInstance("StylusProximityEvent");
     // TODO
-    break;
-  case ag::EventType::StylusProperties:
+    return table;
+  }
+  case ag::EventType::StylusProperties: {
+    sol::table table = makeInstance("StylusPropertiesEvent");
     // TODO
-    break;
-  case ag::EventType::WindowResize:
-    table["width"] = ev.resize.width;
-    table["height"] = ev.resize.height;
-    break;
+    return table;
+  }
+  case ag::EventType::WindowResize: {
+    sol::table table = makeInstance("WindowResizeEvent");
+    pointerEventToLua(table, ev.pointer.info);
+    return table;
+  }
+  case ag::EventType::PointerDown: {
+    sol::table table = makeInstance("PointerDownEvent");
+    pointerEventToLua(table, ev.pointer.info);
+    return table;
+  }
+  case ag::EventType::PointerUp: {
+    sol::table table = makeInstance("PointerUpEvent");
+    pointerEventToLua(table, ev.pointer.info);
+    return table;
+  }
+  case ag::EventType::PointerEnter: {
+    sol::table table = makeInstance("PointerEnterEvent");
+    pointerEventToLua(table, ev.pointer.info);
+    return table;
+  }
+  case ag::EventType::PointerLeave: {
+    sol::table table = makeInstance("PointerLeaveEvent");
+    pointerEventToLua(table, ev.pointer.info);
+    return table;
+  }
+  case ag::EventType::PointerMove: {
+    sol::table table = makeInstance("PointerMoveEvent");
+    pointerEventToLua(table, ev.pointer.info);
+    return table;
+  }
   default:
     break;
   }
-  return table;
+  return sol::nil;
 }
 
 ///////////////////////////////////////////////////////////////
@@ -226,6 +334,8 @@ int main(int argc, char *argv[]) {
       lua.script("require 'init2d'");
       lua.script("init()");
       initOk = true;
+	  // test
+	  openFileDialog("", getProjectRootDirectory().c_str());
     } catch (sol::error &e) {
       errorMessage("Error in init script:\n\t{}", e.what());
       errorMessage("Please fix the script and reload (F5 key)");
@@ -258,8 +368,8 @@ int main(int argc, char *argv[]) {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
     if (!lastOnRenderFailed) {
       try {
-        //AG_DEBUG("Frame");
-        //lua["render"](dt);
+        // AG_DEBUG("Frame");
+        // lua["render"](dt);
       } catch (sol::error &e) {
         errorMessage("Error running render():\n\t{}", e.what());
         errorMessage("Please fix the script and reload (F5 key)");
@@ -274,20 +384,33 @@ int main(int argc, char *argv[]) {
 
     // screen shake
     if (w.getKey(GLFW_KEY_SPACE) == KeyState::Pressed) {
-            offset = shakeScale*diskRandom();
-            shakeScale += 0.1f;
-    }
-    else {
-            shakeScale = 1.0f;
-            offset = vec2{ 0.0f };
+      offset = shakeScale * diskRandom();
+      shakeScale += 0.1f;
+    } else {
+      shakeScale = 1.0f;
+      offset = vec2{0.0f};
     }
 
     Scene2D::Viewport vp;
-    vp.x = (float)std::floor(viewX+offset.x);
+    vp.x = (float)std::floor(viewX + offset.x);
     vp.y = (float)std::floor(viewY + offset.y);
     vp.width = framebufferSize.x / 2.0f;
     vp.height = framebufferSize.y / 2.0f;
     scene2D.render(gl::getDefaultFramebuffer(), vp);
+
+	// GUI test
+	ImGui::BeginMainMenuBar();
+
+	if (ImGui::BeginMenu(ICON_FA_FOLDER " File")) {
+		ImGui::MenuItem(ICON_FA_FOLDER_OPEN " Open...", "Ctrl+O");
+		ImGui::MenuItem(ICON_FA_WINDOW_CLOSE " Close", "Ctrl+F4");
+		ImGui::Separator();
+		ImGui::MenuItem(ICON_FA_WINDOW_CLOSE_O " Quit", "Alt+F4");
+		ImGui::EndMenu();
+	}
+
+	ImGui::EndMainMenuBar();
+	
   });
 
   bool inStroke = false;
@@ -311,34 +434,35 @@ int main(int argc, char *argv[]) {
         lua.unloadModules();
         init();
       }
-    } 
-	else if (ev.type == EventType::PointerDown) {
-		inStroke = true;
-		brushPathBuilder.addPoint(brushPathBuilderParams, ev.pointer.info.x, ev.pointer.info.y, [&](BrushPathBuilder::Point p) {
-			AG_DEBUG("Point {},{} (BEGIN)", p.x, p.y);
-			origX = p.x;
-			origY = p.y;
-			origViewX = viewX;
-			origViewY = viewY;
-		});
-	}
-	else if (ev.type == EventType::PointerUp) {
-		inStroke = false;
-		brushPathBuilder.clear();
-	}
-	else if (ev.type == EventType::PointerMove) {
-		if (inStroke) {
-			brushPathBuilder.addPoint(brushPathBuilderParams, ev.pointer.info.x, ev.pointer.info.y, [&](BrushPathBuilder::Point p) {
-				//AG_DEBUG("Point {},{}", p.x, p.y);
-				viewX = origViewX - 0.5f*(p.x - origX);
-				viewY = origViewY - 0.5f*(p.y - origY);
-			});
-		}
-	}
-      /*AG_DEBUG("pointer({}, type {}, mask{}): button {} pos {},{} pressure {}",
-               ev.pointer.info.id, ev.pointer.info.type, ev.pointer.info.mask,
-               ev.pointer.info.button, ev.pointer.info.x, ev.pointer.info.y,
-               ev.pointer.info.pressure);*/
+    } else if (ev.type == EventType::PointerDown) {
+      inStroke = true;
+      brushPathBuilder.addPoint(brushPathBuilderParams, ev.pointer.info.x,
+                                ev.pointer.info.y,
+                                [&](BrushPathBuilder::Point p) {
+                                  AG_DEBUG("Point {},{} (BEGIN)", p.x, p.y);
+                                  origX = p.x;
+                                  origY = p.y;
+                                  origViewX = viewX;
+                                  origViewY = viewY;
+                                });
+    } else if (ev.type == EventType::PointerUp) {
+      inStroke = false;
+      brushPathBuilder.clear();
+    } else if (ev.type == EventType::PointerMove) {
+      if (inStroke) {
+        brushPathBuilder.addPoint(brushPathBuilderParams, ev.pointer.info.x,
+                                  ev.pointer.info.y,
+                                  [&](BrushPathBuilder::Point p) {
+                                    // AG_DEBUG("Point {},{}", p.x, p.y);
+                                    viewX = origViewX - 0.5f * (p.x - origX);
+                                    viewY = origViewY - 0.5f * (p.y - origY);
+                                  });
+      }
+    }
+    /*AG_DEBUG("pointer({}, type {}, mask{}): button {} pos {},{} pressure {}",
+             ev.pointer.info.id, ev.pointer.info.type, ev.pointer.info.mask,
+             ev.pointer.info.button, ev.pointer.info.x, ev.pointer.info.y,
+             ev.pointer.info.pressure);*/
   });
 
   w.show();

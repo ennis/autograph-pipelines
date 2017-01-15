@@ -4,7 +4,7 @@
 #include <cstdlib>
 
 namespace ag {
-enum class ImageFormat {
+enum class AG_REFLECT ImageFormat {
   R32G32B32A32_SFLOAT = 0,
   R16G16B16A16_SFLOAT,
   R32G32_SFLOAT,
@@ -20,10 +20,11 @@ enum class ImageFormat {
   R8G8_SRGB,
   R8G8B8_SRGB,
   R8G8B8A8_SRGB,
+  R32G32B32A32_UINT,
   Max
 };
 
-struct ImageFormatInfo {
+struct AG_API ImageFormatInfo {
   const char* name;
   uint32_t size;
   uint32_t numChannels;

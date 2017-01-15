@@ -15,7 +15,7 @@ RenderUtils::RenderUtils() {
 }
 
 void RenderUtils::reloadShaders() {
-	drawSpritePass = DrawPass{ "shaders/drawSprite:drawSprite" };
+	drawSpriteShader = Shader{ "shaders/drawSprite:drawSprite" };
 }
 
 void RenderUtils::drawSprite(gl::Framebuffer &target, float targetX0,
@@ -45,7 +45,7 @@ void RenderUtils::drawSprite(gl::Framebuffer &target, float targetX0,
   using namespace gl;
   using namespace gl::bind;
 
-  draw(target, drawArrays(GL_TRIANGLES, 0, 6), drawSpritePass,
+  draw(target, drawArrays(GL_TRIANGLES, 0, 6), drawSpriteShader,
        texture(0, src, samplerNearest),
        vertexBuffer(0, vbuf, sizeof(Vertex2D)));
 }

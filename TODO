@@ -1,5 +1,5 @@
 Minimal system:
- ☐ Autograph interface
+ ✔ Autograph interface @done (17-01-15 12:34)
    autograph/gl/*.h
    draw(xxxx)
    compute(xxxx)
@@ -9,11 +9,11 @@ Minimal system:
    ImageFormat
    Transform
    optional<T>, variant<T>
- ☐ Camera
+ ✔ Camera @done (17-01-15 12:29)
    autograph/core/Camera.h
- ☐ Mesh base class
+ ✔ Mesh base class @done (17-01-15 12:29)
    autograph/engine/Mesh.h => autograph/gl
- ☐ Image load/save
+ ✔ Image load/save @done (17-01-15 12:29)
    autograph/engine/ImageLoad.h
      loadTexture(...) => gl::Texture
      loadImage(...) => std::vector
@@ -31,6 +31,7 @@ Minimal system:
  ☐ Hot reloading (meshes, textures)
  ☐ Lua scripting for GUI and input
    autograph/script/Script.h => sol2
+ ☐ Documentation
 
 General:
  ✔ Implement cameras @high @minimal_subset @done (16-12-24 14:12)
@@ -48,7 +49,7 @@ General:
  ☐ gl::Texture API rework
    ☐ upload(): allow flexible formats for input pixel data
      current one is extremely unsafe
- ☐ gl::Buffer: constructor
+ ✔ gl::Buffer: constructor @done (17-01-15 12:28)
  ☐ binders: default samplers for texture bindings
  ✔ fix weird tearing bug @done (17-01-08 14:39)
    Was Vsync?
@@ -62,7 +63,7 @@ Serialization:
 Autograph:
  ✔ Binders @done (16-12-18 20:52)
  ✔ Draw call @done (16-12-18 20:52)
- ☐ Compute call
+ ☐ Compute call @high
  ✔ State group @done (16-12-18 20:52)
 
 Autograph extensions:
@@ -70,9 +71,10 @@ Autograph extensions:
  ☐ Texture / render target cache @low
  ☐ Readback for video capture @low
  ☐ Effect/pipeline system
+ ✔ RenderTarget utility class @done (17-01-15 12:35)
 
 Resource management:
- ☐ ???
+ ✔ Resource pools @done (17-01-15 12:35)
  
 Effect/pipeline system:
  ✔ Create textures from script @high  @done (16-11-05 16:44)
@@ -93,17 +95,22 @@ Effect/pipeline system:
  ✔ Decide if we keep the C API or go with manual registration of functions @done (17-01-07 17:10)
  ✔ Create passes, textures in C++ (mirror functionality exposed in scripts) @done (16-12-18 20:52)
  ☐ Techniques
+ ☐ Cleanup: inline GLSL source in shader definition files
+ ☐ Cleanup: add #line directives to preprocessor
+ ☐ Cleanup: do not read from the shader file each time
+ ☐ Cleanup: DrawPassBuilder move into *this
+ ☐ Cleanup: Merge DrawPass/ComputePass into a single class ('Shader') ?
 
 Scenes:
  ✔ Load mesh with assimp @done (16-12-18 20:53)
  ☐ Scene: hierarchy of transforms and associated visual elements (meshes, particle systems, billboards, etc.)
  ✔ Transform struct @done (16-12-18 20:53)
- ☐ Load scene tree with assimp (hierarchy of transforms with associated meshes)
+ ✔ Load scene tree with assimp (hierarchy of transforms with associated meshes) @done (17-01-15 12:27)
  ☐ IDMap and IDTable @low 
  ☐ Intrusive lists @low
 
 Editor/painter:
- ☐ Camera control @high
+ ✔ Camera control @high @done (17-01-15 12:25)
  ☐ Basic rendering @high
  ☐ Basic volumetric rendering
  ☐ Better shadows
@@ -111,8 +118,8 @@ Editor/painter:
  ☐ Rendering pipeline from Lua
 
 Engine:
- ☐ Basic renderer: take a scene and draw the visuals
- ☐ Basic deferred shading
+ ✔ Basic renderer: take a scene and draw the visuals @done (17-01-15 12:25)
+ ✔ Basic deferred shading @done (17-01-15 12:25)
  ☐ Transparent pass
  ☐ Basic material system (opaque and transparent buckets)
 
@@ -122,6 +129,14 @@ Animation:
 Scripting:
  ✔ LuaJIT @low @done (16-11-04 11:06)
  ✔ LuaJIT CMake @done (16-11-05 16:43)
+
+Reflection:
+ ✔ Reboot reflection generator @done (17-01-15 12:25)
+     CMake updated, uses lua scripts instead
+ ✔ Make Lua templates work  @done (17-01-15 12:26)
+ ☐ Automatic Lua binding generation using reflection
+ ☐ Merge reflection databases
+ ☐ CMake: can specify multiple templates files and multiple database files in reflection_render_template 
 
 Live GUI:
  ☐ Panels

@@ -7,4 +7,6 @@ namespace ag
 {
 	// while waiting for a standard implementation
 	using std::experimental::optional;
+	using std::experimental::nullopt;
+	using std::experimental::nullopt_t;
 }

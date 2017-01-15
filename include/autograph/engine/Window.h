@@ -181,8 +181,6 @@ namespace ag
 		static void WindowSizeHandler(GLFWwindow *window, int width, int height);
 		static void PointerEventHandler(GLFWwindow *window, const GLFWpointerevent*);
 
-		void updateStylusInfo();
-
 		std::function<void(Window&, double)> renderFunc_;
 		std::function<void(Window&, const Event&)> eventFunc_;
 		GLFWwindow* window_;

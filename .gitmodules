@@ -53,3 +53,6 @@
 [submodule "ext/sol2"]
 	path = ext/sol2
 	url = https://github.com/ThePhD/sol2
+[submodule "ext/nativefiledialog"]
+	path = ext/nativefiledialog
+	url = https://github.com/mlabbe/nativefiledialog

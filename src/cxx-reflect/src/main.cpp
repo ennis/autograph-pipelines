@@ -47,7 +47,7 @@ public:
 
   bool reflectAllInCurrentScope() {
     if (reflectionScopes.empty())
-      return true;
+      return false;
     return reflectionScopes.back();
   }
 
@@ -405,8 +405,9 @@ public:
   ReflectionFrontendAction() {}
 
   void EndSourceFileAction() override {
-    auto outputJsonDBFileName =
-        llvm::sys::path::filename(getCurrentFile()).str().append(".json");
+    //auto outputJsonDBFileName =
+    //    llvm::sys::path::filename(getCurrentFile()).str().append(".json");
+	std::string outputJsonDBFileName = OutputJsonDBFile;
     fmt::print("*** Writing JSON database file to {}...\n",
                outputJsonDBFileName);
     auto db = Visitor.GenerateDatabase();

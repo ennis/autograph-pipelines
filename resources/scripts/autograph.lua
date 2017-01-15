@@ -1,6 +1,7 @@
 autograph = autograph_bindings
 
 lcpp = require 'lcpp'
+require 'class'
 
 autograph.debug = function(msg, ...) autograph.debugMessage(string.format(msg, ...)) end
 autograph.warning = function(msg, ...) autograph.warningMessage(string.format(msg, ...)) end
@@ -42,8 +43,37 @@ autograph.EventType = {
     Text = 7,
     StylusProximity = 8,
     StylusProperties = 9,
-    WindowResize = 10
+    WindowResize = 10,
+    PointerEnter = 11,
+    PointerDown = 12,
+    PointerUp = 13,
+    PointerMove = 14,
+    PointerLeave = 15
 }
+
+autograph.Event = class()
+autograph.MouseButtonEvent = class(autograph.Event)
+autograph.MouseMoveEvent = class(autograph.Event)
+autograph.CursorEvent = class(autograph.Event)
+autograph.CursorEnterEvent = class(autograph.Event)
+autograph.CursorExitEvent = class(autograph.Event)
+autograph.MouseScrollEvent = class(autograph.Event)
+autograph.WindowResizeEvent = class(autograph.Event)
+autograph.KeyEvent = class(autograph.Event)
+autograph.TextEvent = class(autograph.Event)
+autograph.StylusProximityEvent = class(autograph.Event)
+autograph.StylusPropertiesEvent = class(autograph.Event)
+
+autograph.PointerEvent = class(autograph.Event)
+autograph.PointerEnterEvent  = class(autograph.PointerEvent)
+autograph.PointerDownEvent  = class(autograph.PointerEvent)
+autograph.PointerUpEvent  = class(autograph.PointerEvent)
+autograph.PointerMoveEvent  = class(autograph.PointerEvent)
+autograph.PointerLeaveEvent = class(autograph.PointerEvent)
+
+autograph.makeClassInstance = function (className,...)
+  return autograph[className](...)
+end
 
 autograph.KeyState = {
     Pressed=0, 

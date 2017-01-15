@@ -5,44 +5,7 @@
 
 namespace ag {
 
-//////////////////////////////////////////////////////////////////
-// PassBuilder
-void PassBuilder::bindTextureInternal(Pass &pass, int slot, GLuint texobj) {
-  // pass.resources_.textures[slot] = texobj;
-}
-
-void PassBuilder::bindTextureImageInternal(Pass &pass, int slot,
-                                           GLuint texobj) {
-  // pass.resources_.images[slot] = texobj;
-}
-
-void PassBuilder::bindSamplerInternal(Pass &pass, int slot, GLuint samplerobj) {
-  // pass.resources_.samplers[slot] = samplerobj;
-}
-
-void PassBuilder::bindUniformBufferInternal(Pass &pass, int slot,
-                                            const ag::gl::BufferSlice &slice) {
-  /*pass.resources_.uniformBuffers[slot] = slice.obj;
-  pass.resources_.uniformBufferOffsets[slot] = slice.offset;
-  pass.resources_.uniformBufferSizes[slot] = slice.size;*/
-}
-
-void PassBuilder::bindShaderStorageBufferInternal(
-    Pass &pass, int slot, const ag::gl::BufferSlice &slice) {
-  /*pass.resources_.shaderStorageBuffers[slot] = slice.obj;
-  pass.resources_.shaderStorageBufferOffsets[slot] = slice.offset;
-  pass.resources_.shaderStorageBufferSizes[slot] = slice.size;*/
-}
-
-void PassBuilder::addDependencyInternal(Pass &pass, Pass &dependency) {
-  // pass.dependencies_.push_back(&dependency);
-}
-
-//////////////////////////////////////////////////////////////////
-// DrawPassBuilder
-DrawPassBuilder::DrawPassBuilder() {}
-
-void DrawPassBuilder::loadFromTable(sol::table config) {
+void Shader::loadFromTable(sol::table config) {
   {
     sol::table blendStates = config["blendState"];
     blendStates.for_each([this](sol::object key, sol::object value) {
@@ -128,7 +91,7 @@ void DrawPassBuilder::loadFromTable(sol::table config) {
       attrib.normalized = table.get_or("normalized", false);
       attribs.push_back(attrib);
     });
-    drawPass_.vao_.initialize(attribs);
+    vao_.initialize(attribs);
   }
 
   {
@@ -138,64 +101,54 @@ void DrawPassBuilder::loadFromTable(sol::table config) {
   }
 }
 
-void DrawPassBuilder::bindVertexArray(GLuint vao) {}
-void DrawPassBuilder::bindColorBuffer(int index, GLuint texobj) {
-  drawPass_.colorBuffers_[index] = texobj;
-}
-void DrawPassBuilder::bindDepthBuffer(GLuint texobj) {
-  drawPass_.depthBuffer_ = texobj;
-}
-void DrawPassBuilder::bindVertexBuffer(int slot,
-                                       const ag::gl::BufferSlice &slice,
-                                       int stride) {
-  /*drawPass_.drawResources_.vertexBuffers[slot] = slice.obj;
-  drawPass_.drawResources_.vertexBufferOffsets[slot] = slice.offset;
-  drawPass_.drawResources_.vertexBufferStrides[slot] = stride;*/
+void Shader::bindVertexArray(GLuint vao) {
+  // TODO?
 }
 
-void DrawPassBuilder::setVertexShader(std::string vs) {
-  drawPass_.VS_ = std::move(vs);
+void Shader::bindColorBuffer(int index, GLuint texobj) {
+  colorBuffers_[index] = texobj;
 }
 
-void DrawPassBuilder::setFragmentShader(std::string fs) {
-  drawPass_.FS_ = std::move(fs);
+void Shader::bindDepthBuffer(GLuint texobj) { depthBuffer_ = texobj; }
+
+void Shader::setVertexShader(std::string vs) {
+  VS_ = std::move(vs);
+  shouldRecompile_ = true;
 }
 
-void DrawPassBuilder::addShaderDef(std::string kw, std::string def) {
+void Shader::setFragmentShader(std::string fs) {
+  FS_ = std::move(fs);
+  shouldRecompile_ = true;
+}
+
+void Shader::addShaderDef(std::string kw, std::string def) {
   // TODO
+  shouldRecompile_ = true;
 }
 
-void DrawPassBuilder::addShaderKeyword(std::string kw) {
+void Shader::addShaderKeyword(std::string kw) {
   // TODO
+  shouldRecompile_ = true;
 }
 
-auto DrawPassBuilder::makeDrawPass() -> std::unique_ptr<DrawPass> {
-  // copy-construct a new DrawPass
-  auto newpass = std::make_unique<DrawPass>(std::move(drawPass_));
-  newpass->compile();
-  return newpass;
+void Shader::setBlendState(int index, const gl::BlendState &blendState) {
+  drawStates_.blendStates[index] = blendState;
 }
 
-void DrawPassBuilder::setBlendState(int index,
-                                    const gl::BlendState &blendState) {
-  drawPass_.drawStates_.blendStates[index] = blendState;
-}
-
-void DrawPassBuilder::setViewport(int index, float x, float y, float w,
-                                  float h) {
-  auto &vp = drawPass_.drawStates_.viewports[index];
+void Shader::setViewport(int index, float x, float y, float w, float h) {
+  auto &vp = drawStates_.viewports[index];
   vp.x = x;
   vp.y = y;
   vp.w = w;
   vp.h = h;
 }
 
-void DrawPassBuilder::setRasterizerState(const gl::RasterizerState &rs) {
-  drawPass_.drawStates_.rasterizerState = rs;
+void Shader::setRasterizerState(const gl::RasterizerState &rs) {
+  drawStates_.rasterizerState = rs;
 }
 
-void DrawPassBuilder::setDepthStencilState(const gl::DepthStencilState &ds) {
-  drawPass_.drawStates_.depthStencilState = ds;
+void Shader::setDepthStencilState(const gl::DepthStencilState &ds) {
+  drawStates_.depthStencilState = ds;
 }
 
 //////////////////////////////////////////////
@@ -219,7 +172,7 @@ static void loadShaderFile(const char *shaderId) {
 }
 
 /////////////////////////////////////////////////
-void DrawPass::initialize(const char *shaderId, sol::table table) {
+void Shader::initialize(const char *shaderId, sol::table table) {
   auto &L = detail::ensureShaderLuaStateInitialized();
   std::string shaderIdStr{shaderId};
   auto p = shaderIdStr.find_last_of(':');
@@ -228,15 +181,11 @@ void DrawPass::initialize(const char *shaderId, sol::table table) {
   }
   auto shaderFileId = shaderIdStr.substr(0, p);
   auto passId = shaderIdStr.substr(p + 1);
-  AG_DEBUG("createDrawPassInternal: {}", shaderId);
+  // AG_DEBUG("createDrawPassInternal: {}", shaderId);
   loadShaderFile(shaderFileId.c_str());
   try {
     auto config = L["shader_utils"]["createShaderFromTemplate"](passId, table);
-    DrawPassBuilder builder;
-    builder.loadFromTable(config);
-    // move construct into this
-    // TODO this is hackish
-    *this = std::move(*builder.makeDrawPass());
+    loadFromTable(config);
   } catch (sol::error &e) {
     errorMessage("Error loading shader pass {}:\n\t{}", passId, e.what());
     throw;
@@ -244,20 +193,22 @@ void DrawPass::initialize(const char *shaderId, sol::table table) {
 }
 
 /////////////////////////////////////////////////
-void DrawPass::compile() {
+void Shader::compile() {
   prog_ = gl::Program::create(VS_.c_str(), FS_.c_str());
   if (!prog_.getLinkStatus()) {
     errorMessage("Failed to create program for draw pass");
     debugMessage("====== Vertex shader: ======\n {}", VS_.c_str());
     debugMessage("====== Fragment shader: ======\n {}", FS_.c_str());
+    compileOk_ = false;
   } else {
-    // AG_DEBUG("Successfully compiled DrawPass");
+    compileOk_ = true;
   }
+  shouldRecompile_ = false;
   drawStates_.program = prog_.object();
   drawStates_.vertexArray = vao_.object();
 }
 
-void DrawPass::operator()(gl::StateGroup &stateGroup) {
-  stateGroup.drawStates = drawStates_;
+void Shader::operator()(gl::StateGroup &stateGroup) {
+  stateGroup.drawStates = getDrawStates();
 }
 }

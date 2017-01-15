@@ -1,8 +1,8 @@
 ag = require 'autograph'
 gl = require 'glapi'
+require 'class'
 
 local renderUtils = renderUtils or ag.RenderUtils()
-local scene 
 
 local viewX = 0
 local viewY = 0
@@ -17,11 +17,40 @@ function init()
 	reset()
 end
 
+-- event wait lists
+waitlists = {}
+waitlists.events = {}
+waitlists.frame = {}
+waitlists.timer = {}
+
+-- autograph.task.start
+-- autograph.task.yield
+-- autograph.task.waitForFrame()
+-- autograph.task.waitForEvent(ev)
+-- autograph.task.waitForSeconds(seconds)
+-- task.onEvent() => internal
+-- task.onFrame() => internal
+-- autograph.onEvent(...) => internal
+-- autograph.onFrame()
+
+function waitForEvent()
+	waitlists.events[coroutine.running()] = true
+	return coroutine.yield()
+end
+
+function waitForFrame()
+	waitlists.frame[coroutine.running()] = true
+	return coroutine.yield()
+end
+
 -- called on reset
 function reset()
 	viewWidth, viewHeight = window:getFramebufferSize()
 	scene = Scene2D()
 	scene:loadTilemap('data/level1')
+	-- processes
+	procBrush = coroutine.create(brush)
+	coroutine.resume(procBrush)
 end
 
 -- called when the window has been resized
@@ -40,7 +69,6 @@ end
 -- called when the frame is being rendered
 function render(dt)
 	--ag.debug('render (%ix%i), value=%f', framebufferWidth, framebufferHeight, value0)
-
     if window:getKey(ag.KEY_LEFT) == ag.KeyState.Pressed then
       viewX = viewX - moveSpeed * dt
     elseif window:getKey(ag.KEY_RIGHT) == ag.KeyState.Pressed then
@@ -70,7 +98,20 @@ function render(dt)
 end
 
 function onEvent(ev) 
-	if ev.type == autograph.EventType.WindowResize then
-		resize(ev.width, ev.height)
+	--ag.debug('Got an event')
+	-- resume all coroutines waiting on events
+	for k,v in pairs(waitlists.events) do
+		waitlists.events[k] = false
+		coroutine.resume(k, ev)
+	end
+end
+
+function brush()
+		--ag.debug('Enter brush')
+	while true do
+		repeat 
+			local ev = waitForEvent()
+		until isa(ev, ag.PointerEvent)
+		--ag.debug('Got a pointer event')
 	end
 end

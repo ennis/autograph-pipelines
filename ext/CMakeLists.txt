@@ -87,11 +87,11 @@ option(GLFW_DOCUMENT_INTERNALS "..." OFF)
 add_subdirectory(glfw EXCLUDE_FROM_ALL)
 target_include_directories(glfw INTERFACE glfw/include)
 
-# imgui
+# imgui (with addons)
 file(GLOB IMGUI_SOURCES imgui/*.cpp imgui_glfw3/*.cpp)
 add_library(imgui STATIC ${IMGUI_SOURCES})
 target_include_directories(imgui PUBLIC imgui imgui_glfw3)
-target_link_libraries(imgui PRIVATE glloadgen glfw glm)
+target_link_libraries(imgui PRIVATE glloadgen glfw glm stb)
 
 # glm
 add_library(glm INTERFACE)
@@ -208,3 +208,13 @@ endif()
 add_library(sol2 INTERFACE)
 target_include_directories(sol2 INTERFACE sol2)
 target_link_libraries(sol2 INTERFACE luajit_bin optional)
+
+# nativefiledialog
+set(NFD_SOURCES_COMMON nativefiledialog/src/nfd_common.c)
+if (WIN32)
+set(NFD_SOURCES_ARCH nativefiledialog/src/nfd_win.cpp)
+elseif(UNIX)
+set(NFD_SOURCES_ARCH nativefiledialog/src/nfd_gtk.c)
+endif()
+add_library(nativefiledialog STATIC ${NFD_SOURCES_COMMON} ${NFD_SOURCES_ARCH})
+target_include_directories(nativefiledialog PUBLIC nativefiledialog/src/include)

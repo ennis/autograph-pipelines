@@ -7,14 +7,22 @@
 namespace ag {
 class AG_API RenderTarget {
 public:
-	struct DepthRenderbuffer { ImageFormat fmt; };
-	struct DepthTexture { ImageFormat fmt; };
-	struct NoDepth {}; 
-  struct Samples { int count; };
+  struct DepthRenderbuffer {
+    ImageFormat fmt;
+  };
+  struct DepthTexture {
+    ImageFormat fmt;
+  };
+  struct NoDepth {};
+  struct Samples {
+    int count;
+  };
+
+  RenderTarget() = default;
 
   RenderTarget(int w, int h, std::initializer_list<ImageFormat> colorFormats,
                variant<DepthRenderbuffer, DepthTexture, NoDepth> depthFormat,
-	  Samples samples = Samples{0});
+               Samples samples = Samples{0});
 
   void resize(int w, int h);
 
@@ -22,7 +30,9 @@ public:
   auto getColorTarget(int index) -> gl::Texture & {
     return colorTargets_[index];
   }
-  auto getDepthTarget() -> variant<gl::Texture,gl::Renderbuffer>& { return depthTarget_; }
+  auto getDepthTarget() -> variant<gl::Texture, gl::Renderbuffer> & {
+    return depthTarget_;
+  }
   auto getFramebuffer() -> gl::Framebuffer & { return fbo_; }
   auto getSampleCount() { return numSamples_; }
 
@@ -30,14 +40,13 @@ public:
   // addColorTargetMultisample
   // addDepthTarget
   // addDepthRenderbuffer
-  // 
+  //
 
 private:
-  SmallVector<gl::Texture,8> colorTargets_;
+  SmallVector<gl::Texture, 8> colorTargets_;
   int numSamples_;
-  variant<gl::Texture,gl::Renderbuffer> depthTarget_;
+  variant<gl::Texture, gl::Renderbuffer> depthTarget_;
   gl::Framebuffer fbo_;
 };
 
-// RenderTarget rt { {ColorTarget{RGBA32F, , RGBA16F}, RenderTarget::DepthRenderbuffer{}, RenderTarget::Multisample{ 8 } };
 }

@@ -37,11 +37,15 @@ local function preprocess(filename, env)
     return nil
   else  
     env.table = table
+    env.include = function (filename) 
+      local shaderFile = autograph.getActualPath('resources/shaders/' .. filename)
+      local prep = preprocess(shaderFile, env)
+      return prep
+    end
     setfenv(chunkfn, env)
     str = chunkfn()
     --autograph.debug('Preprocessed source:')
     --autograph.debug(str)
-    env.table = nil
     return str
   end
 end

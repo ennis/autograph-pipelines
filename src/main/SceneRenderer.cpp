@@ -28,7 +28,7 @@ DeferredSceneRenderer::DeferredSceneRenderer() { reloadShaders(); }
 DeferredSceneRenderer::~DeferredSceneRenderer() {}
 
 void DeferredSceneRenderer::reloadShaders() {
-  deferredDrawPass = DrawPass{"shaders/deferred:deferredShader"};
+  deferredShader = Shader{"shaders/deferred:deferredShader"};
 }
 
 void DeferredSceneRenderer::renderScene(GBuffer &targets, Scene &scene,
@@ -62,7 +62,7 @@ void DeferredSceneRenderer::renderScene(GBuffer &targets, Scene &scene,
     // camera.viewMat[2], camera.viewMat[3]);
     // AG_DEBUG("projMat {},{},{},{}", camera.projMat[0], camera.projMat[1],
     // camera.projMat[2], camera.projMat[3]);
-    draw(targets.getFramebuffer(), *pMesh, deferredDrawPass,
+    draw(targets.getFramebuffer(), *pMesh, deferredShader,
          uniformBuffer(
              0, uploadFrameData(&objectUniforms, sizeof(objectUniforms))));
 
@@ -75,9 +75,8 @@ WireframeOverlayRenderer::WireframeOverlayRenderer() { reloadShaders(); }
 WireframeOverlayRenderer::~WireframeOverlayRenderer() {}
 
 void WireframeOverlayRenderer::reloadShaders() {
-  wireframeDrawPass = DrawPass{"shaders/wireframe:wireframeOverlay"};
-  wireframeNoDepthDrawPass =
-      DrawPass{"shaders/wireframe:wireframeOverlayNoDepth"};
+  wireframeShader = Shader{"shaders/wireframe:wireframeOverlay"};
+  wireframeNoDepthShader = Shader{"shaders/wireframe:wireframeOverlayNoDepth"};
 }
 
 // render one scene object and its children
@@ -104,9 +103,9 @@ void WireframeOverlayRenderer::renderSceneObject(gl::Framebuffer &target,
 
     using namespace gl;
     using namespace gl::bind;
-    auto pDrawPass = depthTest ? &wireframeDrawPass : &wireframeNoDepthDrawPass;
+    auto pShader = depthTest ? &wireframeShader : &wireframeNoDepthShader;
 
-    draw(target, *pMesh, *pDrawPass,
+    draw(target, *pMesh, *pShader,
          uniformBuffer(
              0, uploadFrameData(&objectUniforms, sizeof(objectUniforms))));
   }

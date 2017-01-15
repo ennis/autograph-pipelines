@@ -18,7 +18,7 @@ namespace ag
 			gl::Texture& src, float srcX = 0.0f, float srcY = 0.0f, float srcWidth = 1.0f, float srcHeight = 1.0f);
 		
 	private:
-		DrawPass drawSpritePass;
+		Shader drawSpriteShader;
 		gl::Sampler samplerNearest;
 	};
 }
