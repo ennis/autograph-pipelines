@@ -238,7 +238,7 @@ sol::table eventToLua(sol::state &L, const ag::Event &ev) {
     std::wstring_convert<std::codecvt_utf8<unsigned int>, unsigned int> cvt;
 #else
     std::wstring_convert<std::codecvt_utf8<char32_t>, char32_t> cvt;
-#endif {
+#endif
     sol::table table = makeInstance("TextEvent");
     table["string"] = cvt.to_bytes(ev.text.codepoint);
     return table;
@@ -286,7 +286,7 @@ sol::table eventToLua(sol::state &L, const ag::Event &ev) {
   default:
     break;
   }
-  return sol::nil;
+  return sol::table{};
 }
 
 ///////////////////////////////////////////////////////////////
