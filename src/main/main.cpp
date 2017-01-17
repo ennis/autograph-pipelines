@@ -7,26 +7,28 @@
 
 #include <imgui.h>
 
-#include <glm/gtc/random.hpp>
 #include <glm/gtc/packing.hpp>
+#include <glm/gtc/random.hpp>
 
 #include <autograph/gl/Device.h>
+#include <autograph/gl/Draw.h>
 #include <autograph/gl/Framebuffer.h>
 #include <autograph/gl/Program.h>
 #include <autograph/gl/Texture.h>
-#include <autograph/gl/Draw.h>
 
 #include <autograph/support/Debug.h>
-#include <autograph/support/ProjectRoot.h>
 #include <autograph/support/FileDialog.h>
+#include <autograph/support/ProjectRoot.h>
 
+#include "Widget.h"
 #include <autograph/engine/Application.h>
-#include <autograph/engine/Input.h>
 #include <autograph/engine/Arcball.h>
 #include <autograph/engine/CameraControl.h>
 #include <autograph/engine/ImageUtils.h>
+#include <autograph/engine/Input.h>
 #include <autograph/engine/MathUtils.h>
 #include <autograph/engine/Mesh.h>
+#include <autograph/engine/Meta.h>
 #include <autograph/engine/RenderTarget.h>
 #include <autograph/engine/RenderUtils.h>
 #include <autograph/engine/ResourcePool.h>
@@ -34,7 +36,6 @@
 #include <autograph/engine/ScriptContext.h>
 #include <autograph/engine/Shader.h>
 #include <autograph/engine/Window.h>
-#include <autograph/engine/Meta.h>
 
 #include "Scene2D.h"
 #include "SceneRenderer.h"
@@ -148,18 +149,18 @@ struct Canvas {
                      RenderTarget::DepthTexture{ag::ImageFormat::D32_SFLOAT}};
 
     canvasBuffers = RenderTarget{width,
-                                  height,
-                                  {
-                                      ag::ImageFormat::R32G32B32A32_UINT,
-                                      ag::ImageFormat::R32G32B32A32_UINT,
-                                  },
-                                  RenderTarget::NoDepth{}};
+                                 height,
+                                 {
+                                     ag::ImageFormat::R32G32B32A32_UINT,
+                                     ag::ImageFormat::R32G32B32A32_UINT,
+                                 },
+                                 RenderTarget::NoDepth{}};
 
     // final color: R16G16A16B16 float
     finalColor = RenderTarget{width,
-                               height,
-                               {ag::ImageFormat::R16G16B16A16_SFLOAT},
-                               RenderTarget::NoDepth{}};
+                              height,
+                              {ag::ImageFormat::R16G16B16A16_SFLOAT},
+                              RenderTarget::NoDepth{}};
   }
 
   RenderTarget GBuffers;
@@ -167,10 +168,9 @@ struct Canvas {
   RenderTarget finalColor;
 };
 
-class CanvasRenderer
-{
+class CanvasRenderer {
 public:
-	void renderCanvas(Canvas& canvas);
+  void renderCanvas(Canvas &canvas);
 
 private:
 };
@@ -334,8 +334,8 @@ int main(int argc, char *argv[]) {
       lua.script("require 'init2d'");
       lua.script("init()");
       initOk = true;
-	  // test
-	  openFileDialog("", getProjectRootDirectory().c_str());
+      // test
+      //openFileDialog("", getProjectRootDirectory().c_str());
     } catch (sol::error &e) {
       errorMessage("Error in init script:\n\t{}", e.what());
       errorMessage("Please fix the script and reload (F5 key)");
@@ -356,6 +356,38 @@ int main(int argc, char *argv[]) {
 
   Scene2D scene2D;
   scene2D.loadTilemap("data/level1");
+
+  // test widgets
+  auto root = ui::Widget{
+      ui::Content{ui::Widget{}, ui::Widget{},
+                  ui::Widget{ui::Content{ui::Widget{}, ui::Widget{}}}}};
+
+  // call sequence (unoptimized):
+  // ui::Widget ctor (x4)
+  // ui::Content ctor <Widget, Widget>
+  //    ui::WidgetList ctor
+  //        vector ctor
+  //        ui::WidgetList add (x2)
+  //            vector push_back
+  //    ui::WidgetList move
+
+  // test 2
+
+  auto menu = ui::MenuBar {
+        ui::Content {
+            ui::Menu{"File",
+                ui::MenuItem { "Open...", "Ctrl+O" },
+                ui::MenuItem { "Close", "Ctrl+F4"},
+                ui::Separator {},
+                ui::MenuItem { "Quit", "Alt-F4" }},
+            ui::Menu{"Edit",
+                ui::MenuItem { "Copy", "Ctrl+C" },
+                ui::MenuItem { "Cut", "Ctrl+X" },
+                ui::MenuItem { "Paste", "Ctrl+V" }
+            }
+        }
+    };
+
 
   w.onRender([&](ag::Window &win, double dt) {
     auto framebufferSize = win.getFramebufferSize();
@@ -398,19 +430,19 @@ int main(int argc, char *argv[]) {
     vp.height = framebufferSize.y / 2.0f;
     scene2D.render(gl::getDefaultFramebuffer(), vp);
 
-	// GUI test
-	ImGui::BeginMainMenuBar();
+    // GUI test
+    ImGui::BeginMainMenuBar();
 
-	if (ImGui::BeginMenu(ICON_FA_FOLDER " File")) {
-		ImGui::MenuItem(ICON_FA_FOLDER_OPEN " Open...", "Ctrl+O");
-		ImGui::MenuItem(ICON_FA_WINDOW_CLOSE " Close", "Ctrl+F4");
-		ImGui::Separator();
-		ImGui::MenuItem(ICON_FA_WINDOW_CLOSE_O " Quit", "Alt+F4");
-		ImGui::EndMenu();
-	}
+    if (ImGui::BeginMenu(ICON_FA_FOLDER " File")) {
+      ImGui::MenuItem(ICON_FA_FOLDER_OPEN " Open...", "Ctrl+O");
+      ImGui::MenuItem(ICON_FA_WINDOW_CLOSE " Close", "Ctrl+F4");
+      ImGui::Separator();
+      ImGui::MenuItem(ICON_FA_WINDOW_CLOSE_O " Quit", "Alt+F4");
+      ImGui::EndMenu();
+    }
 
-	ImGui::EndMainMenuBar();
-	
+    ImGui::EndMainMenuBar();
+
   });
 
   bool inStroke = false;

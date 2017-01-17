@@ -73,6 +73,30 @@ Case 4: FSM with coroutines, composition of awaitables
 		close_dialog.cancel();
 	}
 
+ui::Widget {
+	ui::Widget {},
+	ui::Widget {},
+},
+// Can't do that: ambiguity between move-constructor and content-constructor
+
+// OK: no ambiguity, but more verbose
+ui::Widget {
+	ui::Content {
+		ui::Widget {},
+	}
+}
+
+ui::CollapsiblePanel {
+	"name",
+	ui::Content {
+		...
+	}
+};
+
+// 
+
+
+
 Coroutine suspension:
 	await
 	yield

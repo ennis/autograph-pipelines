@@ -11,6 +11,7 @@ class ProgressHandler : public Assimp::ProgressHandler {
 public:
   virtual bool Update(float percentage) override {
     AG_DEBUG("ReadFile: {} %", percentage);
+    return true;
   }
 };
 
