@@ -70,26 +70,28 @@ class Widget;
 using OptionalPtr = optional_ptr<Widget>;
 
 struct WidgetList {
-    WidgetList() {}
+  WidgetList() {}
 
   template <typename... Widgets> explicit WidgetList(Widgets &&... widgets) {
     // move into list_;
     auto dummy = {0, (add(std::forward<Widgets>(widgets)), 0)...};
   }
 
-    WidgetList(WidgetList &&) = default;
-    WidgetList& operator=(WidgetList &&) = default;
-    WidgetList(const WidgetList &) = delete;
-    WidgetList& operator=(const WidgetList &) = delete;
+  WidgetList(WidgetList &&) = default;
+  WidgetList &operator=(WidgetList &&) = default;
+  WidgetList(const WidgetList &) = delete;
+  WidgetList &operator=(const WidgetList &) = delete;
 
-auto add(OptionalPtr ptr) {
+  auto add(OptionalPtr ptr) {
     auto p = ptr.get();
-  list_.push_back(std::move(ptr));
-  return p;
-}
+    list_.push_back(std::move(ptr));
+    return p;
+  }
 
   // add child and take ownership
-  auto add(std::unique_ptr<Widget> w) -> Widget* { return add(OptionalPtr{std::move(w)}); }
+  auto add(std::unique_ptr<Widget> w) -> Widget * {
+    return add(OptionalPtr{std::move(w)});
+  }
 
   // add reference to heap-allocated widget
   auto add(std::unique_ptr<Widget> &w) { return add(OptionalPtr{w.get()}); }
@@ -100,11 +102,11 @@ auto add(OptionalPtr ptr) {
 
   // fun fact: not adding the is_base_of test will freeze clang
   template <typename T,
-            typename = std::enable_if_t<std::is_rvalue_reference<T&&>::value && std::is_base_of<Widget,T>::value >>
-  auto add(T &&widget) -> Widget* {
+            typename = std::enable_if_t<std::is_rvalue_reference<T &&>::value &&
+                                        std::is_base_of<Widget, T>::value>>
+  auto add(T &&widget) -> Widget * {
     return add(std::make_unique<T>(std::move(widget)));
   }
-
 
   std::vector<OptionalPtr> list_;
 };
@@ -124,38 +126,39 @@ public:
   // Construct from type-erased child widget list
   Widget(WidgetList &&widgetList) : children_{std::move(widgetList)} {}
   // Construct with parent
-  Widget(Widget* par) : parent{par}
-  {
-      if (parent)
-          parent->adoptChild(this);
+  Widget(Widget *par) : parent{par} {
+    if (parent)
+      parent->adoptChild(this);
   }
 
   // unsafe:
   // auto addWidgets(ui::Widget& root)
   // {
-  //    return ui::Button{&root};   // root is rooted (has parent), so will get the address on the button in the stack frame of addWidgets
+  //    return ui::Button{&root};   // root is rooted (has parent), so will get
+  //    the address on the button in the stack frame of addWidgets
   // }
-  // 
+  //
   // solution #-1: document the issue
   // solution #1: remove constructor from parent: only use add (*)
   // solution #2: make widgets unmoveable
   //    breaks constructors
   // solution #0: all widgets on the heap...
   //    probably the only safe solution
-  //    child list = list of optional_ptr<WidgetImpl> 
+  //    child list = list of optional_ptr<WidgetImpl>
   //    WidgetImpl -> widget (?)
   // Widget = wrapper class to unique_ptr
-  // Goal: avoid two construction methods: free functions that return uptr, and constructors
+  // Goal: avoid two construction methods: free functions that return uptr, and
+  // constructors
   //  => construct widgets using constructors
   //  => issue: subclassing? essentially two class hierarchies
-  // 
+  //
   // solution #3: UI builder: returns unique_ptrs for all widgets
   //  => No: cannot use constructors
 
   Widget(Widget &&) = default;
-  Widget& operator=(Widget &&) = default;
+  Widget &operator=(Widget &&) = default;
   Widget(const Widget &) = delete;
-  Widget& operator=(const Widget &) = delete;
+  Widget &operator=(const Widget &) = delete;
 
   virtual ~Widget() {
     // if parented, orphan
@@ -172,13 +175,15 @@ public:
   auto &getChildren() { return children_.list_; }
 
   template <typename T> void add(T &&widget) {
-    adoptChild(add(std::forward<T>(widget)));
+    adoptChild(children_.add(std::forward<T>(widget)));
   }
 
   // add stuff
   template <typename... Content> void addMany(Content &&... contents) {
     auto dummy = {0, (add(std::forward<Content>(contents)), 0)...};
   }
+
+  virtual void render() {}
 
 protected:
   WidgetList children_;
@@ -197,7 +202,7 @@ private:
       c->setParent(this);
   }
 
-  void adoptChild(Widget* w) {
+  void adoptChild(Widget *w) {
     if (parent)
       w->setParent(this);
   }
@@ -214,30 +219,66 @@ private:
   }
 };
 
-struct Separator : public Widget
+struct Separator : public Widget 
 {
+	void render() override {
+		ImGui::Separator();
+	}
 };
 
-class Menu : public Widget 
-{
+class Menu : public Widget {
 public:
   template <typename... Items>
-  Menu(const char* text, Items&&... items) : Widget{WidgetList{std::forward<Items>(items)...}}
-  {}
+  Menu(const char *text, Items &&... items)
+	  : Widget{ WidgetList{std::forward<Items>(items)...} }, text_{ text } {}
+
+  void render() override {
+	  if (ImGui::BeginMenu(text_.c_str())) {
+		  for (auto& c : children_.list_) {
+			  c->render();
+		  }
+		  ImGui::EndMenu();
+	  }
+  }
+
+private:
+	std::string text_;
 };
 
-class MenuBar : public Widget 
-{
+class MenuBar : public Widget {
 public:
-  using Widget::Widget;
+  using Widget::Widget; 
+  
+  void render() override {
+	  if (ImGui::BeginMainMenuBar()) {
+		  for (auto& c : children_.list_) {
+			  c->render();
+		  }
+		  ImGui::EndMainMenuBar();
+	  }
+  }
 };
 
-class MenuItem : public Widget 
-{
+class MenuItem : public Widget {
 public:
-  MenuItem(const char* text, const char* accel)
-  {}
+	MenuItem(const char *text, const char *accel) : text_{ text }, accel_{ accel } {}
+	
+	void render() override {
+		ImGui::MenuItem(text_.c_str(), accel_.c_str());
+	}
 
+private:
+	std::string text_;
+	std::string accel_;
+};
+
+class Button : public Widget {
+public:
+	Button(const char* text) : text_{ text }
+	{}
+
+private:
+	std::string text_;
 };
 
 }

@@ -8,7 +8,7 @@ struct GLFWpointerevent;
 namespace ag
 {
 	//////////////////////////////////////////////
-	enum class EventType {
+	enum class AG_REFLECT EventType {
 		MouseButton = 0,
 		MouseMove,
 		Cursor,
@@ -28,25 +28,25 @@ namespace ag
 	};
 
 	//////////////////////////////////////////////
-	struct CursorEnterEvent {};
-	struct CursorExitEvent {};
+	struct AG_API CursorEnterEvent {};
+	struct AG_API CursorExitEvent {};
 
 	//////////////////////////////////////////////
-	struct WindowResizeEvent
+	struct AG_API WindowResizeEvent
 	{
 		int width;
 		int height;
 	};
 
 	//////////////////////////////////////////////
-	struct MouseButtonEvent
+	struct AG_API MouseButtonEvent
 	{
 		int button;
 		ButtonState action;
 	};
 
 	//////////////////////////////////////////////
-	struct CursorEvent
+	struct AG_API CursorEvent
 	{
 		// in client units (pixels)
 		int x;
@@ -56,21 +56,21 @@ namespace ag
 	};
 
 	//////////////////////////////////////////////
-	struct MouseMoveEvent 
+	struct AG_API MouseMoveEvent
 	{
 		double dx;
 		double dy;
 	};
 
 	//////////////////////////////////////////////
-	struct MouseScrollEvent
+	struct AG_API MouseScrollEvent
 	{
 		double dx;
 		double dy;
 	};
 
 	//////////////////////////////////////////////
-	struct KeyEvent
+	struct AG_API KeyEvent
 	{
 		int key;
 		int scancode;
@@ -78,19 +78,19 @@ namespace ag
 	};
 
 	//////////////////////////////////////////////
-	struct TextEvent 
+	struct AG_API TextEvent
 	{
 		char32_t codepoint;
 	};
 
 	//////////////////////////////////////////////
-	struct StylusProximityEvent
+	struct AG_API StylusProximityEvent
 	{
 		// TODO
 	};
 
 	//////////////////////////////////////////////
-	struct StylusPropertiesEvent
+	struct AG_API StylusPropertiesEvent
 	{
 		double x;
 		double y;
@@ -99,7 +99,7 @@ namespace ag
 	};
 
 	//////////////////////////////////////////////
-	struct PointerInfo
+	struct AG_API PointerInfo
 	{
 		int id;
 		int type;
@@ -113,7 +113,7 @@ namespace ag
 		double tiltY;
 	};
 
-	struct PointerEvent
+	struct AG_API PointerEvent
 	{
 		PointerInfo info;
 	};

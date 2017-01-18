@@ -1,4 +1,5 @@
 #pragma once
+#include <autograph/Config.h>
 #include "GLHandle.h"
 
 namespace ag {
@@ -16,7 +17,7 @@ struct SamplerDeleter {
 };
 
 // Delayed initialization
-class Sampler {
+class AG_API Sampler {
 public:
   Sampler() {}
   Sampler(const SamplerDesc &desc) : desc_{desc} {}

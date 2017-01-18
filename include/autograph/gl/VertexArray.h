@@ -9,7 +9,7 @@ struct VertexArrayDeleter {
   void operator()(GLuint obj) { glDeleteVertexArrays(1, &obj); }
 };
 
-struct VertexAttribute {
+struct AG_REFLECT VertexAttribute {
   unsigned slot;
   GLenum type;
   unsigned size;

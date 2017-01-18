@@ -137,6 +137,9 @@ Reflection:
  ☐ Automatic Lua binding generation using reflection
  ☐ Merge reflection databases
  ☐ CMake: can specify multiple templates files and multiple database files in reflection_render_template 
+ ☐ Support types with unions
+ ☐ Support anonymous structs
+ ☐ Read-only properties
 
 Live GUI:
  ☐ Panels

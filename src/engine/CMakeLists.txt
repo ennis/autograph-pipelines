@@ -19,8 +19,8 @@ set(SRC
 )
 	
 add_library(autograph_engine STATIC ${SRC} )
-#reflection_generate_database(autograph_engine ${AG_PUBLIC_INCLUDE_DIR}/autograph/All.h)
-#reflection_render_template(autograph_engine autograph_engine ${CMAKE_CURRENT_SOURCE_DIR}/Meta.cpp.in)
+reflection_generate_database(autograph_engine ${AG_PUBLIC_INCLUDE_DIR}/autograph/All.h)
+reflection_render_template(autograph_engine autograph_engine ${CMAKE_CURRENT_SOURCE_DIR}/Meta.cpp.in)
 
 target_include_directories(autograph_engine PUBLIC ${Boost_INCLUDE_DIRS})
 target_include_directories(autograph_engine PUBLIC ${AG_PUBLIC_INCLUDE_DIR})

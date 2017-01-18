@@ -1,4 +1,5 @@
 #pragma once
+#include <autograph/Config.h>
 #include "GLHandle.h"
 #include <stdexcept>
 
@@ -24,7 +25,7 @@ struct BufferDeleter {
   void operator()(GLuint obj) { glDeleteBuffers(1, &obj); }
 };
 
-class Buffer {
+class AG_API Buffer {
 public:
   Buffer() = default;
   Buffer(size_t byteSize, BufferUsage usage, const void *initial_data = nullptr);

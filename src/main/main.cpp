@@ -289,6 +289,106 @@ sol::table eventToLua(sol::state &L, const ag::Event &ev) {
   return sol::table{};
 }
 
+template <typename T> bool isSameType(std::type_index ti) {
+  return ti == std::type_index{typeid(T)};
+}
+
+void imguiInputString(const char *label, std::string &str,
+                      size_t buf_size = 100) {
+  std::vector<char> strvec{str.begin(), str.end()};
+  strvec.resize(buf_size);
+  ImGui::InputText("", strvec.data(), strvec.size());
+  str.assign(strvec.begin(), strvec.end());
+}
+
+const char *getFriendlyName(const meta::Field &f) {
+  // if (auto a = f.getAttribute<meta::FriendlyName>()) {
+  //	return a->name;
+  //}
+  // else
+  return f.name;
+}
+
+const char *getFriendlyName(const meta::Enumerator &e) {
+  // if (auto a = e.getAttribute<meta::FriendlyName>()) {
+  //	return a->name;
+  //}
+  // else
+  return e.name;
+}
+
+void valueDebugGUI(std::type_index ti, void *data) {
+  ImGui::PushID(data);
+  // GUIs for primitive types
+  if (isSameType<float>(ti)) {
+    ImGui::SliderFloat("", reinterpret_cast<float *>(data), -10.0f, 10.0f);
+  } else if (isSameType<double>(ti)) {
+    // ImGui::SliderD("", reinterpret_cast<float*>(data), 0.0f, 10.0f);
+  } else if (isSameType<int>(ti)) {
+    ImGui::SliderInt("", reinterpret_cast<int *>(data), 0, 100);
+  } else if (isSameType<bool>(ti)) {
+    ImGui::Checkbox("", reinterpret_cast<bool *>(data));
+  }
+  // GUI for std::string
+  else if (isSameType<std::string>(ti)) {
+    auto &str = *reinterpret_cast<std::string *>(data);
+    imguiInputString("", str);
+  }
+  // GUIs for GLM vector types
+  else if (isSameType<vec2>(ti)) {
+    ImGui::SliderFloat2("", reinterpret_cast<float *>(data), -10.0f, 10.0f);
+  } else if (isSameType<vec3>(ti)) {
+    ImGui::SliderFloat3("", reinterpret_cast<float *>(data), -10.0f, 10.0f);
+  } else if (isSameType<vec4>(ti)) {
+    ImGui::SliderFloat4("", reinterpret_cast<float *>(data), -10.0f, 10.0f);
+  } else if (isSameType<ivec2>(ti)) {
+    ImGui::SliderInt2("", reinterpret_cast<int *>(data), 0, 100);
+  } else if (isSameType<ivec3>(ti)) {
+    ImGui::SliderInt3("", reinterpret_cast<int *>(data), 0, 100);
+  } else if (isSameType<ivec4>(ti)) {
+    ImGui::SliderInt4("", reinterpret_cast<int *>(data), 0, 100);
+  }
+  // GUIs for reflected enum types
+  else if (auto mo0 = meta::typeOf(ti)) {
+    if (auto mo = mo0->as<meta::Enum>()) {
+      int i = mo->findEnumeratorIndex(data);
+      auto items_getter = [](void *data, int idx,
+                             const char **out_text) -> bool {
+        auto mo = static_cast<const meta::Enum *>(data);
+        if (idx >= mo->enumerators.size())
+          return false;
+        *out_text = getFriendlyName(mo->enumerators[idx]);
+        return true;
+      };
+      ImGui::Combo("", &i, items_getter, const_cast<meta::Enum *>(mo),
+                   mo->enumerators.size());
+      mo->setValue(data, mo->enumerators[i].value);
+	}
+	else if (auto mo = mo0->as<meta::Record>()) {
+		if (ImGui::CollapsingHeader(mo->name)) {
+			ImGui::Columns(2);
+			for (auto &&f : mo->publicFields) {
+				ImGui::Text("%s", getFriendlyName(f));
+				ImGui::NextColumn();
+				ImGui::PushItemWidth(-1.0f);
+				valueDebugGUI(f.typeindex, f.getPtr(data));
+				ImGui::NextColumn();
+			}
+			ImGui::Columns(1);
+		}
+	}
+  }
+  // GUIs for structs
+  else {
+    ImGui::TextDisabled("No metaobject");
+  }
+  ImGui::PopID();
+}
+
+template <typename T> void debugValue(T &value) {
+  valueDebugGUI(typeid(T), &value);
+}
+
 ///////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////
 // MAIN
@@ -335,7 +435,7 @@ int main(int argc, char *argv[]) {
       lua.script("init()");
       initOk = true;
       // test
-      //openFileDialog("", getProjectRootDirectory().c_str());
+      // openFileDialog("", getProjectRootDirectory().c_str());
     } catch (sol::error &e) {
       errorMessage("Error in init script:\n\t{}", e.what());
       errorMessage("Please fix the script and reload (F5 key)");
@@ -358,9 +458,9 @@ int main(int argc, char *argv[]) {
   scene2D.loadTilemap("data/level1");
 
   // test widgets
-  auto root = ui::Widget{
+  /*auto root = ui::Widget{
       ui::Content{ui::Widget{}, ui::Widget{},
-                  ui::Widget{ui::Content{ui::Widget{}, ui::Widget{}}}}};
+                  ui::Widget{ui::Content{ui::Widget{}, ui::Widget{}}}}};*/
 
   // call sequence (unoptimized):
   // ui::Widget ctor (x4)
@@ -373,21 +473,22 @@ int main(int argc, char *argv[]) {
 
   // test 2
 
-  auto menu = ui::MenuBar {
-        ui::Content {
-            ui::Menu{"File",
-                ui::MenuItem { "Open...", "Ctrl+O" },
-                ui::MenuItem { "Close", "Ctrl+F4"},
-                ui::Separator {},
-                ui::MenuItem { "Quit", "Alt-F4" }},
-            ui::Menu{"Edit",
-                ui::MenuItem { "Copy", "Ctrl+C" },
-                ui::MenuItem { "Cut", "Ctrl+X" },
-                ui::MenuItem { "Paste", "Ctrl+V" }
-            }
-        }
-    };
+  auto menu = ui::MenuBar{ui::Content{
+      ui::Menu{"File", ui::MenuItem{ICON_FA_FOLDER_OPEN " Open...", "Ctrl+O"},
+               ui::MenuItem{ICON_FA_WINDOW_CLOSE " Close", "Ctrl+F4"},
+               ui::Separator{},
+               ui::MenuItem{ICON_FA_WINDOW_CLOSE_O " Quit", "Alt-F4"}},
+      ui::Menu{"Edit", ui::MenuItem{ICON_FA_CLONE " Copy", "Ctrl+C"},
+               ui::MenuItem{ICON_FA_SCISSORS " Cut", "Ctrl+X"},
+               ui::MenuItem{ICON_FA_CLIPBOARD " Paste", "Ctrl+V"}}}};
 
+  auto additionalMenu = ui::Menu{
+      "Help", ui::MenuItem{ICON_FA_QUESTION_CIRCLE_O " Get help...", "F1"}};
+  menu.add(additionalMenu);
+
+
+  Shader sh{ "shaders/tileMap:tileMap" };
+  auto states = sh.getDrawStates();
 
   w.onRender([&](ag::Window &win, double dt) {
     auto framebufferSize = win.getFramebufferSize();
@@ -430,18 +531,20 @@ int main(int argc, char *argv[]) {
     vp.height = framebufferSize.y / 2.0f;
     scene2D.render(gl::getDefaultFramebuffer(), vp);
 
-    // GUI test
-    ImGui::BeginMainMenuBar();
-
-    if (ImGui::BeginMenu(ICON_FA_FOLDER " File")) {
-      ImGui::MenuItem(ICON_FA_FOLDER_OPEN " Open...", "Ctrl+O");
-      ImGui::MenuItem(ICON_FA_WINDOW_CLOSE " Close", "Ctrl+F4");
-      ImGui::Separator();
-      ImGui::MenuItem(ICON_FA_WINDOW_CLOSE_O " Quit", "Alt+F4");
-      ImGui::EndMenu();
-    }
-
-    ImGui::EndMainMenuBar();
+	debugValue(states);
+    debugValue(offset);
+ 
+        // GUI test
+        ImGui::BeginMainMenuBar();
+        if (ImGui::BeginMenu(ICON_FA_FOLDER " File")) {
+          ImGui::MenuItem(ICON_FA_FOLDER_OPEN " Open...", "Ctrl+O");
+          ImGui::MenuItem(ICON_FA_WINDOW_CLOSE " Close", "Ctrl+F4");
+          ImGui::Separator();
+          ImGui::MenuItem(ICON_FA_WINDOW_CLOSE_O " Quit", "Alt+F4");
+          ImGui::EndMenu();
+        }
+        ImGui::EndMainMenuBar();
+        menu.render();
 
   });
 

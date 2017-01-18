@@ -15,6 +15,7 @@
 #include "engine/Scene.h"
 #include "engine/ScriptContext.h"
 #include "engine/Observable.h"
+#include "engine/Window.h"
 #include "gl/GLHandle.h"
 #include "gl/Buffer.h"
 #include "gl/Device.h"

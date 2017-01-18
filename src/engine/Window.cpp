@@ -258,6 +258,10 @@ Window::Window(int w, int h, const char *title) {
   }
   glfwSwapInterval(1);
 
+  // ImGui init
+  ImGui_ImplGlfwGL3_Init(window_, false);
+  ensureImGuiSetup();
+
   // set event handlers
   glfwSetWindowSizeCallback(window_, WindowSizeHandler);
   glfwSetCursorEnterCallback(window_, CursorEnterHandler);
@@ -274,10 +278,6 @@ Window::Window(int w, int h, const char *title) {
   devCfg.max_frames_in_flight = 3;
   gl::initialize(devCfg);
   gl::resizeDefaultFramebuffer(w, h);
-
-  // ImGui init
-  ImGui_ImplGlfwGL3_Init(window_, false);
-  ensureImGuiSetup();
 
 #ifdef WIN32
   EnableMouseInPointer(true);
@@ -310,8 +310,8 @@ ivec2 Window::getWindowSize() {
 
 void Window::show() {
 	double tlast = glfwGetTime();
+	ImGui_ImplGlfwGL3_NewFrame();
 	while (!glfwWindowShouldClose(window_)) {
-		ImGui_ImplGlfwGL3_NewFrame();
 		auto framebufferSize = getFramebufferSize();
 		ag::gl::resizeDefaultFramebuffer(framebufferSize.x, framebufferSize.y);
 		double t = glfwGetTime();
@@ -320,6 +320,7 @@ void Window::show() {
 		if (renderFunc_)
 		  renderFunc_(*this, dt);
 		ImGui::Render();
+		ImGui_ImplGlfwGL3_NewFrame();
 		ag::gl::endFrame();
 		glfwSwapBuffers(window_);
 		glfwPollEvents();

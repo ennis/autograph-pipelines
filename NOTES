@@ -93,7 +93,6 @@ ui::CollapsiblePanel {
 	}
 };
 
-// 
 
 
 
@@ -1707,3 +1706,50 @@ using Mesh2D = Mesh<Vertex2D>;
 	=> just add an operator()(StateGroup& sg);
 
 	//draw()
+
+
+
+
+IMGUI:
+* Imperative
++ handles dynamic content very well
++ Clean, readable code
++ All behavior (rendering, input) in the same procedure: leads to relatively compact code
++ Data only needs to be available when updating the model (no reference is kept to the model between frames)
+- All widgets redrawn every frame
+- Layout redone every frame
+- Input processing tied to frame rate
+- Some operations have a frame lag
+- Widget must have explicitly assigned IDs
+
+Note: IMGUI is not necessarily fully 'immediate': the visual tree can be cached (and hidden from the programmer)
+	can also keep a cached version of the model
+
+In brief: 
+	model update fused with declaration of the visual tree 
+	No reference is kept to the model
+	=> invalidate by default: to avoid recomputation, one could compare the current data with the data at the previous call
+
+
+RMGUI:
+* Declarative, the visual tree is explicit (exists in memory, is controlled by the user)
+- A reference to the model is kept by the visual tree
+	The model must be available for the lifetime of the widget
+- Model updates must be manually pushed to the widgets
+	OR polled at regular intervals
+- Widgets should hold refs to model data, but this prevents the model data from being moved around in memory
+
+In brief: declaration of visual tree/layout is separated from the model
+	=> DO NOT INVALIDATE by default: if the model is not updated, then do not recompute
+
+
+
+What we want:
+* No need for explicit model updates
+	i.e. do not write code twice: once for the layout, once for the model update
+	=> model and layout AT THE SAME PLACE
+* Having a GUI on a value should not prevent it from moving around in memory. Maybe?
+
+Conclusion:
+	IMGUI just has more advantages here => Use it!
+		For now?
