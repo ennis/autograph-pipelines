@@ -32,6 +32,10 @@ Minimal system:
  ☐ Lua scripting for GUI and input
    autograph/script/Script.h => sol2
  ☐ Documentation
+ ☐ Make a header that includes everything @high
+ ☐ Helper: render screen quad @high
+ ☐ Mid-term: implement a gratin-like interface for image processing
+   Possibly as lua scripts first
 
 General:
  ✔ Implement cameras @high @minimal_subset @done (16-12-24 14:12)
@@ -65,6 +69,7 @@ Autograph:
  ✔ Draw call @done (16-12-18 20:52)
  ☐ Compute call @high
  ✔ State group @done (16-12-18 20:52)
+ ☐ Make a header that includes everything
 
 Autograph extensions:
  ☐ Shader cache @low

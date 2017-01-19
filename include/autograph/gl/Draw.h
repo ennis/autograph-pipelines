@@ -74,10 +74,16 @@ namespace ag
 		  glClearTexImage(tex.object(), 0, GL_DEPTH_COMPONENT, GL_FLOAT, &depth);
 		}
 
-		inline void clearInteger(Texture& tex, const ivec4& color) {
-		  glClearTexImage(tex.object(), 0, GL_RGBA_INTEGER, GL_UNSIGNED_INT,
+		inline void clearTexture(Texture& tex, const ivec4& color) {
+		  glClearTexImage(tex.object(), 0, GL_RGBA_INTEGER, GL_INT,
 			  &color[0]);
 		}
+
+		inline void clearTexture(Texture& tex, const uvec4& color) {
+			glClearTexImage(tex.object(), 0, GL_RGBA_INTEGER, GL_UNSIGNED_INT,
+				&color[0]);
+		}
+
 
 	}
 }

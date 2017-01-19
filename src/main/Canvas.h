@@ -44,10 +44,12 @@ private:
 // Augmented painting canvas
 struct Canvas {
   Canvas() = default;
-  Canvas(int width, int height);
+  Canvas(int width_, int height_);
   RenderTarget GBuffers;
   RenderTarget canvasBuffers;
   RenderTarget finalColor;
+  int width;
+  int height;
 };
 
 class CanvasRenderer {
@@ -59,6 +61,7 @@ public:
 	void reloadShaders();
 
 private:
+	gl::Sampler sampler;
 	Shader gbufferPass;
 	Shader evaluationPass;
 };

@@ -44,8 +44,8 @@ evaluation =
 		frontFace = gl.GL_CCW
 	},
 	depthStencilState = {
-		depthTestEnable = true,
-		depthWriteEnable = true
+		depthTestEnable = false,
+		depthWriteEnable = false
 	},
 	blendState = {
 		[0] = { 

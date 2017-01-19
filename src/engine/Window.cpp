@@ -14,75 +14,86 @@
 
 namespace ag {
 
-	static void ensureImGuiSetup()
-	{
-		static bool setup = false;
-		if (!setup) {
-			// setup styles
-			ImGuiIO& io = ImGui::GetIO();
-			//io.Fonts->AddFontDefault();
-			auto fontFile = ag::getActualPath("resources/fonts/Cousine-Regular.ttf");
-			io.Fonts->AddFontFromFileTTF(fontFile.c_str(), 14.0f);
-			// merge in icons from Font Awesome
-			static const ImWchar icons_ranges[] = { ICON_MIN_FA, ICON_MAX_FA, 0 };
-			fontFile = ag::getActualPath("resources/fonts/fontawesome-webfont.ttf");
-			ImFontConfig config;
-			config.PixelSnapH = true;
-			config.MergeMode = true;
-			io.Fonts->AddFontFromFileTTF(fontFile.c_str(), 14.0f, &config, icons_ranges);
+static void ensureImGuiSetup() {
+  static bool setup = false;
+  if (!setup) {
+    // setup styles
+    ImGuiIO &io = ImGui::GetIO();
+    // io.Fonts->AddFontDefault();
+    auto fontFile = ag::getActualPath("resources/fonts/Cousine-Regular.ttf");
+    io.Fonts->AddFontFromFileTTF(fontFile.c_str(), 14.0f);
+    // merge in icons from Font Awesome
+    static const ImWchar icons_ranges[] = {ICON_MIN_FA, ICON_MAX_FA, 0};
+    fontFile = ag::getActualPath("resources/fonts/fontawesome-webfont.ttf");
+    ImFontConfig config;
+    config.PixelSnapH = true;
+    config.MergeMode = true;
+    io.Fonts->AddFontFromFileTTF(fontFile.c_str(), 14.0f, &config,
+                                 icons_ranges);
 
-			ImGuiStyle& style = ImGui::GetStyle();
-			style.ChildWindowRounding = 3.f;
-			style.GrabRounding = 0.f;
-			style.WindowRounding = 0.f;
-			style.ScrollbarRounding = 3.f;
-			style.FrameRounding = 3.f;
-			style.WindowTitleAlign = ImVec2(0.5f, 0.5f);
-			style.Colors[ImGuiCol_Text] = ImVec4(0.91f, 0.91f, 0.91f, 1.00f);
-			style.Colors[ImGuiCol_TextDisabled] = ImVec4(0.40f, 0.40f, 0.40f, 1.00f);
-			style.Colors[ImGuiCol_WindowBg] = ImVec4(0.10f, 0.10f, 0.10f, 1.00f);
-			style.Colors[ImGuiCol_ChildWindowBg] = ImVec4(0.00f, 0.00f, 0.00f, 0.00f);
-			style.Colors[ImGuiCol_Border] = ImVec4(0.00f, 0.00f, 0.00f, 0.39f);
-			style.Colors[ImGuiCol_BorderShadow] = ImVec4(1.00f, 1.00f, 1.00f, 0.10f);
-			style.Colors[ImGuiCol_FrameBg] = ImVec4(0.06f, 0.06f, 0.06f, 1.00f);
-			style.Colors[ImGuiCol_FrameBgHovered] = ImVec4(0.75f, 0.42f, 0.02f, 0.40f);
-			style.Colors[ImGuiCol_FrameBgActive] = ImVec4(0.75f, 0.42f, 0.02f, 0.67f);
-			style.Colors[ImGuiCol_TitleBg] = ImVec4(0.04f, 0.04f, 0.04f, 1.00f);
-			style.Colors[ImGuiCol_TitleBgCollapsed] = ImVec4(0.00f, 0.00f, 0.00f, 0.51f);
-			style.Colors[ImGuiCol_TitleBgActive] = ImVec4(0.18f, 0.18f, 0.18f, 1.00f);
-			style.Colors[ImGuiCol_MenuBarBg] = ImVec4(0.15f, 0.15f, 0.15f, 1.00f);
-			style.Colors[ImGuiCol_ScrollbarBg] = ImVec4(0.02f, 0.02f, 0.02f, 0.53f);
-			style.Colors[ImGuiCol_ScrollbarGrab] = ImVec4(0.31f, 0.31f, 0.31f, 0.80f);
-			style.Colors[ImGuiCol_ScrollbarGrabHovered] = ImVec4(0.49f, 0.49f, 0.49f, 0.80f);
-			style.Colors[ImGuiCol_ScrollbarGrabActive] = ImVec4(0.49f, 0.49f, 0.49f, 1.00f);
-			style.Colors[ImGuiCol_ComboBg] = ImVec4(0.15f, 0.15f, 0.15f, 0.99f);
-			style.Colors[ImGuiCol_CheckMark] = ImVec4(0.75f, 0.42f, 0.02f, 1.00f);
-			style.Colors[ImGuiCol_SliderGrab] = ImVec4(0.75f, 0.42f, 0.02f, 0.78f);
-			style.Colors[ImGuiCol_SliderGrabActive] = ImVec4(0.75f, 0.42f, 0.02f, 1.00f);
-			style.Colors[ImGuiCol_Button] = ImVec4(0.75f, 0.42f, 0.02f, 0.40f);
-			style.Colors[ImGuiCol_ButtonHovered] = ImVec4(0.75f, 0.42f, 0.02f, 1.00f);
-			style.Colors[ImGuiCol_ButtonActive] = ImVec4(0.94f, 0.47f, 0.02f, 1.00f);
-			style.Colors[ImGuiCol_Header] = ImVec4(0.75f, 0.42f, 0.02f, 0.31f);
-			style.Colors[ImGuiCol_HeaderHovered] = ImVec4(0.75f, 0.42f, 0.02f, 0.80f);
-			style.Colors[ImGuiCol_HeaderActive] = ImVec4(0.75f, 0.42f, 0.02f, 1.00f);
-			style.Colors[ImGuiCol_Column] = ImVec4(0.61f, 0.61f, 0.61f, 1.00f);
-			style.Colors[ImGuiCol_ColumnHovered] = ImVec4(0.75f, 0.42f, 0.02f, 0.78f);
-			style.Colors[ImGuiCol_ColumnActive] = ImVec4(0.75f, 0.42f, 0.02f, 1.00f);
-			style.Colors[ImGuiCol_ResizeGrip] = ImVec4(0.22f, 0.22f, 0.22f, 1.00f);
-			style.Colors[ImGuiCol_ResizeGripHovered] = ImVec4(0.75f, 0.42f, 0.02f, 0.67f);
-			style.Colors[ImGuiCol_ResizeGripActive] = ImVec4(0.75f, 0.42f, 0.02f, 0.95f);
-			style.Colors[ImGuiCol_CloseButton] = ImVec4(0.42f, 0.42f, 0.42f, 0.50f);
-			style.Colors[ImGuiCol_CloseButtonHovered] = ImVec4(0.02f, 0.61f, 0.64f, 1.00f);
-			style.Colors[ImGuiCol_CloseButtonActive] = ImVec4(0.02f, 0.61f, 0.64f, 1.00f);
-			style.Colors[ImGuiCol_PlotLines] = ImVec4(0.61f, 0.61f, 0.61f, 1.00f);
-			style.Colors[ImGuiCol_PlotLinesHovered] = ImVec4(0.00f, 0.57f, 0.65f, 1.00f);
-			style.Colors[ImGuiCol_PlotHistogram] = ImVec4(0.10f, 0.30f, 1.00f, 1.00f);
-			style.Colors[ImGuiCol_PlotHistogramHovered] = ImVec4(0.00f, 0.40f, 1.00f, 1.00f);
-			style.Colors[ImGuiCol_TextSelectedBg] = ImVec4(0.75f, 0.42f, 0.02f, 0.35f);
-			style.Colors[ImGuiCol_PopupBg] = ImVec4(0.00f, 0.00f, 0.00f, 0.94f);
-			style.Colors[ImGuiCol_ModalWindowDarkening] = ImVec4(0.06f, 0.06f, 0.06f, 0.35f);
-		}
-	}
+    ImGuiStyle &style = ImGui::GetStyle();
+    style.ChildWindowRounding = 3.f;
+    style.GrabRounding = 0.f;
+    style.WindowRounding = 0.f;
+    style.ScrollbarRounding = 3.f;
+    style.FrameRounding = 3.f;
+    style.WindowTitleAlign = ImVec2(0.5f, 0.5f);
+    style.Colors[ImGuiCol_Text] = ImVec4(0.91f, 0.91f, 0.91f, 1.00f);
+    style.Colors[ImGuiCol_TextDisabled] = ImVec4(0.40f, 0.40f, 0.40f, 1.00f);
+    style.Colors[ImGuiCol_WindowBg] = ImVec4(0.10f, 0.10f, 0.10f, 1.00f);
+    style.Colors[ImGuiCol_ChildWindowBg] = ImVec4(0.00f, 0.00f, 0.00f, 0.00f);
+    style.Colors[ImGuiCol_Border] = ImVec4(0.00f, 0.00f, 0.00f, 0.39f);
+    style.Colors[ImGuiCol_BorderShadow] = ImVec4(1.00f, 1.00f, 1.00f, 0.10f);
+    style.Colors[ImGuiCol_FrameBg] = ImVec4(0.06f, 0.06f, 0.06f, 1.00f);
+    style.Colors[ImGuiCol_FrameBgHovered] = ImVec4(0.75f, 0.42f, 0.02f, 0.40f);
+    style.Colors[ImGuiCol_FrameBgActive] = ImVec4(0.75f, 0.42f, 0.02f, 0.67f);
+    style.Colors[ImGuiCol_TitleBg] = ImVec4(0.04f, 0.04f, 0.04f, 1.00f);
+    style.Colors[ImGuiCol_TitleBgCollapsed] =
+        ImVec4(0.00f, 0.00f, 0.00f, 0.51f);
+    style.Colors[ImGuiCol_TitleBgActive] = ImVec4(0.18f, 0.18f, 0.18f, 1.00f);
+    style.Colors[ImGuiCol_MenuBarBg] = ImVec4(0.15f, 0.15f, 0.15f, 1.00f);
+    style.Colors[ImGuiCol_ScrollbarBg] = ImVec4(0.02f, 0.02f, 0.02f, 0.53f);
+    style.Colors[ImGuiCol_ScrollbarGrab] = ImVec4(0.31f, 0.31f, 0.31f, 0.80f);
+    style.Colors[ImGuiCol_ScrollbarGrabHovered] =
+        ImVec4(0.49f, 0.49f, 0.49f, 0.80f);
+    style.Colors[ImGuiCol_ScrollbarGrabActive] =
+        ImVec4(0.49f, 0.49f, 0.49f, 1.00f);
+    style.Colors[ImGuiCol_ComboBg] = ImVec4(0.15f, 0.15f, 0.15f, 0.99f);
+    style.Colors[ImGuiCol_CheckMark] = ImVec4(0.75f, 0.42f, 0.02f, 1.00f);
+    style.Colors[ImGuiCol_SliderGrab] = ImVec4(0.75f, 0.42f, 0.02f, 0.78f);
+    style.Colors[ImGuiCol_SliderGrabActive] =
+        ImVec4(0.75f, 0.42f, 0.02f, 1.00f);
+    style.Colors[ImGuiCol_Button] = ImVec4(0.75f, 0.42f, 0.02f, 0.40f);
+    style.Colors[ImGuiCol_ButtonHovered] = ImVec4(0.75f, 0.42f, 0.02f, 1.00f);
+    style.Colors[ImGuiCol_ButtonActive] = ImVec4(0.94f, 0.47f, 0.02f, 1.00f);
+    style.Colors[ImGuiCol_Header] = ImVec4(0.75f, 0.42f, 0.02f, 0.31f);
+    style.Colors[ImGuiCol_HeaderHovered] = ImVec4(0.75f, 0.42f, 0.02f, 0.80f);
+    style.Colors[ImGuiCol_HeaderActive] = ImVec4(0.75f, 0.42f, 0.02f, 1.00f);
+    style.Colors[ImGuiCol_Column] = ImVec4(0.61f, 0.61f, 0.61f, 1.00f);
+    style.Colors[ImGuiCol_ColumnHovered] = ImVec4(0.75f, 0.42f, 0.02f, 0.78f);
+    style.Colors[ImGuiCol_ColumnActive] = ImVec4(0.75f, 0.42f, 0.02f, 1.00f);
+    style.Colors[ImGuiCol_ResizeGrip] = ImVec4(0.22f, 0.22f, 0.22f, 1.00f);
+    style.Colors[ImGuiCol_ResizeGripHovered] =
+        ImVec4(0.75f, 0.42f, 0.02f, 0.67f);
+    style.Colors[ImGuiCol_ResizeGripActive] =
+        ImVec4(0.75f, 0.42f, 0.02f, 0.95f);
+    style.Colors[ImGuiCol_CloseButton] = ImVec4(0.42f, 0.42f, 0.42f, 0.50f);
+    style.Colors[ImGuiCol_CloseButtonHovered] =
+        ImVec4(0.02f, 0.61f, 0.64f, 1.00f);
+    style.Colors[ImGuiCol_CloseButtonActive] =
+        ImVec4(0.02f, 0.61f, 0.64f, 1.00f);
+    style.Colors[ImGuiCol_PlotLines] = ImVec4(0.61f, 0.61f, 0.61f, 1.00f);
+    style.Colors[ImGuiCol_PlotLinesHovered] =
+        ImVec4(0.00f, 0.57f, 0.65f, 1.00f);
+    style.Colors[ImGuiCol_PlotHistogram] = ImVec4(0.10f, 0.30f, 1.00f, 1.00f);
+    style.Colors[ImGuiCol_PlotHistogramHovered] =
+        ImVec4(0.00f, 0.40f, 1.00f, 1.00f);
+    style.Colors[ImGuiCol_TextSelectedBg] = ImVec4(0.75f, 0.42f, 0.02f, 0.35f);
+    style.Colors[ImGuiCol_PopupBg] = ImVec4(0.00f, 0.00f, 0.00f, 0.94f);
+    style.Colors[ImGuiCol_ModalWindowDarkening] =
+        ImVec4(0.06f, 0.06f, 0.06f, 0.35f);
+  }
+}
 
 // GLFW event handlers
 void Window::MouseButtonHandler(GLFWwindow *window, int button, int action,
@@ -133,11 +144,11 @@ void Window::WindowSizeHandler(GLFWwindow *window, int width, int height) {
     static_cast<Window *>(userptr)->windowSizeHandler(width, height);
 }
 
-void Window::PointerEventHandler(GLFWwindow *window, const GLFWpointerevent* pointerEvent)
-{
-	auto userptr = glfwGetWindowUserPointer(window);
-	if (userptr)
-		static_cast<Window *>(userptr)->pointerEventHandler(pointerEvent);
+void Window::PointerEventHandler(GLFWwindow *window,
+                                 const GLFWpointerevent *pointerEvent) {
+  auto userptr = glfwGetWindowUserPointer(window);
+  if (userptr)
+    static_cast<Window *>(userptr)->pointerEventHandler(pointerEvent);
 }
 
 void Window::mouseButtonHandler(int button, int action, int mods) {
@@ -146,7 +157,7 @@ void Window::mouseButtonHandler(int button, int action, int mods) {
   ev.mouseButton.action =
       (action == GLFW_PRESS) ? ButtonState::Pressed : ButtonState::Released;
   if (eventFunc_)
-	eventFunc_(*this, ev);
+    eventFunc_(*this, ev);
 }
 
 void Window::cursorPosHandler(double xpos, double ypos) {
@@ -156,13 +167,13 @@ void Window::cursorPosHandler(double xpos, double ypos) {
   ev.cursor.x = (int)xpos;
   ev.cursor.y = (int)ypos;
   if (eventFunc_)
-	eventFunc_(*this, ev);
+    eventFunc_(*this, ev);
 }
 
 void Window::cursorEnterHandler(int entered) {
   Event ev{entered ? EventType::CursorEnter : EventType::CursorExit};
   if (eventFunc_)
-	eventFunc_(*this, ev);
+    eventFunc_(*this, ev);
 }
 
 void Window::scrollHandler(double xoffset, double yoffset) {
@@ -170,7 +181,7 @@ void Window::scrollHandler(double xoffset, double yoffset) {
   ev.scroll.dx = xoffset;
   ev.scroll.dy = yoffset;
   if (eventFunc_)
-	eventFunc_(*this, ev);
+    eventFunc_(*this, ev);
 }
 
 void Window::keyHandler(int key, int scancode, int action, int mods) {
@@ -182,14 +193,14 @@ void Window::keyHandler(int key, int scancode, int action, int mods) {
   ev.key.scancode = scancode;
   ev.key.key = key;
   if (eventFunc_)
-	eventFunc_(*this, ev);
+    eventFunc_(*this, ev);
 }
 
 void Window::charHandler(unsigned int codepoint) {
   Event ev{EventType::Text};
   ev.text.codepoint = codepoint;
   if (eventFunc_)
-	eventFunc_(*this, ev);
+    eventFunc_(*this, ev);
 }
 
 void Window::windowSizeHandler(int width, int height) {
@@ -197,33 +208,41 @@ void Window::windowSizeHandler(int width, int height) {
   ev.resize.width = width;
   ev.resize.height = height;
   if (eventFunc_)
-	eventFunc_(*this, ev);
+    eventFunc_(*this, ev);
 }
 
-
-void Window::pointerEventHandler(const GLFWpointerevent* pointerevent)
-{
-	EventType type = EventType::PointerMove;
-	switch (pointerevent->action) {
-	case 1: type = EventType::PointerUp;  break;
-	case 2: type = EventType::PointerDown; break;
-	case 3: type = EventType::PointerEnter; break;
-	case 4: type = EventType::PointerLeave; break;
-	case 5: type = EventType::PointerMove; break;
-	};
-	Event ev{ type };
-	ev.pointer.info.button = pointerevent->button;
-	ev.pointer.info.buttons = pointerevent->buttons;
-	ev.pointer.info.id = pointerevent->id;
-	ev.pointer.info.mask = pointerevent->mask;
-	ev.pointer.info.type = pointerevent->type;
-	ev.pointer.info.x = pointerevent->x;
-	ev.pointer.info.y = pointerevent->y;
-	ev.pointer.info.pressure = pointerevent->pressure;
-	ev.pointer.info.tiltX = pointerevent->tiltX;
-	ev.pointer.info.tiltY = pointerevent->tiltY;
-	if (eventFunc_)
-		eventFunc_(*this, ev);
+void Window::pointerEventHandler(const GLFWpointerevent *pointerevent) {
+  EventType type = EventType::PointerMove;
+  switch (pointerevent->action) {
+  case 1:
+    type = EventType::PointerUp;
+    break;
+  case 2:
+    type = EventType::PointerDown;
+    break;
+  case 3:
+    type = EventType::PointerEnter;
+    break;
+  case 4:
+    type = EventType::PointerLeave;
+    break;
+  case 5:
+    type = EventType::PointerMove;
+    break;
+  };
+  Event ev{type};
+  ev.pointer.info.button = pointerevent->button;
+  ev.pointer.info.buttons = pointerevent->buttons;
+  ev.pointer.info.id = pointerevent->id;
+  ev.pointer.info.mask = pointerevent->mask;
+  ev.pointer.info.type = pointerevent->type;
+  ev.pointer.info.x = pointerevent->x;
+  ev.pointer.info.y = pointerevent->y;
+  ev.pointer.info.pressure = pointerevent->pressure;
+  ev.pointer.info.tiltX = pointerevent->tiltX;
+  ev.pointer.info.tiltY = pointerevent->tiltY;
+  if (eventFunc_)
+    eventFunc_(*this, ev);
 }
 
 KeyState Window::getKey(int key) {
@@ -307,26 +326,25 @@ ivec2 Window::getWindowSize() {
   return ivec2{w, h};
 }
 
-
 void Window::show() {
-	double tlast = glfwGetTime();
-	ImGui_ImplGlfwGL3_NewFrame();
-	while (!glfwWindowShouldClose(window_)) {
-		auto framebufferSize = getFramebufferSize();
-		ag::gl::resizeDefaultFramebuffer(framebufferSize.x, framebufferSize.y);
-		double t = glfwGetTime();
-		double dt = t - tlast;
-		tlast = t;
-		if (renderFunc_)
-		  renderFunc_(*this, dt);
-		ImGui::Render();
-		ImGui_ImplGlfwGL3_NewFrame();
-		ag::gl::endFrame();
-		glfwSwapBuffers(window_);
-		glfwPollEvents();
-	}
+  double tlast = glfwGetTime();
+  ImGui_ImplGlfwGL3_NewFrame();
+  while (!glfwWindowShouldClose(window_)) {
+    auto framebufferSize = getFramebufferSize();
+    ag::gl::resizeDefaultFramebuffer(framebufferSize.x, framebufferSize.y);
+    double t = glfwGetTime();
+    double dt = t - tlast;
+    tlast = t;
+    if (renderFunc_)
+      renderFunc_(*this, dt);
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    ImGui::Render();
+    ImGui_ImplGlfwGL3_NewFrame();
+    ag::gl::endFrame();
+    glfwSwapBuffers(window_);
+    glfwPollEvents();
+  }
 }
-
 
 void Window::close() { glfwSetWindowShouldClose(window_, 1); }
 }

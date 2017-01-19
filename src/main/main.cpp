@@ -309,6 +309,8 @@ int main(int argc, char *argv[]) {
   bool initOk = false;
   bool reloadOk = false;
   bool lastOnRenderFailed = false;
+
+  Scene scene;
   Canvas canvas{ 1024, 1024 };
   CanvasRenderer canvasRenderer;
 
@@ -322,15 +324,17 @@ int main(int argc, char *argv[]) {
   init();
 
   w.onRender([&](ag::Window &win, double dt) {
-    auto framebufferSize = win.getFramebufferSize();
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
-    glEnable(GL_FRAMEBUFFER_SRGB);
-    glViewport(0, 0, framebufferSize.x, framebufferSize.y);
-    glClearColor(60.f / 255.f, 60.f / 255.f, 168.f / 255.f, 1.0f);
-    glClearDepth(1.0);
-    glDepthMask(GL_TRUE);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
-  
+	  auto framebufferSize = win.getFramebufferSize();
+	  glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	  glEnable(GL_FRAMEBUFFER_SRGB);
+	  glViewport(0, 0, framebufferSize.x, framebufferSize.y);
+	  glClearColor(60.f / 255.f, 60.f / 255.f, 168.f / 255.f, 1.0f);
+	  glClearDepth(1.0);
+	  glDepthMask(GL_TRUE);
+	  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+
+	  canvasRenderer.renderCanvas(scene, canvas);
+	  glDisable(GL_STENCIL_TEST);
     // GUI test
     ImGui::BeginMainMenuBar();
     if (ImGui::BeginMenu(ICON_FA_FOLDER " Menu")) {
@@ -344,6 +348,7 @@ int main(int argc, char *argv[]) {
       ImGui::EndMenu();
     }
     ImGui::EndMainMenuBar();
+
   });
 
   w.onEvent([&](ag::Window &win, const ag::Event &ev) {

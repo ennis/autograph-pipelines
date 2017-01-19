@@ -11,20 +11,28 @@ local function preprocess(filename, env)
   local file = io.open(filename)
   local chunk = {'local T={}\n'}
   for line in file:lines() do
-     local found = string.find(line, '##')
-     if found then
-      table.insert(chunk, string.sub(line, found+2) .. "\n")
+    -- handle includes
+     local filename = string.match(line, '#include "([%w_%.]+)"')
+     if filename then
+        local shaderFile = autograph.getActualPath('resources/shaders/' .. filename)
+        local prep = preprocess(shaderFile, env)
+        table.insert(chunk, string.format('table.insert(T,%q) ', prep))
      else
-      local last = 1
-      for text, expr, index in string.gmatch(line, "(.-)$(%b())()") do 
-        last = index
-        if text ~= "" then
-          table.insert(chunk, string.format('table.insert(T,%q) ', text))
+        local found = string.find(line, '##')
+       if found then
+        table.insert(chunk, string.sub(line, found+2) .. "\n")
+       else
+        local last = 1
+        for text, expr, index in string.gmatch(line, "(.-)$(%b())()") do 
+          last = index
+          if text ~= "" then
+            table.insert(chunk, string.format('table.insert(T,%q) ', text))
+          end
+          table.insert(chunk, string.format('table.insert(T,tostring %s) ', expr))
         end
-        table.insert(chunk, string.format('table.insert(T,tostring %s) ', expr))
+        table.insert(chunk, string.format('table.insert(T,%q)\n',
+                                           string.sub(line, last).."\n"))
       end
-      table.insert(chunk, string.format('table.insert(T,%q)\n',
-                                         string.sub(line, last).."\n"))
     end
   end
   file:close()
@@ -37,15 +45,10 @@ local function preprocess(filename, env)
     return nil
   else  
     env.table = table
-    env.include = function (filename) 
-      local shaderFile = autograph.getActualPath('resources/shaders/' .. filename)
-      local prep = preprocess(shaderFile, env)
-      return prep
-    end
     setfenv(chunkfn, env)
     str = chunkfn()
     --autograph.debug('Preprocessed source:')
-    --autograph.debug(str)
+    -- autograph.debug(str)
     return str
   end
 end
