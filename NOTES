@@ -1721,6 +1721,9 @@ IMGUI:
 - Input processing tied to frame rate
 - Some operations have a frame lag
 - Widget must have explicitly assigned IDs
+- A component cannot place a widget where it wants:
+	i.e. if we are in the onGUI() function, we cannot add an entry to the main menu
+		need onMenuBarGUI(), onGUI()
 
 Note: IMGUI is not necessarily fully 'immediate': the visual tree can be cached (and hidden from the programmer)
 	can also keep a cached version of the model
@@ -1753,3 +1756,78 @@ What we want:
 Conclusion:
 	IMGUI just has more advantages here => Use it!
 		For now?
+
+Use case: 
+	big table with many rows and many columns
+	each row has an edit box and a button
+
+
+// IMGUI
+for (r in rows) 
+{
+	ImGui::PushID(i)
+	ImGui::Columns()
+		...column 1...
+	ImGui::NextColumn()
+		...column 2...
+		if (ImGui::Button()) {
+			...
+		}
+	...
+	ImGui::PopID()
+	ImGui::NextRow()
+}
+
+
+// Naive RMGUI
+// Must listen to changes in the model
+onRowAdded() 
+{
+	grid.addRow(
+		ui::Label{...},
+		ui::Button { ui::Clicked([] {...} ) },
+		ui::EditBox { ui::Changed([] {...})}
+	);
+}
+
+onRowDeleted() {
+	...
+}
+
+onRowChanged() {
+	grid.removeRow(...)
+	grid.addRow(...)
+}
+
+// 'Sophisticated' RMGUI
+
+ui::DataGrid {
+	ui::Model { 
+		[&data](int row) 
+		{
+			return ui::Row{ 
+				ui::Label{...}, 
+				ui::Button{ ui::Clicked([] { })},
+				ui::EditBox{ &data[row].str } 
+			}
+		}
+	}
+}
+
+// On toggle, show UI:
+// IMGUI
+if (Checkbox(...)) Button();
+
+// RMGUI
+ui::Checkbox check{parent};
+// called each time the widget 'check' is updated
+// will add a new ui::button as a child element
+check.contents([] (auto& w) { if (w.checked) return ui::button(); })
+
+// The data grid doesn't know how many rows there are.
+// it just remembers the range of rows it has to display.
+// If the row doesn't exist, then return empty row.
+// The model view is updated every frame (like ImGui)
+// Widgets can be static: in that case
+
+// Golden rule: The lifetime of GUI objects must be the same as 

@@ -8,7 +8,6 @@
 #include <imgui.h>
 
 #include <glm/gtc/packing.hpp>
-#include <glm/gtc/random.hpp>
 
 #include <autograph/gl/Device.h>
 #include <autograph/gl/Draw.h>
@@ -39,6 +38,7 @@
 
 #include "Scene2D.h"
 #include "SceneRenderer.h"
+#include "Canvas.h"
 
 using namespace ag;
 
@@ -60,120 +60,6 @@ std::string pathCombine(std::string a, std::string b) {
                         value.as<std::string>());
         });
 }*/
-
-/////////////////////////////////////////////////////////////
-template <typename T> T evalJitter(T ref, T jitter) {
-  return ref + glm::linearRand(-jitter, jitter);
-}
-
-/////////////////////////////////////////////////////////////
-// Converts a sequence of mouse position samples to
-// a sequence of splat positions
-// Also handles smoothing
-class AG_API BrushPathBuilder {
-public:
-  struct Params {
-    float spacing;
-    float spacingJitter;
-  };
-
-  struct Point {
-    bool first;
-    float x;
-    float y;
-    float prevX;
-    float prevY;
-  };
-
-  // call this when the mouse has moved
-  // returns how many splats were added as a result of the mouse movement
-  int addPoint(const Params &params, float x, float y,
-               std::function<void(Point)> f) {
-    auto spacing = evalJitter(params.spacing, params.spacingJitter);
-    if (spacing < 0.1f)
-      spacing = 0.1f;
-
-    if (pointerPositions_.empty()) {
-      pointerPositions_.push_back(vec2{x, y});
-      splatPositions_.push_back(vec2{x, y});
-      f(Point{true, x, y, 0.0f, 0.0f});
-      return 1;
-    } else {
-      auto Plast = pointerPositions_.back();
-      vec2 Pmouse{x, y};
-      vec2 Pcur = glm::mix(Plast, Pmouse, 0.5); // smoothing
-      auto length = glm::distance(Plast, Pcur);
-      auto slack = pathLength_;
-      pathLength_ += length;
-      auto pos = spacing - slack;
-      int n = 0;
-      auto Pprev = splatPositions_.back();
-      while (pathLength_ > spacing) {
-        auto P = glm::mix(Plast, Pcur, (length > 0.01f) ? pos / length : 0.0f);
-        splatPositions_.push_back(P);
-        f(Point{false, P.x, P.y, Pprev.x, Pprev.y});
-        Pprev = P;
-        ++n;
-        pathLength_ -= spacing;
-        pos += spacing;
-      }
-      pointerPositions_.push_back(Pmouse);
-      return n;
-    }
-  }
-
-  void clear() {
-    pointerPositions_.clear();
-    splatPositions_.clear();
-    pathLength_ = 0.0f;
-  }
-
-private:
-  std::vector<vec2> pointerPositions_;
-  std::vector<vec2> splatPositions_;
-  float pathLength_{0.0f};
-};
-
-// Augmented painting canvas
-struct Canvas {
-  Canvas(int width, int height) {
-    // Normals (from camera)
-    // Palette coeffs: need 12 coeffs (normalized uint16_t, packed in two
-    // R32G32B32A32 textures)
-    // Color flat reference positions: two texcoords (normalized uint16_ts)
-
-    GBuffers =
-        RenderTarget{width,
-                     height,
-                     {ag::ImageFormat::R16G16B16A16_SFLOAT},
-                     RenderTarget::DepthTexture{ag::ImageFormat::D32_SFLOAT}};
-
-    canvasBuffers = RenderTarget{width,
-                                 height,
-                                 {
-                                     ag::ImageFormat::R32G32B32A32_UINT,
-                                     ag::ImageFormat::R32G32B32A32_UINT,
-                                 },
-                                 RenderTarget::NoDepth{}};
-
-    // final color: R16G16A16B16 float
-    finalColor = RenderTarget{width,
-                              height,
-                              {ag::ImageFormat::R16G16B16A16_SFLOAT},
-                              RenderTarget::NoDepth{}};
-  }
-
-  RenderTarget GBuffers;
-  RenderTarget canvasBuffers;
-  RenderTarget finalColor;
-};
-
-class CanvasRenderer {
-public:
-  void renderCanvas(Canvas &canvas);
-
-private:
-};
 
 void pointerEventToLua(sol::table &tbl, const PointerInfo &info) {
   tbl["button"] = info.button;
@@ -363,20 +249,19 @@ void valueDebugGUI(std::type_index ti, void *data) {
       ImGui::Combo("", &i, items_getter, const_cast<meta::Enum *>(mo),
                    mo->enumerators.size());
       mo->setValue(data, mo->enumerators[i].value);
-	}
-	else if (auto mo = mo0->as<meta::Record>()) {
-		if (ImGui::CollapsingHeader(mo->name)) {
-			ImGui::Columns(2);
-			for (auto &&f : mo->publicFields) {
-				ImGui::Text("%s", getFriendlyName(f));
-				ImGui::NextColumn();
-				ImGui::PushItemWidth(-1.0f);
-				valueDebugGUI(f.typeindex, f.getPtr(data));
-				ImGui::NextColumn();
-			}
-			ImGui::Columns(1);
-		}
-	}
+    } else if (auto mo = mo0->as<meta::Record>()) {
+      if (ImGui::CollapsingHeader(mo->name)) {
+        ImGui::Columns(2);
+        for (auto &&f : mo->publicFields) {
+          ImGui::Text("%s", getFriendlyName(f));
+          ImGui::NextColumn();
+          ImGui::PushItemWidth(-1.0f);
+          valueDebugGUI(f.typeindex, f.getPtr(data));
+          ImGui::NextColumn();
+        }
+        ImGui::Columns(1);
+      }
+    }
   }
   // GUIs for structs
   else {
@@ -424,71 +309,17 @@ int main(int argc, char *argv[]) {
   bool initOk = false;
   bool reloadOk = false;
   bool lastOnRenderFailed = false;
+  Canvas canvas{ 1024, 1024 };
+  CanvasRenderer canvasRenderer;
 
   // call init
   auto init = [&]() {
-    try {
-      lua["screenWidth"] = 640;
-      lua["screenHeight"] = 480;
-      lua["window"] = &w;
-      lua.script("require 'init2d'");
-      lua.script("init()");
-      initOk = true;
-      // test
-      // openFileDialog("", getProjectRootDirectory().c_str());
-    } catch (sol::error &e) {
-      errorMessage("Error in init script:\n\t{}", e.what());
-      errorMessage("Please fix the script and reload (F5 key)");
-      initOk = false;
-    }
   };
 
   auto reset = [&]() {
-    if (initOk)
-      lua.script("reset()");
   };
 
   init();
-
-  double viewX = 0.0f;
-  double viewY = 0.0f;
-  float shakeScale = 1.0f;
-
-  Scene2D scene2D;
-  scene2D.loadTilemap("data/level1");
-
-  // test widgets
-  /*auto root = ui::Widget{
-      ui::Content{ui::Widget{}, ui::Widget{},
-                  ui::Widget{ui::Content{ui::Widget{}, ui::Widget{}}}}};*/
-
-  // call sequence (unoptimized):
-  // ui::Widget ctor (x4)
-  // ui::Content ctor <Widget, Widget>
-  //    ui::WidgetList ctor
-  //        vector ctor
-  //        ui::WidgetList add (x2)
-  //            vector push_back
-  //    ui::WidgetList move
-
-  // test 2
-
-  auto menu = ui::MenuBar{ui::Content{
-      ui::Menu{"File", ui::MenuItem{ICON_FA_FOLDER_OPEN " Open...", "Ctrl+O"},
-               ui::MenuItem{ICON_FA_WINDOW_CLOSE " Close", "Ctrl+F4"},
-               ui::Separator{},
-               ui::MenuItem{ICON_FA_WINDOW_CLOSE_O " Quit", "Alt-F4"}},
-      ui::Menu{"Edit", ui::MenuItem{ICON_FA_CLONE " Copy", "Ctrl+C"},
-               ui::MenuItem{ICON_FA_SCISSORS " Cut", "Ctrl+X"},
-               ui::MenuItem{ICON_FA_CLIPBOARD " Paste", "Ctrl+V"}}}};
-
-  auto additionalMenu = ui::Menu{
-      "Help", ui::MenuItem{ICON_FA_QUESTION_CIRCLE_O " Get help...", "F1"}};
-  menu.add(additionalMenu);
-
-
-  Shader sh{ "shaders/tileMap:tileMap" };
-  auto states = sh.getDrawStates();
 
   w.onRender([&](ag::Window &win, double dt) {
     auto framebufferSize = win.getFramebufferSize();
@@ -499,63 +330,21 @@ int main(int argc, char *argv[]) {
     glClearDepth(1.0);
     glDepthMask(GL_TRUE);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
-    if (!lastOnRenderFailed) {
-      try {
-        // AG_DEBUG("Frame");
-        // lua["render"](dt);
-      } catch (sol::error &e) {
-        errorMessage("Error running render():\n\t{}", e.what());
-        errorMessage("Please fix the script and reload (F5 key)");
-        lastOnRenderFailed = true;
-      }
+  
+    // GUI test
+    ImGui::BeginMainMenuBar();
+    if (ImGui::BeginMenu(ICON_FA_FOLDER " Menu")) {
+      ImGui::MenuItem(ICON_FA_FOLDER_OPEN " Open...", "Ctrl+O");
+      ImGui::MenuItem(ICON_FA_WINDOW_CLOSE " Close", "Ctrl+F4");
+	  if (ImGui::MenuItem(ICON_FA_REFRESH " Reload shaders")) {
+		  canvasRenderer.reloadShaders();
+	  }
+      ImGui::Separator();
+      ImGui::MenuItem(ICON_FA_WINDOW_CLOSE_O " Quit", "Alt+F4");
+      ImGui::EndMenu();
     }
-
-    // speed in pixels/sec
-    /**/
-
-    vec2 offset;
-
-    // screen shake
-    if (w.getKey(GLFW_KEY_SPACE) == KeyState::Pressed) {
-      offset = shakeScale * diskRandom();
-      shakeScale += 0.1f;
-    } else {
-      shakeScale = 1.0f;
-      offset = vec2{0.0f};
-    }
-
-    Scene2D::Viewport vp;
-    vp.x = (float)std::floor(viewX + offset.x);
-    vp.y = (float)std::floor(viewY + offset.y);
-    vp.width = framebufferSize.x / 2.0f;
-    vp.height = framebufferSize.y / 2.0f;
-    scene2D.render(gl::getDefaultFramebuffer(), vp);
-
-	debugValue(states);
-    debugValue(offset);
- 
-        // GUI test
-        ImGui::BeginMainMenuBar();
-        if (ImGui::BeginMenu(ICON_FA_FOLDER " File")) {
-          ImGui::MenuItem(ICON_FA_FOLDER_OPEN " Open...", "Ctrl+O");
-          ImGui::MenuItem(ICON_FA_WINDOW_CLOSE " Close", "Ctrl+F4");
-          ImGui::Separator();
-          ImGui::MenuItem(ICON_FA_WINDOW_CLOSE_O " Quit", "Alt+F4");
-          ImGui::EndMenu();
-        }
-        ImGui::EndMainMenuBar();
-        menu.render();
-
+    ImGui::EndMainMenuBar();
   });
-
-  bool inStroke = false;
-  BrushPathBuilder brushPathBuilder;
-  BrushPathBuilder::Params brushPathBuilderParams;
-  brushPathBuilderParams.spacing = 1.0f;
-  float origX;
-  float origY;
-  float origViewX;
-  float origViewY;
 
   w.onEvent([&](ag::Window &win, const ag::Event &ev) {
     sol::object eventFn = lua["onEvent"];
@@ -566,33 +355,10 @@ int main(int argc, char *argv[]) {
         reset();
       } else if (ev.key.action == KeyState::Pressed &&
                  ev.key.key == GLFW_KEY_F4) {
-        lua.unloadModules();
-        init();
       }
     } else if (ev.type == EventType::PointerDown) {
-      inStroke = true;
-      brushPathBuilder.addPoint(brushPathBuilderParams, ev.pointer.info.x,
-                                ev.pointer.info.y,
-                                [&](BrushPathBuilder::Point p) {
-                                  AG_DEBUG("Point {},{} (BEGIN)", p.x, p.y);
-                                  origX = p.x;
-                                  origY = p.y;
-                                  origViewX = viewX;
-                                  origViewY = viewY;
-                                });
     } else if (ev.type == EventType::PointerUp) {
-      inStroke = false;
-      brushPathBuilder.clear();
     } else if (ev.type == EventType::PointerMove) {
-      if (inStroke) {
-        brushPathBuilder.addPoint(brushPathBuilderParams, ev.pointer.info.x,
-                                  ev.pointer.info.y,
-                                  [&](BrushPathBuilder::Point p) {
-                                    // AG_DEBUG("Point {},{}", p.x, p.y);
-                                    viewX = origViewX - 0.5f * (p.x - origX);
-                                    viewY = origViewY - 0.5f * (p.y - origY);
-                                  });
-      }
     }
     /*AG_DEBUG("pointer({}, type {}, mask{}): button {} pos {},{} pressure {}",
              ev.pointer.info.id, ev.pointer.info.type, ev.pointer.info.mask,

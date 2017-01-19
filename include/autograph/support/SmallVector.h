@@ -83,7 +83,7 @@ private:
   // Allocate raw space for N elements of type T.  If T has a ctor or dtor, we
   // don't want it to be automatically run, so we need to represent the space as
   // something else.  Use an array of char of sufficient alignment.
-  typedef std::aligned_storage<sizeof(T)> U;
+  typedef std::aligned_storage_t<sizeof(T)> U;
   U FirstEl;
   // Space after 'FirstEl' is clobbered, do not add any instance vars after it.
 

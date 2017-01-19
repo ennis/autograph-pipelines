@@ -12,6 +12,7 @@ static GLFormatInfo glfmt_r32_float{GL_R32F, GL_RED, GL_FLOAT, 1, 4};
 static GLFormatInfo glfmt_rg32_float{GL_RG32F, GL_RG, GL_FLOAT, 2, 8}; 
 static GLFormatInfo glfmt_rgba16_float{ GL_RGBA16F, GL_RGBA, GL_FLOAT, 4, 8 };
 static GLFormatInfo glfmt_rgba32_float{GL_RGBA32F, GL_RGBA, GL_FLOAT, 4, 16};
+static GLFormatInfo glfmt_rgba32_uint{ GL_RGBA32UI, GL_RGBA, GL_UNSIGNED_INT, 4, 16 };
 static GLFormatInfo glfmt_depth32_float{GL_DEPTH_COMPONENT32F,
                                         GL_DEPTH_COMPONENT, GL_FLOAT, 1, 4};
 static GLFormatInfo glfmt_argb_10_10_10_2_unorm{GL_RGB10_A2,
@@ -24,6 +25,8 @@ void TextureDeleter::operator()(GLuint tex_obj) {
 
 const GLFormatInfo &getGLImageFormatInfo(ImageFormat fmt) {
   switch (fmt) {
+  case ImageFormat::R32G32B32A32_UINT:
+	  return glfmt_rgba32_uint;
   case ImageFormat::R16G16B16A16_SFLOAT:
 	  return glfmt_rgba32_float;
   case ImageFormat::R8G8B8A8_UNORM:

@@ -1,4 +1,5 @@
 #include <autograph/engine/RenderTarget.h>
+#include <autograph/support/Debug.h>
 
 namespace ag {
 RenderTarget::RenderTarget(

@@ -44,7 +44,7 @@ public:
 
 private:
   SmallVector<gl::Texture, 8> colorTargets_;
-  int numSamples_;
+  int numSamples_{ 0 };
   variant<gl::Texture, gl::Renderbuffer> depthTarget_;
   gl::Framebuffer fbo_;
 };
