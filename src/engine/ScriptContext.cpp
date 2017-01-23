@@ -11,7 +11,8 @@ ScriptContext::ScriptContext() {
   // open required libraries
   open_libraries(sol::lib::base, sol::lib::package, sol::lib::debug,
                  sol::lib::string, sol::lib::io, sol::lib::math,
-                 sol::lib::coroutine, sol::lib::os, sol::lib::table);
+                 sol::lib::coroutine, sol::lib::os, sol::lib::table,
+				sol::lib::bit32);
 
   // register application resource paths
   for (auto &resPath : getResourceDirectories()) {

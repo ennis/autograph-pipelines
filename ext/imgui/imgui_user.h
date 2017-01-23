@@ -74,6 +74,11 @@ IMGUI_API bool FilterInput(const char* label, char* buf, size_t buf_size);
 IMGUI_API void HSplitter(const char* str_id, ImVec2* size);
 IMGUI_API void Rect(float w, float h, ImU32 color);
 
+IMGUI_API bool ImageZoomAndPan(ImTextureID user_texture_id, const ImVec2 &size,
+	float aspectRatio, float &zoom, ImVec2 &zoomCenter,
+	int panMouseButtonDrag, int resetZoomAndPanMouseButton,
+	const ImVec2 &zoomMaxAndZoomStep);
+
 } // namespace ImGui
 
 

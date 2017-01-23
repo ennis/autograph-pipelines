@@ -155,6 +155,7 @@ Program Program::create(const char *vs_src, const char *fs_src,
   return prog;
 }
 
+
 /*auto makeDefineStrings(int numDefines, ShaderPPDefine* pDefines,
                        std::vector<std::string> &out_str) {
   std::vector<const char *> c_strings;

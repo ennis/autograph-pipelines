@@ -74,6 +74,7 @@ public:
   // stride);
   void setVertexShader(std::string vs);
   void setFragmentShader(std::string fs);
+  void setComputeShader(std::string cs);
   void addShaderKeyword(std::string kw);
   void addShaderDef(std::string kw, std::string def);
   void setViewport(int index, float x, float y, float width, float height);
@@ -88,6 +89,7 @@ public:
   }
 
 protected:
+  ShaderType shaderType_{ShaderType::Draw};
   bool shouldRecompile_{true};
   bool compileOk_{false};
   gl::Program prog_;
@@ -96,17 +98,21 @@ protected:
   gl::VertexArray vao_;
   std::string VS_;
   std::string FS_;
+  std::string GS_;
+  std::string TCS_;
+  std::string TES_;
+  std::string CS_;
   gl::DrawStates drawStates_;
+  GLbitfield barrierBits_{0};
   // gl::RasterizerState rasterizerState_;
   // gl::DepthStencilState depthStencilState_;
   // std::array<gl::BlendState, 8> blendStates_;
   // std::array<gl::Viewport, 8> viewports_;
   std::array<GLuint, 8> colorBuffers_;
-  GLuint depthBuffer_;
+  GLuint depthBuffer_{0};
   // empty -> Framebuffer is specified in the draw call
   optional<gl::Framebuffer> fbo_;
   // for compute shaders
-
   optional<int> groupSizeX;
   optional<int> groupSizeY;
   optional<int> groupSizeZ;

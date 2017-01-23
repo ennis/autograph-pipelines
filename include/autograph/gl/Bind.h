@@ -20,19 +20,19 @@ namespace bind {
     return [=](StateGroup &sg) {                                               \
       int loc = glGetUniformLocation(sg.drawStates.program, name);             \
       if (loc != -1)                                                           \
-        fn(loc, 1, &v[0]);                                                     \
+        fn(sg.drawStates.program, loc, 1, &v[0]);                              \
     };                                                                         \
   }                                                                            \
   inline auto uniform_##ty(int loc, value_ty v) {                              \
-    return [=](StateGroup &sg) { fn(loc, 1, &v[0]); };                         \
-  }
+    return [=](StateGroup &sg) { fn(sg.drawStates.program, loc, 1, &v[0]); };  \
+  }																			
 
-UNIFORM_VECN(vec2, vec2, glUniform2fv)
-UNIFORM_VECN(vec3, vec3, glUniform3fv)
-UNIFORM_VECN(vec4, vec4, glUniform4fv)
-UNIFORM_VECN(ivec2, ivec2, glUniform2iv)
-UNIFORM_VECN(ivec3, ivec3, glUniform3iv)
-UNIFORM_VECN(ivec4, ivec4, glUniform4iv)
+UNIFORM_VECN(vec2, vec2, glProgramUniform2fv)
+UNIFORM_VECN(vec3, vec3, glProgramUniform3fv)
+UNIFORM_VECN(vec4, vec4, glProgramUniform4fv)
+UNIFORM_VECN(ivec2, ivec2, glProgramUniform2iv)
+UNIFORM_VECN(ivec3, ivec3, glProgramUniform3iv)
+UNIFORM_VECN(ivec4, ivec4, glProgramUniform4iv)
 #undef UNIFORM_VECN
 
 #define UNIFORM_MATRIX_NXN(nxn)                                                \
@@ -41,13 +41,15 @@ UNIFORM_VECN(ivec4, ivec4, glUniform4iv)
     return [=](StateGroup &sg) {                                               \
       int loc = glGetUniformLocation(sg.drawStates.program, name);             \
       if (loc != -1)                                                           \
-        glUniformMatrix##nxn##fv(loc, 1, transpose, &v[0][0]);                 \
+        glProgramUniformMatrix##nxn##fv(sg.drawStates.program, loc, 1,         \
+                                        transpose, &v[0][0]);                  \
     };                                                                         \
   }                                                                            \
   inline auto uniform_mat##nxn(int loc, const mat##nxn &v,                     \
                                bool transpose = false) {                       \
     return [=](StateGroup &sg) {                                               \
-      glUniformMatrix##nxn##fv(loc, 1, transpose, &v[0][0]);                   \
+      glProgramUniformMatrix##nxn##fv(sg.drawStates.program, loc, 1,           \
+                                      transpose, &v[0][0]);                    \
     };                                                                         \
   }
 

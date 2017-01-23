@@ -3,11 +3,10 @@
 #include <autograph/engine/RenderTarget.h>
 #include <autograph/engine/Scene.h>
 #include <autograph/engine/Shader.h>
-#include <vector>
 #include <functional>
+#include <vector>
 
-namespace ag 
-{
+namespace ag {
 
 /////////////////////////////////////////////////////////////
 // Converts a sequence of mouse position samples to
@@ -54,16 +53,12 @@ struct Canvas {
 
 class CanvasRenderer {
 public:
-	CanvasRenderer();
-
-	void renderCanvas(Scene& scene, Canvas &canvas);
-
-	void reloadShaders();
+  CanvasRenderer();
+  void renderCanvas(Scene &scene, Canvas &canvas);
+  void reloadShaders();
 
 private:
-	gl::Sampler sampler;
-	Shader gbufferPass;
-	Shader evaluationPass;
+  Shader gbufferPass;
+  Shader evaluationPass;
 };
-
 }

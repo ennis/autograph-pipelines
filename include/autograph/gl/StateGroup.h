@@ -149,6 +149,7 @@ struct AG_API StateGroup {
   StateGroupMask mask;
   DrawStates drawStates;
   Uniforms uniforms;
+  GLbitfield barrierBits {0};
 };
 
 // bind a uniform state group to the opengl pipeline

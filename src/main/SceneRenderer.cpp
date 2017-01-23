@@ -28,7 +28,7 @@ DeferredSceneRenderer::DeferredSceneRenderer() { reloadShaders(); }
 DeferredSceneRenderer::~DeferredSceneRenderer() {}
 
 void DeferredSceneRenderer::reloadShaders() {
-  deferredShader = Shader{"shaders/deferred:deferredShader"};
+  deferredShader = Shader{"shaders/default:deferred"};
 }
 
 void DeferredSceneRenderer::renderScene(GBuffer &targets, Scene &scene,
@@ -75,8 +75,8 @@ WireframeOverlayRenderer::WireframeOverlayRenderer() { reloadShaders(); }
 WireframeOverlayRenderer::~WireframeOverlayRenderer() {}
 
 void WireframeOverlayRenderer::reloadShaders() {
-  wireframeShader = Shader{"shaders/wireframe:wireframeOverlay"};
-  wireframeNoDepthShader = Shader{"shaders/wireframe:wireframeOverlayNoDepth"};
+  wireframeShader = Shader{"shaders/default:wireframeOverlay"};
+  wireframeNoDepthShader = Shader{"shaders/default:wireframeOverlayNoDepth"};
 }
 
 // render one scene object and its children

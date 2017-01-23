@@ -29,6 +29,8 @@
 //---- Don't define obsolete functions names
 #define IMGUI_DISABLE_OBSOLETE_FUNCTIONS
 
+#define IMGUI_DEFINE_MATH_OPERATORS
+
 //---- Implement STB libraries in a namespace to avoid conflicts
 //#define IMGUI_STB_NAMESPACE     ImGuiStb
 

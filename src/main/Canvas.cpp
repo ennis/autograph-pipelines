@@ -1,9 +1,9 @@
 #include "Canvas.h"
-#include <glm/gtc/random.hpp>
-#include <glm/gtc/packing.hpp>
-#include <autograph/gl/Draw.h>
+#include <autograph/engine/RenderUtils.h>
 #include <autograph/gl/Device.h>
-
+#include <autograph/gl/Draw.h>
+#include <glm/gtc/packing.hpp>
+#include <glm/gtc/random.hpp>
 
 namespace ag {
 
@@ -56,7 +56,7 @@ void BrushPathBuilder::clear() {
 }
 
 /////////////////////////////////////////////////////////////
-Canvas::Canvas(int width_, int height_) : width{ width_ }, height{ height_ } {
+Canvas::Canvas(int width_, int height_) : width{width_}, height{height_} {
   // Normals (from camera)
   // Palette coeffs: need 12 coeffs (normalized uint16_t, packed in two
   // R32G32B32A32 textures)
@@ -80,68 +80,37 @@ Canvas::Canvas(int width_, int height_) : width{ width_ }, height{ height_ } {
                             {ag::ImageFormat::R16G16B16A16_SFLOAT},
                             RenderTarget::NoDepth{}};
 
-  glm::uint a0 = glm::packUnorm2x16(vec2{ 0.5f, 0.5f });
-  glm::uint a1 = glm::packUnorm2x16(vec2{ 0.5f, 0.5f });
-  glm::uint a2 = glm::packUnorm2x16(vec2{ 0.5f, 0.5f });
-  glm::uint a3 = glm::packUnorm2x16(vec2{ 2.0f, 1.0f });
-  uvec4 A = uvec4{ a0,a1,a2,a3 };
+  glm::uint a0 = glm::packUnorm2x16(vec2{0.5f, 0.5f});
+  glm::uint a1 = glm::packUnorm2x16(vec2{0.5f, 0.5f});
+  glm::uint a2 = glm::packUnorm2x16(vec2{0.5f, 0.5f});
+  glm::uint a3 = glm::packUnorm2x16(vec2{2.0f, 1.0f});
+  uvec4 A = uvec4{a0, a1, a2, a3};
 
-  glm::uint b0 = glm::packUnorm2x16(vec2{ 0.0f, 0.5f });
-  glm::uint b1 = glm::packUnorm2x16(vec2{ 0.2f, 0.25f });
-  glm::uint b2 = glm::packUnorm2x16(vec2{ 0.5f, 0.5f });
-  glm::uint b3 = glm::packUnorm2x16(vec2{ 0.5f, 0.5f });
-  uvec4 B = uvec4{ b0,b1,b2,b3 };
+  glm::uint b0 = glm::packUnorm2x16(vec2{0.0f, 0.5f});
+  glm::uint b1 = glm::packUnorm2x16(vec2{0.2f, 0.25f});
+  glm::uint b2 = glm::packUnorm2x16(vec2{0.5f, 0.5f});
+  glm::uint b3 = glm::packUnorm2x16(vec2{0.5f, 0.5f});
+  uvec4 B = uvec4{b0, b1, b2, b3};
 
   gl::clearTexture(canvasBuffers.getColorTarget(0), A);
   gl::clearTexture(canvasBuffers.getColorTarget(1), B);
 }
 
-CanvasRenderer::CanvasRenderer() 
-{
-	gl::SamplerDesc desc;
-	desc.addrU = GL_CLAMP_TO_EDGE;
-	desc.addrV = GL_CLAMP_TO_EDGE;
-	desc.addrW = GL_CLAMP_TO_EDGE;
-	desc.minFilter = GL_NEAREST;
-	desc.magFilter = GL_NEAREST;
-	sampler = gl::Sampler{ desc }; 
-	reloadShaders(); 
-}
+CanvasRenderer::CanvasRenderer() { reloadShaders(); }
 
-void CanvasRenderer::renderCanvas(Scene &scene, Canvas &canvas) 
-{
-	struct Vertex2D {
-		float x;
-		float y;
-		float tx;
-		float ty;
-	};
+void CanvasRenderer::renderCanvas(Scene &scene, Canvas &canvas) {
+  auto &sampler = getRenderUtils().samplerNearest;
 
-	Vertex2D quad[6] = {
-		{ - 1.0f, - 1.0f, 0.0f, 0.0f },
-		{ 1.0f, - 1.0f, 0.0f, 0.0f },
-		{  - 1.0f, 1.0f, 0.0f, 0.0f },
-		{  - 1.0f, 1.0f, 0.0f, 0.0f },
-		{  1.0f,  - 1.0f, 0.0f, 0.0f },
-		{ 1.0f,  1.0f, 0.0f, 0.0f } };
-
-	auto vbuf = ag::gl::uploadFrameArray(quad);
-
-	using namespace gl;
-	using namespace gl::bind;
-
-	draw(canvas.finalColor.getFramebuffer(), 
-		drawArrays(GL_TRIANGLES, 0, 6), 
-		evaluationPass,
-		texture(0, canvas.GBuffers.getColorTarget(0), sampler),
-		texture(1, canvas.canvasBuffers.getColorTarget(0), sampler),
-		texture(2, canvas.canvasBuffers.getColorTarget(1), sampler),
-		vertexBuffer(0, vbuf, sizeof(Vertex2D)));
+  gl::drawQuad(
+      canvas.finalColor.getFramebuffer(), evaluationPass,
+      gl::bind::texture(0, canvas.GBuffers.getColorTarget(0), sampler),
+      gl::bind::texture(1, canvas.canvasBuffers.getColorTarget(0), sampler),
+      gl::bind::texture(2, canvas.canvasBuffers.getColorTarget(1), sampler),
+	  gl::bind::uniform_vec2("u_ref", {0.0f, 0.0f}));
 }
 
 void CanvasRenderer::reloadShaders() {
   gbufferPass = Shader{"shaders/canvas:gbuffer"};
   evaluationPass = Shader{"shaders/canvas:evaluation"};
 }
-
 }

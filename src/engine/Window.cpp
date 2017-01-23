@@ -285,6 +285,7 @@ Window::Window(int w, int h, const char *title) {
   glfwSetWindowSizeCallback(window_, WindowSizeHandler);
   glfwSetCursorEnterCallback(window_, CursorEnterHandler);
   glfwSetMouseButtonCallback(window_, MouseButtonHandler);
+  glfwSetScrollCallback(window_, ScrollHandler);
   glfwSetCursorPosCallback(window_, CursorPosHandler);
   glfwSetCharCallback(window_, CharHandler);
   glfwSetKeyCallback(window_, KeyHandler);

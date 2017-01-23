@@ -33,9 +33,10 @@ Minimal system:
    autograph/script/Script.h => sol2
  ☐ Documentation
  ☐ Make a header that includes everything @high
- ☐ Helper: render screen quad @high
- ☐ Mid-term: implement a gratin-like interface for image processing
+ ✔ Helper: render screen quad @high @done (17-01-20 18:09)
+ ☐ Long-term: implement a gratin-like interface for image processing
    Possibly as lua scripts first
+   At least, find somewhere else to test shaders
 
 General:
  ✔ Implement cameras @high @minimal_subset @done (16-12-24 14:12)
@@ -66,10 +67,19 @@ Serialization:
 
 Autograph:
  ✔ Binders @done (16-12-18 20:52)
+ ✔ Named uniforms @done (17-01-21 17:00)
+ ☐ Implementation limits
  ✔ Draw call @done (16-12-18 20:52)
  ☐ Compute call @high
+   autograph/gl/Compute.h
+   gl::dispatchCompute()
+ ☐ Compute helpers
+   gl::dispatchComputeOnImage()
  ✔ State group @done (16-12-18 20:52)
- ☐ Make a header that includes everything
+ ☐ Geometry shader
+ ☐ Make a header that includes everything @high
+   autograph/gl/All.h
+ ☐ The Lua shader system is good => include it in autograph, then release autograph
 
 Autograph extensions:
  ☐ Shader cache @low
@@ -87,9 +97,12 @@ Effect/pipeline system:
  ☐ Move into submodule @high
  ✔ Specify draw states @high  @done (16-12-18 20:52)
  ✔ Create draw passes @high  @done (16-12-18 20:52)
- ☐ Create screen passes
+ ✘ Create screen passes @cancelled (17-01-21 17:00) 
+   Use gl::drawQuad
  ☐ Run screen passes @high @minimal_subset
  ☐ Run compute passes
+ ☐ Geometry shader support @high
+ ☐ Tess shader support
  ✔ Run draw passes @done (16-12-18 20:52)
  ✘ Specify and run dependencies of passes  @cancelled (16-12-24 14:13)
  ☐ Specify uniforms in script
@@ -103,8 +116,8 @@ Effect/pipeline system:
  ☐ Cleanup: inline GLSL source in shader definition files
  ☐ Cleanup: add #line directives to preprocessor
  ☐ Cleanup: do not read from the shader file each time
- ☐ Cleanup: DrawPassBuilder move into *this
- ☐ Cleanup: Merge DrawPass/ComputePass into a single class ('Shader') ?
+ ✔ Cleanup: DrawPassBuilder move into *this @done (17-01-20 14:30)
+ ✔ Cleanup: Merge DrawPass/ComputePass into a single class ('Shader') ? @done (17-01-20 14:30)
 
 Scenes:
  ✔ Load mesh with assimp @done (16-12-18 20:53)
@@ -171,3 +184,4 @@ Long-term:
  ☐ An actual game?
  ☐ Terrain generation
  
+

@@ -53,6 +53,13 @@ local function preprocess(filename, env)
   end
 end
 
+local function tableConcat(t1,t2)
+    for i=1,#t2 do
+        t1[#t1+1] = t2[i]
+    end
+    return t1
+end
+
 function shader_utils.createShaderFromTemplate(shaderId, defines)
   local shader = _G[shaderId]
   if not shader then
@@ -60,22 +67,30 @@ function shader_utils.createShaderFromTemplate(shaderId, defines)
     return nil
   end 
   local shaderFile = autograph.getActualPath('resources/shaders/' .. shader.shaderFile)
-  defines._VERTEX_ = true
-  local vs = preprocess(shaderFile, defines)
-  defines._VERTEX_ = nil
-  defines._FRAGMENT_ = true
-  local fs = preprocess(shaderFile, defines)
-  defines._FRAGMENT_ = nil
-  
   local pass = table.shallow_copy(shader)
-  pass.vertexShader = vs
-  pass.fragmentShader = fs
+
+  local shaderdefs = shader.defines
+  if shaderdefs then
+    for i=1,#shaderdefs do
+      defines[#defines+1] = shaderdefs[i]
+    end
+  end
+
+  if shader.isCompute then
+    defines._COMPUTE_ = true
+    local cs = preprocess(shaderFile, defines)
+    pass.vertexShader = cs
+  else
+    defines._VERTEX_ = true
+    local vs = preprocess(shaderFile, defines)
+    defines._VERTEX_ = nil
+    defines._FRAGMENT_ = true
+    local fs = preprocess(shaderFile, defines)
+    defines._FRAGMENT_ = nil
+    pass.vertexShader = vs
+    pass.fragmentShader = fs
+  end
+    
   return pass
 end
 
-function shader_utils.createShaderPass(shaderId, defines)
-  local builder = autograph.DrawPassBuilder()
-  autograph.debug('autograph.createShaderPass(%s,...)', shaderId)
-  builder:loadFromTable(createShaderFromTemplate(shaderId, defines))
-  return builder:makeDrawPass()
-end

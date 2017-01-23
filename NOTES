@@ -1800,11 +1800,11 @@ onRowChanged() {
 }
 
 // 'Sophisticated' RMGUI
-
 ui::DataGrid {
 	ui::Model { 
 		[&data](int row) 
 		{
+			// Issue: internal state is cleared-out when a row is re-created
 			return ui::Row{ 
 				ui::Label{...}, 
 				ui::Button{ ui::Clicked([] { })},
@@ -1813,6 +1813,25 @@ ui::DataGrid {
 		}
 	}
 }
+
+ui::DataGrid {
+	ui::View {
+		ui::EditBox{},	// View will bind it to the first column of the model
+		ui::Text{
+			ui::TextStyle{},
+		},
+	},
+	ui::Model {
+		[&] (int row) { return make_tuple(...data-from-row...) };
+	}
+}
+
+Solution:
+
+"state cache"
+=> window.table.0.2.scroll = 45	// scroll position of some entry in the table
+
+Models = data only
 
 // On toggle, show UI:
 // IMGUI
@@ -1831,3 +1850,90 @@ check.contents([] (auto& w) { if (w.checked) return ui::button(); })
 // Widgets can be static: in that case
 
 // Golden rule: The lifetime of GUI objects must be the same as 
+
+// Node graph model:
+// => nodes and connections
+//   + models for nodes
+
+
+Models (data to display) can come from:
+
+- Constants (like text labels)
+- Pointer to variables 
+	-> they should not move around in memory!
+- Closures (read-only)
+- Closures with state (read/write)
+	[state=0] (auto v) mutable { if (v) { state = *v; } return state; }
+	also coroutines
+- column reference for grid models
+	ui::DataColumn{index}
+
+ListModels are more complicated than just lambdas:
+- element count
+- 
+
+The model should be available at all times:
+-> rendering
+-> input processing, for updates
+The two may happen at different frequencies
+
+_______________________________________________
+
+Ideas for a gratin-like node editor:
+
+- Interface: ImGui
+	- Node graph
+	- Image viewer
+- Nodes: SceneRenderer, ImagePass, Geometry generators
+- Lua scripting (add/remove nodes)
+- Parameter linking
+- Node groups
+- Can control output texture formats
+- Can merge GLSL snippets
+- Graph structure in C++
+- In C++: node evaluation logic / traversal logic
+- Links:
+	- Images
+	- Fragment streams
+	- Geometry generators (hot-reloadable Lua code)
+	- Generic value nodes (Lua code)
+- can add/remove inputs as needed
+
+Internals:
+struct Node:
+	- input connections
+		- type
+		- constraints
+		- connected resource (Texture, Value, Nothing)
+	- output connections
+		- connected resource (...)
+	- connection update logic
+		- when an input has been changed/disconnected/connected
+	- rendering logic
+	- UI state (screen pos)
+
+struct Connection:
+	- constraints (code)
+
+struct ShaderTemplate:
+	- Lua shader template code
+
+
+class SomeNode : public Node 
+{
+public:
+	SomeNode() 
+	{
+		addInput(...);
+		addInput(...);
+		addInputConstraint(...);
+		addOutput(...);
+	}	
+
+	onGui() {
+		...
+	}
+
+	onInputConnectionUpdate(int i, ...);
+	onOutputConnectionUpdate(int i, ...); 
+};

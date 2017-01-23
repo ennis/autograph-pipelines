@@ -15,14 +15,13 @@ RenderUtils::RenderUtils() {
 }
 
 void RenderUtils::reloadShaders() {
-	drawSpriteShader = Shader{ "shaders/drawSprite:drawSprite" };
+  drawSpriteShader = Shader{"shaders/default:drawSprite"};
 }
 
 void RenderUtils::drawSprite(gl::Framebuffer &target, float targetX0,
                              float targetY0, float targetX1, float targetY1,
                              gl::Texture &src, float srcX0, float srcY0,
-                             float srcX1, float srcY1) 
-{
+                             float srcX1, float srcY1) {
   struct Vertex2D {
     float x;
     float y;
@@ -33,12 +32,12 @@ void RenderUtils::drawSprite(gl::Framebuffer &target, float targetX0,
   float h = (float)target.height();
 
   Vertex2D quad[6] = {
-      {2.0f * targetX0 / w - 1.0f, 2.0f * targetY0 / h - 1.0f, srcX0, srcY0 },
-      {2.0f * targetX1 / w - 1.0f, 2.0f * targetY0 / h - 1.0f, srcX1, srcY0 },
-      {2.0f * targetX0 / w - 1.0f, 2.0f * targetY1 / h - 1.0f, srcX0, srcY1 },
-      {2.0f * targetX0 / w - 1.0f, 2.0f * targetY1 / h - 1.0f, srcX0, srcY1 },
-      {2.0f * targetX1 / w - 1.0f, 2.0f * targetY0 / h - 1.0f, srcX1, srcY0 },
-      {2.0f * targetX1 / w - 1.0f, 2.0f * targetY1 / h - 1.0f, srcX1, srcY1 }};
+      {2.0f * targetX0 / w - 1.0f, 2.0f * targetY0 / h - 1.0f, srcX0, srcY0},
+      {2.0f * targetX1 / w - 1.0f, 2.0f * targetY0 / h - 1.0f, srcX1, srcY0},
+      {2.0f * targetX0 / w - 1.0f, 2.0f * targetY1 / h - 1.0f, srcX0, srcY1},
+      {2.0f * targetX0 / w - 1.0f, 2.0f * targetY1 / h - 1.0f, srcX0, srcY1},
+      {2.0f * targetX1 / w - 1.0f, 2.0f * targetY0 / h - 1.0f, srcX1, srcY0},
+      {2.0f * targetX1 / w - 1.0f, 2.0f * targetY1 / h - 1.0f, srcX1, srcY1}};
 
   auto vbuf = ag::gl::uploadFrameArray(quad);
 
@@ -48,5 +47,10 @@ void RenderUtils::drawSprite(gl::Framebuffer &target, float targetX0,
   draw(target, drawArrays(GL_TRIANGLES, 0, 6), drawSpriteShader,
        texture(0, src, samplerNearest),
        vertexBuffer(0, vbuf, sizeof(Vertex2D)));
+}
+
+AG_API RenderUtils &getRenderUtils() {
+  static RenderUtils instance;
+  return instance;
 }
 }

@@ -2,7 +2,8 @@
 set(SRC main.cpp 
     SceneRenderer.cpp
 	Scene2D.cpp
-	Canvas.cpp)
+	Canvas.cpp
+	Widget.cpp)
 
 set(HEADERS 
 	SceneRenderer.h)

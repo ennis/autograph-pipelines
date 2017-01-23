@@ -1,7 +1,8 @@
 #pragma once
 #include <autograph/Config.h>
-#include <autograph/gl/ShaderStage.h>
 #include <autograph/gl/GLHandle.h>
+#include <autograph/gl/ShaderStage.h>
+#include <autograph/gl/StateGroup.h>
 #include <string>
 
 namespace ag {
@@ -61,11 +62,14 @@ public:
   void link();
   bool getLinkStatus();
   std::string getLinkLog();
+  void operator()(gl::StateGroup &stateGroup) {
+    stateGroup.drawStates.program = obj_.get();
+  }
 
   /**
    * @brief [brief description]
    * @details [long description]
-   * 
+   *
    * @param vs_src [description]
    * @param fs_src [description]
    * @param gs_src [description]
@@ -81,7 +85,7 @@ public:
   /**
    * @brief [brief description]
    * @details [long description]
-   * 
+   *
    * @param cs_src [description]
    * @return [description]
    */

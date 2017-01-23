@@ -6,6 +6,7 @@
 #include <unordered_map>
 
 #include <imgui.h>
+#include <imgui_internal.h>
 
 #include <glm/gtc/packing.hpp>
 
@@ -36,9 +37,9 @@
 #include <autograph/engine/Shader.h>
 #include <autograph/engine/Window.h>
 
+#include "Canvas.h"
 #include "Scene2D.h"
 #include "SceneRenderer.h"
-#include "Canvas.h"
 
 using namespace ag;
 
@@ -49,17 +50,6 @@ std::string pathCombine(std::string a, std::string b) {
   p /= std::move(b);
   return p.string();
 }
-
-/////////////////////////////////////////////////////////////
-/////////////////////////////////////////////////////////////
-/*void drawMesh(Mesh &mesh, DrawPass *drawPass, sol::table args) {
-        AG_DEBUG("drawMesh: mesh={}, drawPass={}", (void *)&mesh, (void
-*)drawPass);
-        args.for_each([](sol::object key, sol::object value) {
-                AG_DEBUG("key={}, value={}", key.as<std::string>(),
-                        value.as<std::string>());
-        });
-}*/
 
 void pointerEventToLua(sol::table &tbl, const PointerInfo &info) {
   tbl["button"] = info.button;
@@ -278,77 +268,102 @@ template <typename T> void debugValue(T &value) {
 ///////////////////////////////////////////////////////////////
 // MAIN
 int main(int argc, char *argv[]) {
-  using namespace ag;
-  addResourceDirectory(getActualPath("resources/"));
+	using namespace ag;
+	addResourceDirectory(getActualPath("resources/"));
 
-  Window w{640, 480, "???"};
+	// Global vars
+	Window w{ 640, 480, "???" };
+	ScriptContext lua;
+	bool initOk = false;
+	bool reloadOk = false;
+	bool lastOnRenderFailed = false;
+	float currentFps = 0.0f;
+	Scene scene;
+	Canvas canvas{ 1024, 1024 };
+	CanvasRenderer canvasRenderer;
+	float someValue = 0.0f;
+	float someValue2 = 0.5f;
+	std::string someText;
+	std::string fpsText;
+	std::string someValueText;
+	vec4 color;
 
-  ScriptContext lua;
+	// bindings
+	lua.new_usertype<DeferredSceneRenderer>(
+		"DeferredSceneRenderer", sol::call_constructor,
+		sol::constructors<sol::types<>>(), "renderScene",
+		&DeferredSceneRenderer::renderScene);
+	lua.new_usertype<DeferredSceneRenderer::GBuffer>(
+		"DeferredGBuffer", sol::call_constructor,
+		sol::constructors<sol::types<int, int>>(), "release",
+		&DeferredSceneRenderer::GBuffer::release, "diffuseColor",
+		sol::property(&DeferredSceneRenderer::GBuffer::getDiffuseTarget), "depth",
+		sol::property(&DeferredSceneRenderer::GBuffer::getDepthTarget));
+	lua.new_usertype<WireframeOverlayRenderer>(
+		"WireframeOverlayRenderer", sol::call_constructor,
+		sol::constructors<sol::types<>>(), "renderSceneObject",
+		&WireframeOverlayRenderer::renderSceneObject);
+	lua.new_usertype<Scene2D>(
+		"Scene2D", sol::call_constructor, sol::constructors<sol::types<>>(),
+		"loadTilemap", &Scene2D::loadTilemap, "render",
+		static_cast<void (Scene2D::*)(gl::Framebuffer &, float, float, float,
+			float)>(&Scene2D::render));
 
-  // bindings
-  lua.new_usertype<DeferredSceneRenderer>(
-      "DeferredSceneRenderer", sol::call_constructor,
-      sol::constructors<sol::types<>>(), "renderScene",
-      &DeferredSceneRenderer::renderScene);
-  lua.new_usertype<DeferredSceneRenderer::GBuffer>(
-      "DeferredGBuffer", sol::call_constructor,
-      sol::constructors<sol::types<int, int>>(), "release",
-      &DeferredSceneRenderer::GBuffer::release, "diffuseColor",
-      sol::property(&DeferredSceneRenderer::GBuffer::getDiffuseTarget), "depth",
-      sol::property(&DeferredSceneRenderer::GBuffer::getDepthTarget));
-  lua.new_usertype<WireframeOverlayRenderer>(
-      "WireframeOverlayRenderer", sol::call_constructor,
-      sol::constructors<sol::types<>>(), "renderSceneObject",
-      &WireframeOverlayRenderer::renderSceneObject);
-  lua.new_usertype<Scene2D>(
-      "Scene2D", sol::call_constructor, sol::constructors<sol::types<>>(),
-      "loadTilemap", &Scene2D::loadTilemap, "render",
-      static_cast<void (Scene2D::*)(gl::Framebuffer &, float, float, float,
-                                    float)>(&Scene2D::render));
+	// Test
+	/*auto menu = ui::MenuBar{ ui::Content{
+		ui::Menu{"File", ui::MenuItem{ICON_FA_FOLDER_OPEN " Open...", "Ctrl+O"},
+				 ui::MenuItem{ICON_FA_WINDOW_CLOSE " Close", "Ctrl+F4"},
+				 ui::Separator{},
+				 ui::MenuItem{ICON_FA_WINDOW_CLOSE_O " Quit", "Alt-F4"}},
+		ui::Menu{"Edit", ui::MenuItem{ICON_FA_CLONE " Copy", "Ctrl+C"},
+				 ui::MenuItem{ICON_FA_SCISSORS " Cut", "Ctrl+X"},
+				 ui::MenuItem{ICON_FA_CLIPBOARD " Paste", "Ctrl+V"}},
+		ui::Menu{"Test", ui::MenuItem{"Regular menu item", "?"},
+				 ui::SliderFloat{"Test float", &someValue },
+				 ui::TextEdit{ &someText },
+				 ui::Text{ [&](auto) { return someText.c_str(); } },
+				 // The model expects a const char*, but std::to_string returns a std::string
+				 // We cannot call c_str() (reference on the stack)
+				 // So we need to store a temporary std::string object along the lambda
+				 // This is inefficient
+				 // It's push (ImGui) vs pull (our system)
+				 // Push = user sends model
+				 // Pull = system retrieves model
+				 ui::Text {[&](auto) { return someValueText.c_str(); }},
+				 ui::Text{ [&](auto) { return fpsText.c_str(); } } }} };*/
 
-  bool initOk = false;
-  bool reloadOk = false;
-  bool lastOnRenderFailed = false;
-
-  Scene scene;
-  Canvas canvas{ 1024, 1024 };
-  CanvasRenderer canvasRenderer;
-
-  // call init
-  auto init = [&]() {
-  };
-
-  auto reset = [&]() {
-  };
-
-  init();
+	/*auto docks = ui::DockArea{ "dockarea" };
+	static const char* const comboItems[] = {"Item 1", "Item 2", "Item 3", "Item 4"};
+	docks.add(ui::DockPanel{ "Test panel",
+		ui::CollapsingHeader{ "Collapsed",
+		ui::SliderFloat{ "Float1", &someValue2 },
+		ui::SliderFloat{ "Float2", &someValue2 },
+		ui::SliderFloat{ "Float3", &someValue2 },
+		ui::ColorPicker{ &color } } });
+	docks.add(ui::DockPanel{ "Test panel2",
+		ui::SliderFloat{ "Float1", &someValue2 },
+		ui::SliderFloat{ "Float2", &someValue2 },
+		ui::SliderFloat{ "Float3", &someValue2 },
+		ui::ColorPicker{ &color },
+		ui::ComboBox{"Choose", comboItems} });*/
 
   w.onRender([&](ag::Window &win, double dt) {
-	  auto framebufferSize = win.getFramebufferSize();
-	  glBindFramebuffer(GL_FRAMEBUFFER, 0);
-	  glEnable(GL_FRAMEBUFFER_SRGB);
-	  glViewport(0, 0, framebufferSize.x, framebufferSize.y);
-	  glClearColor(60.f / 255.f, 60.f / 255.f, 168.f / 255.f, 1.0f);
-	  glClearDepth(1.0);
-	  glDepthMask(GL_TRUE);
-	  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+    currentFps = 1.0f / dt;
+	someValueText = std::to_string(someValue);
+	fpsText = std::to_string(currentFps);
 
-	  canvasRenderer.renderCanvas(scene, canvas);
-	  glDisable(GL_STENCIL_TEST);
-    // GUI test
-    ImGui::BeginMainMenuBar();
-    if (ImGui::BeginMenu(ICON_FA_FOLDER " Menu")) {
-      ImGui::MenuItem(ICON_FA_FOLDER_OPEN " Open...", "Ctrl+O");
-      ImGui::MenuItem(ICON_FA_WINDOW_CLOSE " Close", "Ctrl+F4");
-	  if (ImGui::MenuItem(ICON_FA_REFRESH " Reload shaders")) {
-		  canvasRenderer.reloadShaders();
-	  }
-      ImGui::Separator();
-      ImGui::MenuItem(ICON_FA_WINDOW_CLOSE_O " Quit", "Alt+F4");
-      ImGui::EndMenu();
-    }
-    ImGui::EndMainMenuBar();
-
+    auto framebufferSize = win.getFramebufferSize();
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    glEnable(GL_FRAMEBUFFER_SRGB);
+    glViewport(0, 0, framebufferSize.x, framebufferSize.y);
+    glClearColor(60.f / 255.f, 60.f / 255.f, 168.f / 255.f, 1.0f);
+    glClearDepth(1.0);
+    glDepthMask(GL_TRUE);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+    canvasRenderer.renderCanvas(scene, canvas);
+    //menu.render();
+	//docks.render();
+    glDisable(GL_STENCIL_TEST);
   });
 
   w.onEvent([&](ag::Window &win, const ag::Event &ev) {
@@ -357,7 +372,6 @@ int main(int argc, char *argv[]) {
       eventFn.as<sol::function>()(eventToLua(lua, ev));
     if (ev.type == EventType::Key) {
       if (ev.key.action == KeyState::Pressed && ev.key.key == GLFW_KEY_F5) {
-        reset();
       } else if (ev.key.action == KeyState::Pressed &&
                  ev.key.key == GLFW_KEY_F4) {
       }

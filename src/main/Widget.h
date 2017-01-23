@@ -1,7 +1,10 @@
 #pragma once
+// This has to be the weirdest code i have ever written
 #include <algorithm>
 #include <autograph/Types.h>
 #include <autograph/engine/Application.h>
+#include <autograph/support/Optional.h>
+#include <functional>
 #include <memory>
 #include <vector>
 
@@ -82,23 +85,14 @@ struct WidgetList {
   WidgetList(const WidgetList &) = delete;
   WidgetList &operator=(const WidgetList &) = delete;
 
-  auto add(OptionalPtr ptr) {
-    auto p = ptr.get();
-    list_.push_back(std::move(ptr));
-    return p;
-  }
-
+  auto add(OptionalPtr ptr) -> Widget *;
   // add child and take ownership
-  auto add(std::unique_ptr<Widget> w) -> Widget * {
-    return add(OptionalPtr{std::move(w)});
-  }
-
+  auto add(std::unique_ptr<Widget> w) -> Widget *;
   // add reference to heap-allocated widget
-  auto add(std::unique_ptr<Widget> &w) { return add(OptionalPtr{w.get()}); }
-
+  auto add(std::unique_ptr<Widget> &w) -> Widget *;
   // add reference to widget on stack or heap
   // w should not move afterwards
-  auto add(Widget &w) { return add(OptionalPtr{&w}); }
+  auto add(Widget &w) -> Widget *;
 
   // fun fact: not adding the is_base_of test will freeze clang
   template <typename T,
@@ -126,10 +120,7 @@ public:
   // Construct from type-erased child widget list
   Widget(WidgetList &&widgetList) : children_{std::move(widgetList)} {}
   // Construct with parent
-  Widget(Widget *par) : parent{par} {
-    if (parent)
-      parent->adoptChild(this);
-  }
+  Widget(Widget *par);
 
   // unsafe:
   // auto addWidgets(ui::Widget& root)
@@ -160,17 +151,7 @@ public:
   Widget(const Widget &) = delete;
   Widget &operator=(const Widget &) = delete;
 
-  virtual ~Widget() {
-    // if parented, orphan
-    // NOTE: if this widget is owned by another widget,
-    // then parent will be set to zero before entering this destructor
-    if (parent)
-      parent->orphanChild(this);
-    // orphan all children
-    for (auto &&c : children_.list_) {
-      c->parent = nullptr;
-    }
-  }
+  virtual ~Widget();
 
   auto &getChildren() { return children_.list_; }
 
@@ -183,103 +164,323 @@ public:
     auto dummy = {0, (add(std::forward<Content>(contents)), 0)...};
   }
 
-  virtual void render() {}
+  virtual void render();
 
 protected:
   WidgetList children_;
   Widget *parent{nullptr};
 
 private:
-  // Should fail for owned widgets
-  void setParent(Widget *newParent) {
-    if (parent != nullptr) {
-      throw std::logic_error("Widget already has a parent");
-    }
-    parent = newParent;
-    // the parent has been set, which means we are rooted somewhere:
-    // we can update the parent field of child elements
-    for (auto &c : children_.list_)
-      c->setParent(this);
-  }
-
-  void adoptChild(Widget *w) {
-    if (parent)
-      w->setParent(this);
-  }
-
-  // might make 'child' invalid if it is owned
-  void orphanChild(Widget *child) {
-    child->parent = nullptr;
-    // TODO could do this lazily
-    children_.list_.erase(
-        std::remove_if(
-            children_.list_.begin(), children_.list_.end(),
-            [child](auto &&c) { return !c.owns() && (c.get() == child); }),
-        children_.list_.end());
-  }
+  void setParent(Widget *newParent);
+  void adoptChild(Widget *w);
+  void orphanChild(Widget *child);
 };
 
-struct Separator : public Widget 
-{
-	void render() override {
-		ImGui::Separator();
-	}
+struct Separator : public Widget {
+  void render() override;
 };
 
 class Menu : public Widget {
 public:
   template <typename... Items>
   Menu(const char *text, Items &&... items)
-	  : Widget{ WidgetList{std::forward<Items>(items)...} }, text_{ text } {}
+      : Widget{WidgetList{std::forward<Items>(items)...}}, text_{text} {}
 
-  void render() override {
-	  if (ImGui::BeginMenu(text_.c_str())) {
-		  for (auto& c : children_.list_) {
-			  c->render();
-		  }
-		  ImGui::EndMenu();
-	  }
-  }
+  void render() override;
 
 private:
-	std::string text_;
+  std::string text_;
 };
 
 class MenuBar : public Widget {
 public:
-  using Widget::Widget; 
-  
-  void render() override {
-	  if (ImGui::BeginMainMenuBar()) {
-		  for (auto& c : children_.list_) {
-			  c->render();
-		  }
-		  ImGui::EndMainMenuBar();
-	  }
-  }
+  using Widget::Widget;
+  void render() override;
 };
 
 class MenuItem : public Widget {
 public:
-	MenuItem(const char *text, const char *accel) : text_{ text }, accel_{ accel } {}
-	
-	void render() override {
-		ImGui::MenuItem(text_.c_str(), accel_.c_str());
-	}
+  MenuItem(const char *text, const char *accel) : text_{text}, accel_{accel} {}
+  void render() override;
 
 private:
-	std::string text_;
-	std::string accel_;
+  std::string text_;
+  std::string accel_;
 };
 
 class Button : public Widget {
 public:
-	Button(const char* text) : text_{ text }
-	{}
+  Button(const char *text) : text_{text} {}
 
 private:
-	std::string text_;
+  std::string text_;
 };
+
+template <typename T> struct is_callable {
+private:
+  typedef char (&yes)[1];
+  typedef char (&no)[2];
+
+  struct Fallback {
+    void operator()();
+  };
+  struct Derived : T, Fallback {};
+
+  template <typename U, U> struct Check;
+
+  template <typename> static yes test(...);
+
+  template <typename C>
+  static no test(Check<void (Fallback::*)(), &C::operator()> *);
+
+public:
+  static const bool value = sizeof(test<Derived>(0)) == sizeof(yes);
+};
+
+// List model
+template <typename T> class Model {
+public:
+  using ClosureType = std::function<T(ag::optional<T>)>;
+  // default
+  Model() : closure_{[](auto) { return T{}; }} {}
+
+  // construct from pointer to data
+  Model(T *data)
+      : closure_{[data](optional<T> v) mutable {
+          if (v)
+            *data = std::move(*v);
+          return *data;
+        }} {}
+
+  // construct from closure
+  template <typename U,
+            typename = std::enable_if_t<
+                std::is_constructible<ClosureType, U &&>::value>>
+  Model(U closure) : closure_{std::move(closure)} {}
+
+  // construct from constant
+  Model(const T &constant) : closure_{[constant](auto) { return constant; }} {}
+
+  T get() { return closure_(nullopt); }
+
+  void set(T t) { closure_(t); }
+
+private:
+  ClosureType closure_;
+};
+
+// List model
+template <typename T> class ListModel {
+public:
+  using ClosureType = std::function<optional<T>(int, optional<T>)>;
+
+  // default
+  ListModel() : closure_{[](auto, auto) { return T{}; }} {}
+
+  // construct from slice of data
+  ListModel(span<T> data)
+      : closure_{[data](int row, optional<T> v) mutable -> optional<T> {
+          if (row >= data.size())
+            return nullopt;
+          if (v)
+            data[row] = std::move(*v);
+          return data[row];
+        }} {}
+
+  // construct from array
+  template <int N>
+  ListModel(T (&data)[N])
+      : closure_{[&data, N = N](int row, optional<T> v) mutable->optional<T>{
+            if (row >= N) return nullopt;
+  if (v)
+    data[row] = std::move(*v);
+  return data[row];
+}
+}
+{}
+
+// construct from const array
+template <int N>
+ListModel(const T (&data)[N])
+    : closure_{[&data, N = N](int row, optional<T> v)
+                   ->optional<T>{if (row >= N) return nullopt;
+return data[row];
+}
+}
+{}
+
+auto get(int row) { return closure_(row, nullopt); }
+
+void set(int row, T t) { closure_(row, t); }
+
+private:
+ClosureType closure_;
+}
+;
+
+class StaticText : public Widget {
+public:
+  StaticText() {}
+  StaticText(const char *text) : text_{text} {}
+  StaticText(std::string text) : text_{std::move(text)} {}
+  void render() override;
+
+private:
+  std::string text_;
+};
+
+class Text : public Widget {
+public:
+  Text() {}
+
+  Text(Model<const char*> text) : text_{std::move(text)} {}
+
+  void render() override;
+
+private:
+  Model<const char*> text_;
+};
+
+class TextEdit : public Widget {
+public:
+  TextEdit() {}
+  TextEdit(Model<std::string> text) : text_{std::move(text)} {}
+  void render() override;
+
+private:
+  Model<std::string> text_;
+};
+
+class SliderFloat : public Widget {
+public:
+  SliderFloat(const char *label, Model<float> value, float initMinValue = 0.0f,
+              float initMaxValue = 1.0f)
+      : minValue{initMinValue}, maxValue{initMaxValue}, label_{label},
+        value_{std::move(value)} {}
+
+  void render() override;
+
+  float minValue = 0.0f;
+  float maxValue = 1.0f;
+
+private:
+  std::string label_;
+  Model<float> value_;
+};
+
+class CollapsingHeader : public Widget {
+public:
+  template <typename... Items>
+  CollapsingHeader(const char *label, Items &&... items)
+      : Widget{WidgetList{std::forward<Items>(items)...}}, label_{label} {}
+
+  void render() override;
+
+private:
+  std::string label_;
+  bool collapsed_{true};
+};
+
+class ColorPicker : public Widget {
+public:
+  ColorPicker(Model<vec4> value) : value_{std::move(value)} {}
+  void render() override;
+
+private:
+  Model<vec4> value_;
+};
+
+class ColorPickerAlpha : public Widget {
+public:
+  ColorPickerAlpha(Model<vec4> value) : value_{std::move(value)} {}
+  void render() override;
+
+private:
+  Model<vec4> value_;
+};
+
+class DockArea : public Widget {
+public:
+  template <typename... Items>
+  DockArea(const char *label, Items &&... items)
+      : Widget{WidgetList{std::forward<Items>(items)...}}, label_{label} {}
+
+  void render() override;
+
+private:
+  std::string label_;
+};
+
+class DockPanel : public Widget {
+public:
+  template <typename... Items>
+  DockPanel(const char *label, Items &&... items)
+      : Widget{WidgetList{std::forward<Items>(items)...}}, label_{label} {}
+
+  void render() override;
+
+private:
+  std::string label_;
+};
+
+class Checkbox : public Widget {
+public:
+  Checkbox(const char *label, Model<bool> value)
+      : label_{label}, value_{std::move(value)} {}
+
+  void render() override;
+
+private:
+  std::string label_;
+  Model<bool> value_;
+};
+
+class ComboBox : public Widget {
+public:
+  ComboBox(const char *label, ListModel<const char*> values)
+      : label_{label}, values_{std::move(values)} {}
+
+  void render() override;
+  int selected() const { return selected_; }
+
+private:
+  int selected_{-1};
+  std::string label_;
+  ListModel<const char*> values_;
+};
+
+////////////////////////////////////////////////////////
+// Graph model
+/*class GraphModel
+{
+public:
+	struct Edge {
+		int src;
+		int srcOutput;
+		int dst;
+		int dstInput;
+	};
+
+	virtual int nodeCount();
+	virtual int edgeCount();
+	virtual Edge edge(int edgeIndex);
+	// Called ONCE per node
+	virtual NodeWidget node(int nodeIndex);
+
+private:
+};
+
+class NodeGraph : public Widget
+{
+public:
+private:
+};
+
+class NodeWidget : public Widget
+{
+};*/
+
+
 
 }
 }
