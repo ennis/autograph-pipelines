@@ -1,15 +1,20 @@
 gl = require 'glapi'
 
+local mesh2DColorLayout = {
+	{ buffer = 0, type = gl.GL_FLOAT, size = 2, relativeOffset = 0, normalized = false },
+	{ buffer = 0, type = gl.GL_UNSIGNED_BYTE, size = 4, relativeOffset = 8, normalized = true }
+}
+
 local mesh2DLayout = {
-	{ buffer = 0, type = gl.GL_FLOAT, size = 2, stride = 8, normalized = false },
-	{ buffer = 0, type = gl.GL_FLOAT, size = 2, stride = 8, normalized = false }
+	{ buffer = 0, type = gl.GL_FLOAT, size = 2, relativeOffset = 0, normalized = false },
+	{ buffer = 0, type = gl.GL_FLOAT, size = 2, relativeOffset = 8, normalized = false }
 }
 
 local mesh3DLayout = {
-	{ buffer = 0, type = gl.GL_FLOAT, size = 3, stride = 12, normalized = false },
-		{ buffer = 0, type = gl.GL_FLOAT, size = 3, stride = 12, normalized = false },
-		{ buffer = 0, type = gl.GL_FLOAT, size = 3, stride = 12, normalized = false },
-		{ buffer = 0, type = gl.GL_FLOAT, size = 2, stride = 8, normalized = false }
+	{ buffer = 0, type = gl.GL_FLOAT, size = 3, relativeOffset = 0, normalized = false },
+	{ buffer = 0, type = gl.GL_FLOAT, size = 3, relativeOffset = 12, normalized = false },
+	{ buffer = 0, type = gl.GL_FLOAT, size = 3, relativeOffset = 24, normalized = false },
+	{ buffer = 0, type = gl.GL_FLOAT, size = 2, relativeOffset = 36, normalized = false }
 }
 
 local geometryPassBase =

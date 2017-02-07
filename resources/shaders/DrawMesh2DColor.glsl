@@ -1,24 +1,24 @@
 #version 450
-#include "Utils.glsli"
 
 ## if _VERTEX_ then
 
 layout(location = 0) in vec2 pos;
-layout(location = 1) in vec2 texcoord;
-out vec2 fTexcoord;
+layout(location = 1) in vec4 color;
+
+out vec4 fColor;
+
 void main() {
   gl_Position = vec4(pos, 0.0, 1.0);
-  fTexcoord = texcoord;
+  fColor = color;
 }
 
 ## elseif _FRAGMENT_ then
 
-layout(binding = 0) uniform sampler2D tex;
+in vec4 fColor;
 layout(location = 0) out vec4 color;
-in vec2 fTexcoord;
 
 void main() {
-  color = texture(tex, fTexcoord.xy);
+  color = fColor;
 }
 
 ## end

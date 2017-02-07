@@ -10,17 +10,6 @@
 
 #include <glm/gtc/packing.hpp>
 
-#include <autograph/gl/Device.h>
-#include <autograph/gl/Draw.h>
-#include <autograph/gl/Framebuffer.h>
-#include <autograph/gl/Program.h>
-#include <autograph/gl/Texture.h>
-
-#include <autograph/support/Debug.h>
-#include <autograph/support/FileDialog.h>
-#include <autograph/support/ProjectRoot.h>
-
-#include "Widget.h"
 #include <autograph/engine/Application.h>
 #include <autograph/engine/Arcball.h>
 #include <autograph/engine/CameraControl.h>
@@ -36,6 +25,14 @@
 #include <autograph/engine/ScriptContext.h>
 #include <autograph/engine/Shader.h>
 #include <autograph/engine/Window.h>
+#include <autograph/gl/Device.h>
+#include <autograph/gl/Draw.h>
+#include <autograph/gl/Framebuffer.h>
+#include <autograph/gl/Program.h>
+#include <autograph/gl/Texture.h>
+#include <autograph/support/Debug.h>
+#include <autograph/support/FileDialog.h>
+#include <autograph/support/ProjectRoot.h>
 
 #include "Canvas.h"
 #include "Scene2D.h"
@@ -263,107 +260,133 @@ void valueDebugGUI(std::type_index ti, void *data) {
 template <typename T> void debugValue(T &value) {
   valueDebugGUI(typeid(T), &value);
 }
+/*
+class ImageView : public ui::Widget {
+public:
+  ImageView(ui::Widget *parent, gl::Texture &tex) : Widget{parent}, tex_{tex}
+  {
+          t1.setText(fmt::format("{}x{} : {}", tex.width(), tex.height(),
+meta::getEnumeratorName(tex.format())));
+  }
+
+  void render() override {
+    float w = (float)tex_.width();
+    float h = (float)tex_.height();
+    float aspect = w / h;
+        t1.render();
+        t2.render();
+
+        float texTopLeftX = - (offsetX + dragDeltaX) / w;
+        float texTopLeftY = - (offsetY + dragDeltaY) / h;
+
+        ImGui::ImageButton(reinterpret_cast<ImTextureID>(tex_.object()), ImVec2{
+w,h }, ImVec2{ texTopLeftX, texTopLeftY },
+                ImVec2{ texTopLeftX+1.0f, texTopLeftY+1.0f });
+
+        if (ImGui::IsItemHovered() && ImGui::IsMouseDragging())
+        {
+                auto drag = ImGui::GetMouseDragDelta();
+                dragDeltaX = drag.x;
+                dragDeltaY = drag.y;
+                t2.setText(fmt::format("Drag: {},{}", dragDeltaX, dragDeltaY));
+        }
+        else {
+                offsetX += dragDeltaX; dragDeltaX = 0;
+                offsetY += dragDeltaY; dragDeltaY = 0;
+        }
+  }
+
+private:
+  ui::Text t1;
+  ui::Text t2;
+  float offsetX{ 0.0f };
+  float offsetY{ 0.0f };
+  float dragDeltaX{ 0.0f };
+  float dragDeltaY{ 0.0f };
+  gl::Texture &tex_;
+};*/
+
+void centerCameraOnObject(CameraControl &camCtl, const SceneObject &obj) {
+  auto aabb = obj.getApproximateWorldBoundingBox();
+  auto size = std::max({aabb.width(), aabb.height(), aabb.depth()});
+  auto cx = (aabb.xmax + aabb.xmin) / 2.f;
+  auto cy = (aabb.xmax + aabb.xmin) / 2.f;
+  auto cz = (aabb.xmax + aabb.xmin) / 2.f;
+  camCtl.setNearFarPlanes(0.01f, 10.0f);
+  camCtl.lookAt(cx, cy, cz);
+  camCtl.lookDistance(1.5f * size);
+  camCtl.setFieldOfView(45.0f);
+}
 
 ///////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////
 // MAIN
 int main(int argc, char *argv[]) {
-	using namespace ag;
-	addResourceDirectory(getActualPath("resources/"));
+  using namespace ag;
+  addResourceDirectory(getActualPath("resources/"));
 
-	// Global vars
-	Window w{ 640, 480, "???" };
-	ScriptContext lua;
-	bool initOk = false;
-	bool reloadOk = false;
-	bool lastOnRenderFailed = false;
-	float currentFps = 0.0f;
-	Scene scene;
-	Canvas canvas{ 1024, 1024 };
-	CanvasRenderer canvasRenderer;
-	float someValue = 0.0f;
-	float someValue2 = 0.5f;
-	std::string someText;
-	std::string fpsText;
-	std::string someValueText;
-	vec4 color;
+  // Global vars
+  Window w{640, 480, "???"};
+  ScriptContext lua;
+  bool initOk = false;
+  bool reloadOk = false;
+  bool lastOnRenderFailed = false;
+  float currentFps = 0.0f;
+  Scene scene;
+  Canvas canvas{1024, 1024};
+  CanvasRenderer canvasRenderer;
+  CameraControl camCtl;
 
-	// bindings
-	lua.new_usertype<DeferredSceneRenderer>(
-		"DeferredSceneRenderer", sol::call_constructor,
-		sol::constructors<sol::types<>>(), "renderScene",
-		&DeferredSceneRenderer::renderScene);
-	lua.new_usertype<DeferredSceneRenderer::GBuffer>(
-		"DeferredGBuffer", sol::call_constructor,
-		sol::constructors<sol::types<int, int>>(), "release",
-		&DeferredSceneRenderer::GBuffer::release, "diffuseColor",
-		sol::property(&DeferredSceneRenderer::GBuffer::getDiffuseTarget), "depth",
-		sol::property(&DeferredSceneRenderer::GBuffer::getDepthTarget));
-	lua.new_usertype<WireframeOverlayRenderer>(
-		"WireframeOverlayRenderer", sol::call_constructor,
-		sol::constructors<sol::types<>>(), "renderSceneObject",
-		&WireframeOverlayRenderer::renderSceneObject);
-	lua.new_usertype<Scene2D>(
-		"Scene2D", sol::call_constructor, sol::constructors<sol::types<>>(),
-		"loadTilemap", &Scene2D::loadTilemap, "render",
-		static_cast<void (Scene2D::*)(gl::Framebuffer &, float, float, float,
-			float)>(&Scene2D::render));
+  // bindings
+  lua.new_usertype<DeferredSceneRenderer>(
+      "DeferredSceneRenderer", sol::call_constructor,
+      sol::constructors<sol::types<>>(), "renderScene",
+      &DeferredSceneRenderer::renderScene);
+  lua.new_usertype<DeferredSceneRenderer::GBuffer>(
+      "DeferredGBuffer", sol::call_constructor,
+      sol::constructors<sol::types<int, int>>(), "release",
+      &DeferredSceneRenderer::GBuffer::release, "diffuseColor",
+      sol::property(&DeferredSceneRenderer::GBuffer::getDiffuseTarget), "depth",
+      sol::property(&DeferredSceneRenderer::GBuffer::getDepthTarget));
+  lua.new_usertype<WireframeOverlayRenderer>(
+      "WireframeOverlayRenderer", sol::call_constructor,
+      sol::constructors<sol::types<>>(), "renderSceneObject",
+      &WireframeOverlayRenderer::renderSceneObject);
+  lua.new_usertype<Scene2D>(
+      "Scene2D", sol::call_constructor, sol::constructors<sol::types<>>(),
+      "loadTilemap", &Scene2D::loadTilemap, "render",
+      static_cast<void (Scene2D::*)(gl::Framebuffer &, float, float, float,
+                                    float)>(&Scene2D::render));
 
-	// Test
-	/*auto menu = ui::MenuBar{ ui::Content{
-		ui::Menu{"File", ui::MenuItem{ICON_FA_FOLDER_OPEN " Open...", "Ctrl+O"},
-				 ui::MenuItem{ICON_FA_WINDOW_CLOSE " Close", "Ctrl+F4"},
-				 ui::Separator{},
-				 ui::MenuItem{ICON_FA_WINDOW_CLOSE_O " Quit", "Alt-F4"}},
-		ui::Menu{"Edit", ui::MenuItem{ICON_FA_CLONE " Copy", "Ctrl+C"},
-				 ui::MenuItem{ICON_FA_SCISSORS " Cut", "Ctrl+X"},
-				 ui::MenuItem{ICON_FA_CLIPBOARD " Paste", "Ctrl+V"}},
-		ui::Menu{"Test", ui::MenuItem{"Regular menu item", "?"},
-				 ui::SliderFloat{"Test float", &someValue },
-				 ui::TextEdit{ &someText },
-				 ui::Text{ [&](auto) { return someText.c_str(); } },
-				 // The model expects a const char*, but std::to_string returns a std::string
-				 // We cannot call c_str() (reference on the stack)
-				 // So we need to store a temporary std::string object along the lambda
-				 // This is inefficient
-				 // It's push (ImGui) vs pull (our system)
-				 // Push = user sends model
-				 // Pull = system retrieves model
-				 ui::Text {[&](auto) { return someValueText.c_str(); }},
-				 ui::Text{ [&](auto) { return fpsText.c_str(); } } }} };*/
-
-	/*auto docks = ui::DockArea{ "dockarea" };
-	static const char* const comboItems[] = {"Item 1", "Item 2", "Item 3", "Item 4"};
-	docks.add(ui::DockPanel{ "Test panel",
-		ui::CollapsingHeader{ "Collapsed",
-		ui::SliderFloat{ "Float1", &someValue2 },
-		ui::SliderFloat{ "Float2", &someValue2 },
-		ui::SliderFloat{ "Float3", &someValue2 },
-		ui::ColorPicker{ &color } } });
-	docks.add(ui::DockPanel{ "Test panel2",
-		ui::SliderFloat{ "Float1", &someValue2 },
-		ui::SliderFloat{ "Float2", &someValue2 },
-		ui::SliderFloat{ "Float3", &someValue2 },
-		ui::ColorPicker{ &color },
-		ui::ComboBox{"Choose", comboItems} });*/
+  auto &obj = scene.loadModel("mesh/youmu/youmu");
+  obj.localTransform.scaling = vec3{ 0.01f };
+  scene.update();
+  centerCameraOnObject(camCtl, obj);
 
   w.onRender([&](ag::Window &win, double dt) {
-    currentFps = 1.0f / dt;
-	someValueText = std::to_string(someValue);
-	fpsText = std::to_string(currentFps);
-
-    auto framebufferSize = win.getFramebufferSize();
+    auto screenSizeI = win.getFramebufferSize();
+	auto screenSize = vec2{ (float)screenSizeI.x,(float)screenSizeI.y };
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glEnable(GL_FRAMEBUFFER_SRGB);
-    glViewport(0, 0, framebufferSize.x, framebufferSize.y);
-    glClearColor(60.f / 255.f, 60.f / 255.f, 168.f / 255.f, 1.0f);
+    glViewport(0, 0, screenSizeI.x, screenSizeI.y);
+    glClearColor(20.f / 255.f, 20.f / 255.f, 20.f / 255.f, 1.0f);
     glClearDepth(1.0);
     glDepthMask(GL_TRUE);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+	auto &renderUtils = getRenderUtils();
+	renderUtils.drawGrid2D(gl::getDefaultFramebuffer(), screenSize / 2.0f, vec2{ 25.0f }, 10);
     canvasRenderer.renderCanvas(scene, canvas);
-    //menu.render();
-	//docks.render();
-    glDisable(GL_STENCIL_TEST);
+	Camera cam = camCtl.getCamera();
+    scene.update();
+    for (auto &obj : scene.getObjects()) {
+		if (obj->mesh)
+		{
+			renderUtils.drawMesh(gl::getDefaultFramebuffer(), cam, *obj->mesh,
+				obj->worldTransform);
+			renderUtils.drawWireMesh(gl::getDefaultFramebuffer(), cam, *obj->mesh,
+				obj->worldTransform);
+		}
+    }
   });
 
   w.onEvent([&](ag::Window &win, const ag::Event &ev) {

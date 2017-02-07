@@ -1,6 +1,7 @@
 #include <autograph/engine/Application.h>
 #include <autograph/engine/ImageUtils.h>
 #include <autograph/support/Debug.h>
+#include <experimental/filesystem>
 
 static void *stbi_realloc_sized(void *ptr, size_t oldsz, size_t newsz) {
   auto ptr2 = new uint8_t[newsz];
@@ -25,8 +26,10 @@ static std::unique_ptr<uint8_t[]> loadImageByPathRaw(const char *path,
                                                      int &comp, int req_cmp) {
   auto raw_data = stbi_load(path, &width, &height, &comp, req_cmp);
   if (!raw_data) {
-    errorMessage("Missing or corrupt image file: {}", path);
-    throw std::runtime_error{"Missing or corrupt image file"};
+    errorMessage("Missing, corrupt image file, or unsupported format: {}",
+                 path);
+    throw std::runtime_error{
+        "Missing, corrupt image file, or unsupported format"};
   }
   return std::unique_ptr<uint8_t[]>{raw_data};
 }
@@ -70,5 +73,28 @@ AG_API gl::Texture loadTexture(const char *id, ImageFormat targetFormat) {
 AG_API Image loadImage(const char *id, ImageFormat targetFormat) {
   return loadImageByPath(findResourceFile(id, allowedImageExtensions).c_str(),
                          targetFormat);
+}
+
+AG_API void saveImageByPath(const char *path, const void *pixelData, int width, int height, ImageFormat format) {
+  if (format != ImageFormat::R8G8B8A8_SNORM &&
+      format != ImageFormat::R8G8B8A8_UNORM &&
+      format != ImageFormat::R8G8B8A8_SRGB) {
+    throw std::runtime_error{"Unsupported pixel format"};
+  }
+
+  int nbcomp = 4;
+  std::experimental::filesystem::path p{path};
+  auto ext = p.extension().string();
+
+  if (ext == ".png") {
+    // assume lines are contiguous
+    stbi_write_png(path, width, height, nbcomp, pixelData, 0);
+  } else if (ext == ".bmp") {
+    stbi_write_bmp(path, width, height, nbcomp, pixelData);
+  } else if (ext == ".tga") {
+    stbi_write_tga(path, width, height, nbcomp, pixelData);
+  } else {
+    throw std::runtime_error{"Unsupported target file format"};
+  }
 }
 }

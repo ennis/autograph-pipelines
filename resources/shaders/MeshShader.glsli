@@ -1,0 +1,16 @@
+
+## if _VERTEX_ then 
+layout(std140, binding = 0) uniform U0 {
+  mat4 uViewMatrix;
+  mat4 uProjMatrix;
+  mat4 uViewProjMatrix;
+};
+
+uniform mat4 uModelMatrix;
+
+layout(location = 0) in vec3 iPosition;
+layout(location = 1) in vec3 iNormal;
+layout(location = 2) in vec3 iTangent;
+layout(location = 3) in vec2 iTexcoords;
+
+## end

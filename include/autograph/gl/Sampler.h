@@ -13,6 +13,7 @@ struct SamplerDesc {
 };
 
 struct SamplerDeleter {
+	static constexpr GLenum objectType = GL_SAMPLER;
   void operator()(GLuint sam_obj) { glDeleteSamplers(1, &sam_obj); }
 };
 

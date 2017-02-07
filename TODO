@@ -28,7 +28,7 @@ Minimal system:
    autograph/support/Serialization.h
  ☐ OS helpers: file dialogs 
    autograph/support/NativeFileDialog.h 
- ☐ Hot reloading (meshes, textures)
+ ☐ Hot reloading (meshes, textures) @high
  ☐ Lua scripting for GUI and input
    autograph/script/Script.h => sol2
  ☐ Documentation
@@ -37,6 +37,9 @@ Minimal system:
  ☐ Long-term: implement a gratin-like interface for image processing
    Possibly as lua scripts first
    At least, find somewhere else to test shaders
+ ☐ Image save: separate pixel & target formats
+ ☐ Image save: SRGB conversions
+ ☐ Better UI for texture inspector
 
 General:
  ✔ Implement cameras @high @minimal_subset @done (16-12-24 14:12)
@@ -106,7 +109,7 @@ Effect/pipeline system:
  ✔ Run draw passes @done (16-12-18 20:52)
  ✘ Specify and run dependencies of passes  @cancelled (16-12-24 14:13)
  ☐ Specify uniforms in script
- ☐ Named uniforms
+ ✔ Named uniforms @done (17-02-03 22:41)
  ☐ Pass tags (arbitrary values)
  ☐ Pass variants: name + parameters
  ☐ Cache passes and compiled shaders (shader cache)
@@ -116,8 +119,15 @@ Effect/pipeline system:
  ☐ Cleanup: inline GLSL source in shader definition files
  ☐ Cleanup: add #line directives to preprocessor
  ☐ Cleanup: do not read from the shader file each time
+ ☐ Cleanup: get rid of the redundant gl.* table in shader scripts
  ✔ Cleanup: DrawPassBuilder move into *this @done (17-01-20 14:30)
  ✔ Cleanup: Merge DrawPass/ComputePass into a single class ('Shader') ? @done (17-01-20 14:30)
+ ☐ Cleanup: get rid of the Lua template system, replace with simple preprocessor 
+   Or find something better?
+ ☐ Robustness: issue a one-time warning when a named uniform is not found @high
+ ☐ Hot-reload @high
+ ☐ Move the shader preprocessor to the C++ side
+   Easier to debug, fixed code that does not change often
 
 Scenes:
  ✔ Load mesh with assimp @done (16-12-18 20:53)
@@ -126,6 +136,8 @@ Scenes:
  ✔ Load scene tree with assimp (hierarchy of transforms with associated meshes) @done (17-01-15 12:27)
  ☐ IDMap and IDTable @low 
  ☐ Intrusive lists @low
+ ☐ Transform: setScale(float), setPosition
+ ☐ SceneObject: shorthand setScale(...), setPosition(...)
 
 Editor/painter:
  ✔ Camera control @high @done (17-01-15 12:25)
@@ -177,11 +189,87 @@ Live GUI:
  ☐ Lua extensibility
  ☐ Save layout to Lua/Json
 
-
 Long-term:
  ☐ autograph_vk: Vulkan backend
  ☐ Live GUI
  ☐ An actual game?
  ☐ Terrain generation
- 
 
+List of errors made, and corrective measures:
+Error, first noticed where (intellisense, compile-time, runtime crash, runtime silent), corrective measures, impact on iteration time
+
+ ☐ [runtime silent] GLSL: declare a new variable instead of assigning 
+     ??? GLSL linter/compiler warning?
+ ☐ [runtime crash] Lua: crash on include file not found, no check 
+     Check for existence of include file, report error if it doesn't exist
+     Robustness (file IO)
+ ☐ [runtime crash] Lua/GLSL: include file not found, no more info given
+     Output more info
+     Keep a stack of includes 
+ ☐ [runtime silent] C++/GLSL: wrong name for uniform 
+     Check if the uniform actually exists in the shader
+ ☐ [runtime silent] C++/GLSL: wrong uniform buffer layout 
+     Check if the size of the buffer in the C++ size matches the one in the shader signature
+ ☐ [runtime silent] C++/GLSL: wrong struct used for uniform buffer 
+     Same as above
+ ☐ [runtime silent] Lua/GLSL: incorrect depthWrite specification (copy-paste) 
+     ???
+     Live frame inspector
+ ☐ [runtime silent] C++/GLSL: copying pointer to data instead of data 
+     ???
+ ☐ [runtime silent] C++: created a Camera and a CameraControl, but forgot to assign the camera from camCtl.getCamera() 
+     ??? 
+ ☐ [runtime silent] C++: Passed a transparent color 
+     ???
+     Live frame inspector
+ ☐ [runtime crash] C++/SceneObject: forgot that sceneObject->pMesh can be null 
+     Iterate only on objects with a mesh (views? custom iterator?)
+     scene.getRenderableObjects/getVisibleObjects()
+ ☐ [runtime silent] C++: UploadFrameData instead of uploadFrameArray
+     ??? Could be caught at compile-time
+ ☐ [runtime silent] C++: Wrong pass name specified
+ ☐ [runtime silent] Lua: Wrong shader file specified
+     => Two (unnecessary?) indirections
+ ☐ [runtime silent] C++/SceneObject: passed the identity matrix instead of the actual object transform 
+     ???
+ ☐ [runtime silent] Camera not centered on object
+     Robust camera auto-center 
+ ☐ [runtime silent] gl::bind::vertexBuffer: incorrect stride parameter
+     Use meshes 
+ ☐ [runtime silent] gl::bind::vertexBuffer: incorrect stride parameter b/c of C++ alignment
+     ??? 
+ ☐ [runtime silent] Lua/ShaderDef: no error when 'layout' in shader def was set to an undefined table  
+     Require a layout to be present, issue an error otherwise
+     For each layout entry, check if all required members are present, error otherwise
+     ShaderInspector: show VAO 
+ ☐ [intellisense] Forgot pointer indirection somewhere
+     Caught by intellisense
+     Coherent API
+ ☐ [runtime silent] uploadFrameData: pointer to pointer to data instead of pointer to data
+     Probably a copy-paste error
+
+Ideas:
+ ☐ General: Lua shader robustness
+ ☐ Low-level 'Frame debugger'/'Frame inspector' => record calls made to gl::draw and gl::compute to identify suspicious behaviors
+   ☐ Weird bindings
+   ☐ Weird data size passed to uploadFrameData
+   ☐ Signature matching between shader and bindings 
+     incoherent buffer sizes for UBOs
+   ☐ Weird/incoherent fixed-pipeline state combinations
+   ☐ Warnings on states that can prevent pixels from being rendered to the screen (weird blend states)
+   ☐ glDepthMask(true) on glClear(GL_DEPTH_BUFFER_BIT)
+   ☐ Forgot to clear a framebuffer since last frame (need per-object history)
+ ☐ Shader 'testbench'
+   Included as a library
+ ☐ Ctrl+F12: 'dev tools'
+   ☐ Access to frame inspector, script inspector, texture inspector, shader testbench, etc.
+   ☐ GL object tracker
+     ✔ Issue: can't store a reference to the wrapper object because it may move in memory @done (17-02-04 14:15)
+       Dynamically allocate gl::Texture ? 
+       GL objects have pointer-to-implementations?
+       ** Just track GLHandles
+   ☐ Shader tracker
+      Dynamically inspect and modify the state of Shader instances
+      Need the shader cache for that (since we can't keep track of all Shader instances)
+   ☐ Texture inspector: evaluate expression on pixels 
+     Input: GLSL code, compile shader, run a pass, draw the result

@@ -6,6 +6,7 @@
 namespace ag {
 namespace gl {
 struct VertexArrayDeleter {
+	static constexpr GLenum objectType = GL_VERTEX_ARRAY;
   void operator()(GLuint obj) { glDeleteVertexArrays(1, &obj); }
 };
 
@@ -13,7 +14,7 @@ struct AG_REFLECT VertexAttribute {
   unsigned slot;
   GLenum type;
   unsigned size;
-  unsigned stride;
+  unsigned relativeOffset;
   bool normalized;
 };
 

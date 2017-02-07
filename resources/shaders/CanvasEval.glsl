@@ -1,6 +1,6 @@
 #version 450
-#include "utils.glsl"
-#include "screenPass.glsl"
+#include "Utils.glsli"
+#include "ImageShader.glsli"
 
 layout(binding = 0) uniform sampler2D t_normals;
 layout(binding = 1) uniform usampler2D t_coefs0;

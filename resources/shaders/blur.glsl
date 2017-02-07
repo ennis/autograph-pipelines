@@ -2,7 +2,7 @@
 // Adapted from:
 // http://callumhay.blogspot.com/2010/09/gaussian-blur-shader-glsl.html
 #version 450
-#include "utils.glsl"
+#include "Utils.glsli"
 
 layout(binding = 0, $(IN_FORMAT)) readonly uniform image2D tex0;
 layout(binding = 1, $(OUT_FORMAT)) writeonly uniform image2D tex1;

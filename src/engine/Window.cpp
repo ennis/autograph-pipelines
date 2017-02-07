@@ -1,4 +1,5 @@
 #include <autograph/engine/Window.h>
+#include <autograph/engine/DebugOverlay.h>
 #include <autograph/gl/Device.h>
 #include <autograph/support/Debug.h>
 #include <autograph/support/ProjectRoot.h>
@@ -194,6 +195,10 @@ void Window::keyHandler(int key, int scancode, int action, int mods) {
   ev.key.key = key;
   if (eventFunc_)
     eventFunc_(*this, ev);
+  if (mods == GLFW_MOD_CONTROL && key == GLFW_KEY_F12 && action == GLFW_PRESS) {
+	  // Toggle debug overlay
+	  showDebugOverlay_ = !showDebugOverlay_;
+  }
 }
 
 void Window::charHandler(unsigned int codepoint) {
@@ -339,6 +344,11 @@ void Window::show() {
     if (renderFunc_)
       renderFunc_(*this, dt);
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	glDisable(GL_STENCIL_TEST);
+	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+	if (showDebugOverlay_) {
+		drawDebugOverlay(dt);
+	}
     ImGui::Render();
     ImGui_ImplGlfwGL3_NewFrame();
     ag::gl::endFrame();

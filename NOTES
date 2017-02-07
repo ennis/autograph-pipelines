@@ -1877,6 +1877,59 @@ The model should be available at all times:
 -> input processing, for updates
 The two may happen at different frequencies
 
+
+
+--- Lifetimes ---
+	Avoid displaying an interface for an object that is not alive anymore
+	IMGUI: Conditional execution; no dangling refs, since the UI is rebuilt from scratch on every frame
+		(++) No dangling refs possible
+	RMGUI(RAII): Values must outlive the UI element, UI element lifetime controlled by RAII
+		(--) Dangling refs possible, but unlikely
+	RMGUI(non-owned): UI element owned by the UI visual tree, must manually remove element from visual tree
+		(--) Dangling refs possible
+
+--- Layout ---
+	Support complex layouts (that depend on the contents of a widget)
+	Screen percentage, min value, max value
+	IMGUI: Cannot size a widget according to its content 
+		OR incurs a one-frame delay for hit-testing
+		(--)
+
+	RMGUI: No limitations
+		(++)
+
+--- Animation ---
+	Can animate properties of individual UI elements
+	IMGUI: OK, but code driven (animation mixed with UI definition code)
+	 	(--)
+	RMGUI: No limitations (attach scripts to UI elements)
+		(++) 
+
+--- Optimization ---
+	If possible, avoid re-rendering everything each frame
+	IMGUI: Difficult, possible through caching (but expensive)
+	RMGUI: Possible, but also requires caching
+		(--) for both
+
+--- Handling of dynamic data ---
+	How the UI handles data that changes every frame
+	IMGUI: Perfect
+		(++)
+	RMGUI: Good if we keep refs to values
+
+--- Dynamic UI ---
+	e.g. conditionally reveal an UI element
+	IMGUI: easy (conditional structure)
+		(++)
+	RMGUI: harder; must manually remove/add elements
+		(--)
+
+--- Synchronisation with the model ---
+	How the UI is bound to the model
+
+--- Drag-and-drop ---
+
+
 _______________________________________________
 
 Ideas for a gratin-like node editor:
@@ -1937,3 +1990,30 @@ public:
 	onInputConnectionUpdate(int i, ...);
 	onOutputConnectionUpdate(int i, ...); 
 };
+
+_______________________________________________
+
+Scenes:
+
+Scene:
+	- Hierarchy of 3D objects with optional meshes
+	- ID => SceneObject
+Scene2D:
+	- Same, with 2D meshes
+	- ID => Scene2DObject
+RenderScene:
+	- ID => Material and render options
+	- ID => RenderObject
+PhysicsScene:
+	- ID => PhysicsObject (position+velocity)
+AI scene:
+	- ID (sparse) => AI script
+
+Physics: Scene + PhysicsScene
+Rendering: Scene + RenderScene
+AI: all scenes
+
+ID maps:
+	can be sparse (list of IDs) or dense (array with holes)
+	can be direct (contiguous data) or indirect (array of pointers)
+

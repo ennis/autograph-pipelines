@@ -1,9 +1,9 @@
 require 'shaders/utils'
 
 gbuffer = GeometryPass{
-	shaderFile = 'canvas_gbuffers.glsl'
+	shaderFile = 'CanvasGBuffers.glsl'
 }
 
 evaluation = ScreenPass{
-	shaderFile = 'canvas_evaluate.glsl'
+	shaderFile = 'CanvasEval.glsl'
 }

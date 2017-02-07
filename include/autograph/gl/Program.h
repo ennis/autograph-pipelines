@@ -12,10 +12,12 @@ namespace gl {
 AG_API const char *getShaderStageName(GLenum stage);
 
 struct ProgramDeleter {
+	static constexpr GLenum objectType = GL_PROGRAM;
   void operator()(GLuint obj) { glDeleteProgram(obj); }
 };
 
 struct ShaderDeleter {
+	static constexpr GLenum objectType = GL_SHADER;
   void operator()(GLuint obj) { glDeleteShader(obj); }
 };
 

@@ -67,6 +67,9 @@ public:
   template <typename Func> void subscribe(Subscription &sub, Func &&func) {
     ptr_->subscribe(sub, std::forward<Func>(func));
   }
+  template <typename Func> void subscribe(Func &&func) {
+    ptr_->subscribe(std::forward<Func>(func));
+  }
 
   template <typename U = T>
   void operator()(std::enable_if_t<!std::is_void<U>::value, U> value) {
@@ -101,6 +104,11 @@ protected:
     template <typename Func> void subscribe(Subscription &sub, Func &&func) {
       callbacks_.push_back(
           detail::callback<T>{std::forward<Func>(func), sub.ptr_});
+    }
+
+    template <typename Func> void subscribe(Func &&func) {
+      callbacks_.push_back(
+          detail::callback<T>{std::forward<Func>(func), sub_.ptr_});
     }
 
     // see http://stackoverflow.com/questions/2892087/
@@ -142,6 +150,7 @@ protected:
     }
 
     std::vector<detail::callback<T>> callbacks_;
+    Subscription sub_;
   };
 
   std::shared_ptr<state> ptr_;

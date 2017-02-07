@@ -19,18 +19,51 @@
 namespace ag {
 enum class ShaderType { Compute = 0, Draw };
 
-using UniformValue = variant<float, vec2, vec3, vec4, int, ivec2, ivec3, ivec4,
-                             mat2, mat3, mat4, mat3x4>;
+////////////////////////////////////////////////////////
+struct PipelineState {
+  uint64_t hash{0};
+  std::string origShaderID;
+  ShaderType shaderType{ShaderType::Draw};
+  bool shouldRecompile{true};
+  bool compileOk{false};
+  std::string vertexShaderSource;
+  std::string fragmentShaderSource;
+  std::string geometryShaderSource;
+  std::string tessControlShaderSource;
+  std::string tessEvalShaderSource;
+  std::string computeShaderSource;
+  gl::Program programObject;
+  gl::VertexArray vertexArrayObject;
+  gl::DrawStates drawStates;
+  GLbitfield barrierBits{0};
+  int groupSizeX{0};
+  int groupSizeY{0};
+  int groupSizeZ{0};
 
-struct NamedUniform {
-  std::string name;
-  int location;
-  UniformValue value;
+  void loadFromTable(sol::table config);
+  void compile();
 };
 
-using Parameter =
-    variant<float, vec2, vec3, vec4, int, ivec2, ivec3, ivec4, mat2, mat3, mat4,
-            mat3x4, gl::Texture *, gl::BufferSlice, gl::Sampler *>;
+////////////////////////////////////////////////////////
+class PipelineStateCache {
+public:
+  // Look in the cache for a compiled pipeline state matching the one given as
+  // input
+  // Otherwise, add this one to the cache
+  std::shared_ptr<PipelineState>
+  cachePipelineState(std::shared_ptr<PipelineState> ps);
+  // release the specified cached pipeline
+  void releasePipelineState(std::shared_ptr<PipelineState> &ps);
+  // get number of cached states
+  int getCachedPipelineStateCount();
+  PipelineState *getCachedPipelineState(int index);
+
+private:
+  // should be hash -> CachedPipelineState
+  std::vector<std::shared_ptr<PipelineState>> states;
+};
+
+PipelineStateCache& getPipelineStateCache();
 
 //////////////////////////////////////////////
 // Helpers
@@ -54,24 +87,9 @@ public:
   }
 
   void operator()(gl::StateGroup &stateGroup);
-
   void initialize(const char *shaderId, sol::table table);
-  void loadFromTable(sol::table config);
-  // void bindTexture(int slot, GLuint texobj) { bindTextureInternal(drawPass_,
-  // slot, texobj); }
-  // void bindTextureImage(int slot, GLuint texobj) {
-  // bindTextureImageInternal(drawPass_, slot, texobj); }
-  // void bindSampler(int slot, GLuint samplerobj) {
-  // bindSamplerInternal(drawPass_, slot, samplerobj); }
-  // void bindUniformBuffer(int slot, const ag::gl::BufferSlice &slice) {
-  // bindUniformBufferInternal(drawPass_, slot, slice); }
-  // void bindShaderStorageBuffer(int slot, const ag::gl::BufferSlice &slice) {
-  // bindShaderStorageBufferInternal(drawPass_, slot, slice); }
+  // void loadFromTable(sol::table config);
   void bindVertexArray(GLuint vao);
-  void bindColorBuffer(int index, GLuint texobj);
-  void bindDepthBuffer(GLuint texobj);
-  // void bindVertexBuffer(int slot, const ag::gl::BufferSlice &slice, int
-  // stride);
   void setVertexShader(std::string vs);
   void setFragmentShader(std::string fs);
   void setComputeShader(std::string cs);
@@ -81,40 +99,9 @@ public:
   void setBlendState(int index, const gl::BlendState &blendState);
   void setRasterizerState(const gl::RasterizerState &rs);
   void setDepthStencilState(const gl::DepthStencilState &ds);
-  auto getDrawStates() -> const gl::DrawStates & {
-    if (shouldRecompile_) {
-      compile();
-    }
-    return drawStates_;
-  }
+  auto getDrawStates() -> const gl::DrawStates &;
 
 protected:
-  ShaderType shaderType_{ShaderType::Draw};
-  bool shouldRecompile_{true};
-  bool compileOk_{false};
-  gl::Program prog_;
-  // load from file
-  void compile();
-  gl::VertexArray vao_;
-  std::string VS_;
-  std::string FS_;
-  std::string GS_;
-  std::string TCS_;
-  std::string TES_;
-  std::string CS_;
-  gl::DrawStates drawStates_;
-  GLbitfield barrierBits_{0};
-  // gl::RasterizerState rasterizerState_;
-  // gl::DepthStencilState depthStencilState_;
-  // std::array<gl::BlendState, 8> blendStates_;
-  // std::array<gl::Viewport, 8> viewports_;
-  std::array<GLuint, 8> colorBuffers_;
-  GLuint depthBuffer_{0};
-  // empty -> Framebuffer is specified in the draw call
-  optional<gl::Framebuffer> fbo_;
-  // for compute shaders
-  optional<int> groupSizeX;
-  optional<int> groupSizeY;
-  optional<int> groupSizeZ;
+  std::shared_ptr<PipelineState> cached;
 };
 }

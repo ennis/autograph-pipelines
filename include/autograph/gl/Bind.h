@@ -59,12 +59,26 @@ UNIFORM_MATRIX_NXN(2)
 UNIFORM_MATRIX_NXN(3x4)
 #undef UNIFORM_MATRIX_NXN
 
+inline auto texture(int unit, GLuint obj, GLuint samplerObj) {
+	return
+		[unit, obj, samplerObj](StateGroup & sg) {
+		sg.uniforms.textures[unit] = obj;
+		sg.uniforms.samplers[unit] = samplerObj;
+	};
+}
+
 inline auto texture(int unit, const Texture &tex, Sampler &sampler) {
   return
       [ unit, obj = tex.object(), sobj = sampler.object() ](StateGroup & sg) {
     sg.uniforms.textures[unit] = obj;
     sg.uniforms.samplers[unit] = sobj;
   };
+}
+
+inline auto image(int unit, GLuint obj) {
+	return[unit, obj](StateGroup & sg) {
+		sg.uniforms.images[unit] = obj;
+	};
 }
 
 inline auto image(int unit, const Texture &tex) {
@@ -79,6 +93,16 @@ inline auto uniformBuffer(int slot, BufferSlice buf) {
     sg.uniforms.uniformBufferOffsets[slot] = buf.offset;
     sg.uniforms.uniformBufferSizes[slot] = buf.size;
   };
+}
+
+template <typename T>
+inline auto uniformFrameData(int slot, const T* data) {
+	auto slice = uploadFrameData(data, sizeof(T));
+	return [slot, slice](StateGroup &sg) {
+		sg.uniforms.uniformBuffers[slot] = slice.obj;
+		sg.uniforms.uniformBufferOffsets[slot] = slice.offset;
+		sg.uniforms.uniformBufferSizes[slot] = slice.size;
+	};
 }
 
 inline auto vertexBuffer(int slot, BufferSlice buf, int stride) {

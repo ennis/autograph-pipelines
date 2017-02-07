@@ -58,3 +58,7 @@ namespace ag
 {
 	static constexpr const char projectName[] = "autograph-pipelines";
 }
+
+//////////////////////////////////////////////
+// Track GL objects for the devtools
+#define AG_TRACK_GL_OBJECTS 1

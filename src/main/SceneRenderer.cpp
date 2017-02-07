@@ -1,5 +1,6 @@
 #include "SceneRenderer.h"
 #include <autograph/engine/Shader.h>
+#include <autograph/engine/ShaderUtils.h>
 #include <autograph/gl/Device.h>
 #include <autograph/gl/Draw.h>
 #include <autograph/support/Debug.h>
@@ -34,12 +35,7 @@ void DeferredSceneRenderer::reloadShaders() {
 void DeferredSceneRenderer::renderScene(GBuffer &targets, Scene &scene,
                                         Camera &camera) {
   // Per-object uniforms
-  struct ObjectUniforms {
-    mat4 modelMatrix;
-    mat4 viewMatrix;
-    mat4 projMatrix;
-    mat4 viewProjMatrix;
-  } objectUniforms;
+  CameraPerObjectUniforms camUniforms{ camera };
 
   gl::clearTexture(targets.getDiffuseTarget(), vec4{0.0f, 0.0f, 0.0f, 1.0f});
   gl::clearDepthTexture(targets.getDepthTarget(), 1.0f);
@@ -51,10 +47,10 @@ void DeferredSceneRenderer::renderScene(GBuffer &targets, Scene &scene,
       continue;
     using namespace gl;
     using namespace gl::bind;
-    objectUniforms.modelMatrix = obj->worldTransform;
-    objectUniforms.viewMatrix = camera.viewMat;
-    objectUniforms.projMatrix = camera.projMat;
-    objectUniforms.viewProjMatrix = camera.projMat * camera.viewMat;
+	camUniforms.modelMatrix = obj->worldTransform;
+	camUniforms.viewMatrix = camera.viewMat;
+	camUniforms.projMatrix = camera.projMat;
+	camUniforms.viewProjMatrix = camera.projMat * camera.viewMat;
     // AG_DEBUG("modelMat {},{},{},{}", objectUniforms.modelMatrix[0],
     // objectUniforms.modelMatrix[1], objectUniforms.modelMatrix[2],
     // objectUniforms.modelMatrix[3]);
@@ -62,9 +58,7 @@ void DeferredSceneRenderer::renderScene(GBuffer &targets, Scene &scene,
     // camera.viewMat[2], camera.viewMat[3]);
     // AG_DEBUG("projMat {},{},{},{}", camera.projMat[0], camera.projMat[1],
     // camera.projMat[2], camera.projMat[3]);
-    draw(targets.getFramebuffer(), *pMesh, deferredShader,
-         uniformBuffer(
-             0, uploadFrameData(&objectUniforms, sizeof(objectUniforms))));
+    draw(targets.getFramebuffer(), *pMesh, deferredShader, uniformFrameData(0, &camUniforms));
 
     // AG_DEBUG("renderScene, object ID {} mesh {}", obj->id, (void*)obj->mesh);
   }
@@ -75,8 +69,8 @@ WireframeOverlayRenderer::WireframeOverlayRenderer() { reloadShaders(); }
 WireframeOverlayRenderer::~WireframeOverlayRenderer() {}
 
 void WireframeOverlayRenderer::reloadShaders() {
-  wireframeShader = Shader{"shaders/default:wireframeOverlay"};
-  wireframeNoDepthShader = Shader{"shaders/default:wireframeOverlayNoDepth"};
+  wireframeShader = Shader{"shaders/default:drawWireMesh"};
+  wireframeNoDepthShader = Shader{"shaders/default:drawWireMeshNoDepth"};
 }
 
 // render one scene object and its children

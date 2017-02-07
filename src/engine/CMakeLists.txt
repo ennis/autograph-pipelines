@@ -16,6 +16,7 @@ set(SRC
 	ResourcePool.cpp
 	Window.cpp
 	MathUtils.cpp
+	DebugOverlay.cpp
 )
 	
 add_library(autograph_engine STATIC ${SRC} )
@@ -41,11 +42,11 @@ target_link_libraries(
 		zlibstatic
 		imgui
 		luajit_bin
-		sol2 
 		stb
 	PUBLIC
 		# GLM and glloadgen are exported as a part of the public API
 		autograph_gl
+		sol2 
 		glm 
 		glloadgen
 		skia-bin

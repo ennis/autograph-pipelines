@@ -3,19 +3,32 @@ require 'autograph'
 
 shader_utils = shader_utils or {}
 
+local function printFileStack(filestack)
+  autograph.error('Include stack:')
+  for i = 1, #filestack do
+    autograph.error('... %s', filestack[#filestack-i+1])
+  end 
+end
+
 -- lua shader preprocessor
-local function preprocess(filename, env)
+local function preprocess(filename, env, filestack)
   --autograph.debug('Preprocessing %s', filename)
   --autograph.debug('Environment:')
   --autograph.debug(dump(env))
   local file = io.open(filename)
+  if not file then
+    autograph.error('preprocess(): could not open file %s', filename)
+    printFileStack(filestack)
+    return nil
+  end
+  filestack[#filestack+1] = filename
   local chunk = {'local T={}\n'}
   for line in file:lines() do
     -- handle includes
      local filename = string.match(line, '#include "([%w_%.]+)"')
      if filename then
         local shaderFile = autograph.getActualPath('resources/shaders/' .. filename)
-        local prep = preprocess(shaderFile, env)
+        local prep = preprocess(shaderFile, env, filestack)
         table.insert(chunk, string.format('table.insert(T,%q) ', prep))
      else
         local found = string.find(line, '##')
@@ -42,15 +55,17 @@ local function preprocess(filename, env)
   if err then 
     autograph.error('Error while processing Lua shader template:')
     autograph.error('%s', err) 
-    return nil
+    printFileStack(filestack)
   else  
     env.table = table
     setfenv(chunkfn, env)
     str = chunkfn()
     --autograph.debug('Preprocessed source:')
     -- autograph.debug(str)
-    return str
   end
+
+  filestack[#filestack] = nil
+  return str
 end
 
 local function tableConcat(t1,t2)
@@ -78,14 +93,14 @@ function shader_utils.createShaderFromTemplate(shaderId, defines)
 
   if shader.isCompute then
     defines._COMPUTE_ = true
-    local cs = preprocess(shaderFile, defines)
+    local cs = preprocess(shaderFile, defines, {})
     pass.vertexShader = cs
   else
     defines._VERTEX_ = true
-    local vs = preprocess(shaderFile, defines)
+    local vs = preprocess(shaderFile, defines, {})
     defines._VERTEX_ = nil
     defines._FRAGMENT_ = true
-    local fs = preprocess(shaderFile, defines)
+    local fs = preprocess(shaderFile, defines, {})
     defines._FRAGMENT_ = nil
     pass.vertexShader = vs
     pass.fragmentShader = fs

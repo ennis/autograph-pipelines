@@ -8,6 +8,7 @@ namespace ag {
 namespace gl {
 //////////////////////////////////////////////
 struct RenderbufferDeleter {
+	static constexpr GLenum objectType = GL_RENDERBUFFER;
   void operator()(GLuint rb) { glDeleteRenderbuffers(1, &rb); }
 };
 
@@ -31,6 +32,7 @@ private:
 
 //////////////////////////////////////////////
 struct FramebufferDeleter {
+	static constexpr GLenum objectType = GL_FRAMEBUFFER;
   void operator()(GLuint fbo) { glDeleteFramebuffers(1, &fbo); }
 };
 

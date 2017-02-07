@@ -1,15 +1,15 @@
 #pragma once
 #include <autograph/support/Span.h>
+#include <cstddef> // somehow needed for size_t
 #include <type_traits>
 #include <typeindex>
 #include <unordered_map>
-#include <cstddef> // somehow needed for size_t
 
 namespace ag {
 namespace meta {
 
-	using packer = int;
-	using unpacker = int;
+using packer = int;
+using unpacker = int;
 
 struct Attribute {
   std::type_index typeindex;
@@ -29,12 +29,12 @@ struct Field {
   }
 
   template <typename T> const T *getAttribute() const {
-	  for (auto&& a : attributes) {
-		  if (a.typeindex == std::type_index{ typeid(T) }) {
-			  return static_cast<const T*>(a.data);
-		  }
-	  }
-	  return nullptr;
+    for (auto &&a : attributes) {
+      if (a.typeindex == std::type_index{typeid(T)}) {
+        return static_cast<const T *>(a.data);
+      }
+    }
+    return nullptr;
   }
 };
 
@@ -42,14 +42,14 @@ struct Enumerator {
   const char *name;
   uint64_t value;
   span<const Attribute> attributes;
-  
+
   template <typename T> const T *getAttribute() const {
-	  for (auto&& a : attributes) {
-		  if (a.typeindex == std::type_index{ typeid(T) }) {
-			  return static_cast<const T*>(a.data);
-		  }
-	  }
-	  return nullptr;
+    for (auto &&a : attributes) {
+      if (a.typeindex == std::type_index{typeid(T)}) {
+        return static_cast<const T *>(a.data);
+      }
+    }
+    return nullptr;
   }
 };
 
@@ -75,10 +75,9 @@ struct Type {
 struct Record : public Type {
   static constexpr TypeKind t_kind = TypeKind::Struct;
   Record(const char *name, span<const Field> public_fields_,
-           span<const std::type_index> bases_,
-           span<const Attribute> attributes_,
-           void (*serialize_)(packer &, const void *),
-           void (*deserialize_)(unpacker &, void *))
+         span<const std::type_index> bases_, span<const Attribute> attributes_,
+         void (*serialize_)(packer &, const void *),
+         void (*deserialize_)(unpacker &, void *))
       : Type{name, t_kind, attributes_, serialize_, deserialize_},
         publicFields{public_fields_}, bases{bases_} {}
 
@@ -89,14 +88,12 @@ struct Record : public Type {
 struct Enum : public Type {
   static constexpr TypeKind t_kind = TypeKind::Enum;
   Enum(const char *name, span<const Enumerator> enumerators_,
-         uint64_t (*getValue_)(const void *e),
-         void (*setValue_)(void *, uint64_t),
-         span<const Attribute> attributes_,
-         void (*serialize_)(packer &, const void *),
-         void (*deserialize_)(unpacker &, void *))
+       uint64_t (*getValue_)(const void *e),
+       void (*setValue_)(void *, uint64_t), span<const Attribute> attributes_,
+       void (*serialize_)(packer &, const void *),
+       void (*deserialize_)(unpacker &, void *))
       : Type{name, t_kind, attributes_, serialize_, deserialize_},
-        enumerators{enumerators_}, getValue{getValue_},
-        setValue{setValue_} {}
+        enumerators{enumerators_}, getValue{getValue_}, setValue{setValue_} {}
 
   span<const Enumerator> enumerators;
 
@@ -124,21 +121,19 @@ struct Enum : public Type {
 template <typename T> const Type *typeOf();
 const Type *typeOf(std::type_index ti);
 
-template <typename T> void serialize(packer& p, const T& data)
-{
-	serialize(p, typeOf<T>(), &data);
+template <typename T> void serialize(packer &p, const T &data) {
+  serialize(p, typeOf<T>(), &data);
 }
 
-template <typename T> void serialize_dynamic(packer& p, const T& data)
-{
-	// always use the dynamic type
-	serialize(p, typeOf(typeid(data)), &data);
+template <typename T> void serialize_dynamic(packer &p, const T &data) {
+  // always use the dynamic type
+  serialize(p, typeOf(typeid(data)), &data);
 }
 
-inline void serialize(packer& p, const Type* ty, const void* data)
-{
-	if (!ty) return;
-	ty->serialize(p, data);
+inline void serialize(packer &p, const Type *ty, const void *data) {
+  if (!ty)
+    return;
+  ty->serialize(p, data);
 }
 
 // enum value-to-string and string-to-value
@@ -146,6 +141,5 @@ template <typename T, typename = std::enable_if_t<std::is_enum<T>::value>>
 const char *getEnumeratorName(T constant);
 template <typename T, typename = std::enable_if_t<std::is_enum<T>::value>>
 T getEnumeratorValue(const char *name);
-
 }
 }

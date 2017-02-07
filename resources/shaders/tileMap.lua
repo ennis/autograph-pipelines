@@ -6,5 +6,5 @@ tileMap = Geometry2DPass
 		depthTestEnable = false,
 		depthWriteEnable = false
 	},
-	shaderFile = 'tileMap.glsl'
+	shaderFile = 'DrawTileMap.glsl'
 }

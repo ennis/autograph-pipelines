@@ -142,17 +142,6 @@ sol::table openLuaBindings(sol::this_state s) {
   module.new_usertype<Shader>(
       "Shader", sol::call_constructor,
       sol::constructors<sol::types<>>{},
-      "setColorBuffer",
-      [](Shader &shader, int index, gl::Texture &tex) {
-		  shader.bindColorBuffer(index, tex.object());
-      },
-      "setDepthBuffer",
-      [](Shader &shader, gl::Texture *tex) {
-        if (tex)
-			shader.bindDepthBuffer(tex->object());
-        else
-			shader.bindDepthBuffer(0);
-      },
       "setVertexShader", &Shader::setVertexShader, "setFragmentShader",
       &Shader::setFragmentShader, "setBlendState",
       [](Shader &shader, int index, sol::table table) {
@@ -229,8 +218,7 @@ sol::table openLuaBindings(sol::this_state s) {
 
   // RenderUtils
   module.new_usertype<RenderUtils>("RenderUtils", sol::call_constructor,
-                                   sol::constructors<sol::types<>>(),
-                                   "drawSprite", &RenderUtils::drawSprite);
+                                   sol::constructors<sol::types<>>());
 
   module["loadTextureByPath"] = &loadTextureByPath;
   module["loadImageByPath"] = &loadImageByPath;

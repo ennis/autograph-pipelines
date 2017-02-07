@@ -184,5 +184,6 @@ namespace ag
 		std::function<void(Window&, double)> renderFunc_;
 		std::function<void(Window&, const Event&)> eventFunc_;
 		GLFWwindow* window_;
+		bool showDebugOverlay_{ false };
 	};
 }

@@ -1,5 +1,6 @@
 #pragma once
 #include <autograph/Types.h>
+#include <cmath>
 
 namespace ag {
 

@@ -8,6 +8,7 @@ namespace ag {
 namespace gl {
 
 struct TextureDeleter {
+	static constexpr GLenum objectType = GL_TEXTURE;
 	void operator()(GLuint tex_obj);
 };
 

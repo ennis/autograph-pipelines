@@ -22,6 +22,7 @@ enum class BufferUsage {
 
 //////////////////////////////////////////////
 struct BufferDeleter {
+	static constexpr GLenum objectType = GL_BUFFER;
   void operator()(GLuint obj) { glDeleteBuffers(1, &obj); }
 };
 

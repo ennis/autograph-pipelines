@@ -50,7 +50,7 @@ AG_API BufferSlice uploadFrameData(const void *data, size_t size,
 template <typename T>
 inline BufferSlice uploadFrameArray(const T *data, size_t num_elements,
                                     size_t alignment = -1) {
-  return uploadFrameData(&data, num_elements * sizeof(T), alignment);
+  return uploadFrameData(data, num_elements * sizeof(T), alignment);
 }
 
 template <typename T, size_t N>

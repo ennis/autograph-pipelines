@@ -2,7 +2,7 @@ require 'shaders/utils'
 
 deferred = GeometryPass
 {
-	shaderFile = 'deferred.glsl'
+	shaderFile = 'Deferred.glsl'
 }
 
 drawSprite = Geometry2DPass
@@ -11,25 +11,57 @@ drawSprite = Geometry2DPass
 		depthTestEnable = false,
 		depthWriteEnable = false
 	},
-	shaderFile = 'drawSprite.glsl'
+	shaderFile = 'DrawSprite.glsl'
 }
 
-wireframeOverlay = GeometryPass
+drawMeshDefault = GeometryPass
 {
+	depthStencilState = {
+		depthTestEnable = true,
+		depthWriteEnable = true
+	},
+	shaderFile = 'DrawMesh.glsl'
+}
+
+drawWireMesh = GeometryPass
+{
+	rasterizerState = {
+		fillMode = gl.GL_LINE,
+	},
 	depthStencilState = {
 		depthTestEnable = true,
 		depthWriteEnable = false
 	},
-	shaderFile = 'wireframe.glsl'
+	shaderFile = 'DrawWire.glsl'
 }
 
-wireframeOverlayNoDepth = GeometryPass
+drawWireMeshNoDepth = GeometryPass
 {
+	rasterizerState = {
+		fillMode = gl.GL_LINE,
+	},
 	depthStencilState = {
 		depthTestEnable = false,
 		depthWriteEnable = false
 	},
-	shaderFile = 'wireframe.glsl'
+	shaderFile = 'DrawWire.glsl'
+}
+
+
+drawWireMesh2DColor = GeometryPass
+{
+	layout = {
+		{ buffer = 0, type = gl.GL_FLOAT, size = 2, relativeOffset = 0, normalized = false },
+		{ buffer = 0, type = gl.GL_UNSIGNED_BYTE, size = 4, relativeOffset = 8, normalized = true }
+	},
+	rasterizerState = {
+		fillMode = gl.GL_LINE,
+	},
+	depthStencilState = {
+		depthTestEnable = false,
+		depthWriteEnable = false
+	},
+	shaderFile = 'DrawMesh2DColor.glsl'
 }
 
 ----------------------------------------------------------
@@ -37,12 +69,12 @@ wireframeOverlayNoDepth = GeometryPass
 local function BlurPasses(defs)
 	local H = ComputeShader {
 		defines = deepcopy(defs),
-		shaderFile = 'blur.glsl',
+		shaderFile = 'Blur.glsl',
 		barrierBits = bit.bor(gl.GL_TEXTURE_FETCH_BARRIER_BIT, gl.GL_SHADER_IMAGE_ACCESS_BARRIER_BIT)
 	}
 	local V = ComputeShader {
 		defines = deepcopy(defs),
-		shaderFile = 'blur.glsl',
+		shaderFile = 'Blur.glsl',
 		barrierBits = bit.bor(gl.GL_TEXTURE_FETCH_BARRIER_BIT, gl.GL_SHADER_IMAGE_ACCESS_BARRIER_BIT)
 	}
 	H.defines.BLUR_H = 1

@@ -1,5 +1,4 @@
 #version 450
-
 layout(binding = 0) uniform sampler2D tileset;
 layout(binding = 1) uniform sampler2D tilemap;
 

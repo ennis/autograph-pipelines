@@ -25,6 +25,16 @@ AG_API gl::Texture
 loadTextureByPath(const char *path,
                   ImageFormat targetFormat = ImageFormat::R8G8B8A8_SRGB);
 
+
+//
+// Save a texture
+//AG_API void saveImageByPath(const char *path, const Image& img);
+
+// Note: ideally, should take two formats:
+// - one for the format of the input pixel data
+// - one for the storage format
+AG_API void saveImageByPath(const char *path, const void* pixelData, int width, int height, ImageFormat format);
+
 // Helpers
 AG_API gl::Texture
 loadTexture(const char *id,

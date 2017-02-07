@@ -11,7 +11,7 @@ VertexArray::VertexArray(ag::span<VertexAttribute> attribs) {
 void VertexArray::initialize(ag::span<VertexAttribute> attribs) {
   constexpr auto max_attribs = 16;
   auto num_attribs = attribs.size();
-  GLuint strides[max_attribs] = {0};
+ // GLuint strides[max_attribs] = {0};
   GLuint vertex_array_obj;
   glCreateVertexArrays(1, &vertex_array_obj);
   assert(num_attribs < getGLImplementationLimits().max_vertex_attributes);
@@ -20,9 +20,9 @@ void VertexArray::initialize(ag::span<VertexAttribute> attribs) {
     assert(a.slot < max_attribs);
     glEnableVertexArrayAttrib(vertex_array_obj, attribindex);
     glVertexArrayAttribFormat(vertex_array_obj, attribindex, a.size, a.type,
-                              a.normalized, strides[a.slot]);
+                              a.normalized, a.relativeOffset);
     glVertexArrayAttribBinding(vertex_array_obj, attribindex, a.slot);
-    strides[a.slot] += a.stride;
+    //strides[a.slot] += a.stride;
     ++attribindex;
   }
   obj_ = vertex_array_obj;
