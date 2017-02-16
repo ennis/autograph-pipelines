@@ -82,13 +82,15 @@ static void editTransform(const Camera &camera, Transform &tr) {
   // convert matrix back to transform components
   ImGuizmo::DecomposeMatrixToComponents(&matrix[0][0], matrixTranslation,
                                         matrixRotation, matrixScale);
-  tr.position.x = matrixTranslation[0];
+  tr = Transform::fromMatrix(matrix);
+  /*tr.position.x = matrixTranslation[0];
   tr.position.y = matrixTranslation[1];
   tr.position.z = matrixTranslation[2];
   tr.rotation = quat{matrix};   // extract rotation component from matrix
+  //tr.rotation = quat{vec3{matrixRotation[0], matrixRotation[1], matrixRotation[2]}};
   tr.scaling.x = matrixScale[0];
   tr.scaling.y = matrixScale[1];
-  tr.scaling.z = matrixScale[2];
+  tr.scaling.z = matrixScale[2];*/
 }
 
 void sceneEditor(const Camera &cam, EntityList &scene, ID rootEntityID) {

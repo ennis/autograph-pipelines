@@ -217,12 +217,12 @@ int main(int argc, char *argv[]) {
     auto &renderUtils = getRenderUtils();
     renderUtils.drawGrid2D(gl::getDefaultFramebuffer(), screenSize / 2.0f,
                            vec2{25.0f}, 10);
-    canvasRenderer.renderCanvas(scene, canvas);
     Camera cam = camCtl.getCamera();
     // show scene editor
     gui::sceneEditor(cam, scene, rootObj->id);
     rootObj->updateWorldTransform();
     rootObj->updateBounds();
+    canvasRenderer.renderCanvas(scene, canvas);
 
     for (auto &id_obj : scene.getObjects()) {
       auto sceneObj = id_obj.second.getComponent<SceneObject>();
