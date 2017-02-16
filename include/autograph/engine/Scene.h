@@ -79,9 +79,12 @@ public:
   }
 
   ID getID() const { return id_; }
+  const std::string& getName() const { return name_; }
+  void setName(const char* name) {  name_ = name; }
 
 private:
   ID id_;
+  std::string name_;
   SmallVector<std::unique_ptr<ComponentBase>, 8> components_;
 };
 
@@ -90,15 +93,15 @@ class EntityList
 {
 public:
   ////////////////////////////////////
-  auto create() -> Entity * { return add(ids_.createID()); }
-
-  ////////////////////////////////////
-  Entity *add(ID id) {
-    //auto idx = IDIndex(id);
+  Entity *create(const char* name = nullptr) {
+	  if (name == nullptr) 
+		  name = "<no name>";
+	auto id = ids_.createID();
     auto it = objects_.find(id);
     if (it == objects_.end()) {
         it = objects_.emplace(std::make_pair(id, Entity{})).first;
     }
+	it->second.name_ = name;
     it->second.id_ = id;
     return &it->second;
   }

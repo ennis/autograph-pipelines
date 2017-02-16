@@ -1,4 +1,3 @@
-#include <autograph/engine/SceneUtils.h>
 #include <assimp/Importer.hpp>
 #include <assimp/ProgressHandler.hpp>
 #include <assimp/postprocess.h>
@@ -6,6 +5,7 @@
 #include <autograph/engine/Application.h>
 #include <autograph/engine/ResourcePool.h>
 #include <autograph/engine/Scene.h>
+#include <autograph/engine/SceneUtils.h>
 
 namespace ag {
 namespace SceneUtils {
@@ -51,38 +51,40 @@ public:
       }
       // import ref material
       importMaterial(scene, scene->mMaterials[mesh->mMaterialIndex]);
-      return std::make_unique<ResourceWrapper<Mesh3D>>(Mesh3D{vertices, indices});
+      return std::make_unique<ResourceWrapper<Mesh3D>>(
+          Mesh3D{vertices, indices});
     });
   }
 
-    void importMaterial(const aiScene* scene, const aiMaterial* material)
-    {
-        // get material name
-        aiString matName;
-        material->Get(AI_MATKEY_NAME, matName);
-        // look for textures
-        aiString texAlbedoPath;
+  void importMaterial(const aiScene *scene, const aiMaterial *material) {
+    // get material name
+    aiString matName;
+    material->Get(AI_MATKEY_NAME, matName);
+    // look for textures
+    aiString texAlbedoPath;
 
-        for (int i = 0; i < material->mNumProperties; ++i) {
-            if (material->mProperties[i]->mType == aiPTI_String) {
-                AG_DEBUG("[material {} matkey {}]", matName.C_Str(), material->mProperties[i]->mKey.C_Str());
-            }
-            //if (material->mProperties[i]->mSemantic != aiTextureType_NONE)
-        }
-
-        for (int i = 0; i < AI_TEXTURE_TYPE_MAX; ++i) {
-            auto res = material->GetTexture((aiTextureType)i, 0, &texAlbedoPath);
-            if (res == aiReturn_SUCCESS) {
-                AG_DEBUG("[material {} texindex{} path {}]", matName.C_Str(), i, texAlbedoPath.C_Str());
-            }
-        }
-
+    for (unsigned i = 0; i < material->mNumProperties; ++i) {
+      if (material->mProperties[i]->mType == aiPTI_String) {
+        AG_DEBUG("[material {} matkey {}]", matName.C_Str(),
+                 material->mProperties[i]->mKey.C_Str());
+      }
+      // if (material->mProperties[i]->mSemantic != aiTextureType_NONE)
     }
+
+    for (unsigned i = 0; i < AI_TEXTURE_TYPE_MAX; ++i) {
+      auto res = material->GetTexture((aiTextureType)i, 0, &texAlbedoPath);
+      if (res == aiReturn_SUCCESS) {
+        AG_DEBUG("[material {} texindex{} path {}]", matName.C_Str(), i,
+                 texAlbedoPath.C_Str());
+      }
+    }
+  }
 
   //////////////////////////////////////////////////
   SceneObject *importAssimpNodeRecursive(const aiScene *scene, aiNode *node,
                                          SceneObject *parent) {
     auto entity = entities_.create();
+    entity->setName(node->mName.C_Str());
     auto thisNode = entity->addComponent<SceneObject>();
     thisNode->id = entity->getID();
     thisNode->parent = parent;
@@ -136,7 +138,8 @@ public:
             aiProcess_Triangulate | aiProcess_JoinIdenticalVertices |
             aiProcess_CalcTangentSpace | aiProcess_SortByPType);
     if (!scene) {
-      errorMessage("loadScene({}): failed to load scene ({})", sceneFileId, actualPath);
+      errorMessage("loadScene({}): failed to load scene ({})", sceneFileId,
+                   actualPath);
       return nullptr;
     }
     sceneFileId_ = sceneFileId;
@@ -158,12 +161,12 @@ private:
 
 //////////////////////////////////////////////////
 
-Entity* load(const char* id, EntityList& scene, ResourcePool& resourcePool)
-{
-    AssimpSceneImporter asi{scene, resourcePool};
-    auto sceneobj = asi.load(id, nullptr);
-    if (!sceneobj) return nullptr;
-    return scene.get(sceneobj->id);
+Entity *load(const char *id, EntityList &scene, ResourcePool &resourcePool) {
+  AssimpSceneImporter asi{scene, resourcePool};
+  auto sceneobj = asi.load(id, nullptr);
+  if (!sceneobj)
+    return nullptr;
+  return scene.get(sceneobj->id);
 }
 
 /*void updateScene() {

@@ -18,8 +18,8 @@ set(SRC
 	Window.cpp
 	MathUtils.cpp
 	DebugOverlay.cpp
-        ImGuiUtils.cpp
-        Meta.cpp
+    ImGuiUtils.cpp
+    Meta.cpp
 )
 	
 add_library(autograph_engine STATIC ${SRC} )

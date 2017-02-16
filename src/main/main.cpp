@@ -197,7 +197,7 @@ int main(int argc, char *argv[]) {
                                     float)>(&Scene2D::render));
 
   EntityList scene;
-  auto ent = SceneUtils::load("meshes/treasure_chest/model", scene, pool);
+  auto ent = SceneUtils::load("mesh/youmu/youmu", scene, pool);
   auto rootObj = ent->getComponent<SceneObject>();
   rootObj->localTransform.scaling = vec3{0.01f};
   rootObj->updateWorldTransform();

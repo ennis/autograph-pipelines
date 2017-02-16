@@ -47,11 +47,11 @@ void SceneObject::updateBounds() {
   for (auto c : children) {
     c->updateBounds();
     if (c->hasWorldBounds) {
-      if (!c->hasWorldBounds)
-        c->worldBounds = c->worldBounds;
+      if (!hasWorldBounds)
+        worldBounds = c->worldBounds;
       else
-        c->worldBounds.unionWith(c->worldBounds);
-      c->hasWorldBounds = true;
+        worldBounds.unionWith(c->worldBounds);
+      hasWorldBounds = true;
     }
   }
 }

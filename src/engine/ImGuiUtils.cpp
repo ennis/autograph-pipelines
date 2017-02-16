@@ -16,7 +16,16 @@ void beginFrame() {
 void endFrame() {
 }
 
-static void editTransform(const Camera &camera, Transform &tr) {
+static void editTransform(Transform &tr)
+{
+	vec3 rotEuler = glm::eulerAngles(tr.rotation);
+	ImGui::InputFloat3("Tr", &tr.position[0]);
+	ImGui::InputFloat3("Rt", &rotEuler[0]);
+	ImGui::InputFloat3("Sc", &tr.scaling[0]);
+	tr.rotation = quat{ rotEuler };
+}
+
+static void transformGizmo(const Camera &camera, Transform &tr) {
   mat4 matrix = tr.getMatrix();
 
   static ImGuizmo::OPERATION currentGizmoOperation = ImGuizmo::ROTATE;
@@ -36,15 +45,6 @@ static void editTransform(const Camera &camera, Transform &tr) {
   ImGui::SameLine();
   if (ImGui::RadioButton("Scale", currentGizmoOperation == ImGuizmo::SCALE))
     currentGizmoOperation = ImGuizmo::SCALE;
-
-  float matrixTranslation[3], matrixRotation[3], matrixScale[3];
-  ImGuizmo::DecomposeMatrixToComponents(&matrix[0][0], matrixTranslation,
-                                        matrixRotation, matrixScale);
-  ImGui::InputFloat3("Tr", matrixTranslation, 3);
-  ImGui::InputFloat3("Rt", matrixRotation, 3);
-  ImGui::InputFloat3("Sc", matrixScale, 3);
-  ImGuizmo::RecomposeMatrixFromComponents(matrixTranslation, matrixRotation,
-                                          matrixScale, &matrix[0][0]);
 
   if (currentGizmoOperation != ImGuizmo::SCALE) {
     if (ImGui::RadioButton("Local", currentGizmoMode == ImGuizmo::LOCAL))
@@ -80,24 +80,29 @@ static void editTransform(const Camera &camera, Transform &tr) {
                        nullptr, useSnap ? &snap[0] : nullptr);
 
   // convert matrix back to transform components
-  ImGuizmo::DecomposeMatrixToComponents(&matrix[0][0], matrixTranslation,
-                                        matrixRotation, matrixScale);
   tr = Transform::fromMatrix(matrix);
-  /*tr.position.x = matrixTranslation[0];
-  tr.position.y = matrixTranslation[1];
-  tr.position.z = matrixTranslation[2];
-  tr.rotation = quat{matrix};   // extract rotation component from matrix
-  //tr.rotation = quat{vec3{matrixRotation[0], matrixRotation[1], matrixRotation[2]}};
-  tr.scaling.x = matrixScale[0];
-  tr.scaling.y = matrixScale[1];
-  tr.scaling.z = matrixScale[2];*/
+}
+
+static void sceneObjectGui(EntityList &scene, SceneObject *sceneObj) {
+	Entity* ent = scene.get(sceneObj->id);
+	ImGui::PushID(sceneObj->id);
+  if (ImGui::TreeNode(ent->getName().c_str())) {
+	  editTransform(sceneObj->localTransform);
+    for (auto c : sceneObj->children) {
+      sceneObjectGui(scene, c);
+    }
+    ImGui::TreePop();
+  }
+  ImGui::PopID();
 }
 
 void sceneEditor(const Camera &cam, EntityList &scene, ID rootEntityID) {
   ImGui::Begin("Scene editor");
   Entity *rootEntity = scene.get(rootEntityID);
   SceneObject *rootSceneObject = rootEntity->getComponent<SceneObject>();
-  editTransform(cam, rootSceneObject->localTransform);
+  editTransform(rootSceneObject->localTransform);
+  transformGizmo(cam, rootSceneObject->localTransform);
+  sceneObjectGui(scene, rootSceneObject);
   ImGui::End();
 }
 

@@ -57,7 +57,7 @@ void releaseGLObject(GLuint obj, GLenum type) {
 
 int getGLObjectCount()
 {
-	return GLObjects.size();
+	return static_cast<int>(GLObjects.size());
 }
 
 const GLObjectTrackingData* getGLObjectData(int index)
