@@ -1,55 +1,151 @@
 #pragma once
-#include <autograph/Transform.h>
 #include "Mesh.h"
-#include <vector>
+#include <autograph/Transform.h>
+#include <autograph/engine/ResourcePool.h>
+#include <autograph/support/IDTable.h>
+#include <autograph/support/SmallVector.h>
 #include <memory>
+#include <vector>
 
 struct aiScene;
 struct aiMesh;
 struct aiNode;
 
-namespace ag 
-{
-	struct SceneObject 
-	{
-		SceneObject* parent{ nullptr };
-		uint64_t id{ 0 };
-		Mesh3D* mesh{ nullptr };
-		Transform localTransform;
-		mat4 worldTransform;
-		std::vector<SceneObject*> children;
-		AABB worldBounds;
-		AABB localBounds;
-		bool hasWorldBounds{ false };
+namespace ag {
 
-		// includes children
-		AABB getLocalBoundingBox() const;
-		AABB getApproximateWorldBoundingBox() const;
-	};
+class ComponentBase {
+public:
+  virtual ~ComponentBase();
+  virtual int getComponentID() = 0;
 
-	class Scene 
-	{
-	public:
-		Scene();
-		void clear();
+protected:
+  static int nextComponentID;
+};
 
-		auto addObject()->SceneObject&;
-		auto addMesh(Mesh3D& mesh) -> SceneObject&;
-		auto loadModel(const char* path) -> SceneObject&;
-		void update();
+template <typename Derived> class Component : public ComponentBase {
+public:
+  static int componentID() {
+    static int id = ComponentBase::nextComponentID++;
+    return id;
+  }
+  int getComponentID() override final { return componentID(); }
 
-		auto& getObjects() {
-			return sceneObjects_;
-		}
+private:
+};
 
-	private:
-		void updateWorldTransformsRecursive(mat4 current, SceneObject& obj);
-		void updateObjectBoundsRecursive(SceneObject& obj);
-		auto importAssimpMesh(const aiScene* scene, int index, Mesh3D** loadedMeshes) ->Mesh3D*;
-		auto importAssimpNodeRecursive(const aiScene* scene, aiNode* node, SceneObject* parent, Mesh3D** loadedMeshes)->SceneObject*;
-		auto makeOwnedMesh(std::unique_ptr<Mesh3D> pMesh)->Mesh3D*;
-		SceneObject* rootObj_;
-		std::vector<std::unique_ptr<SceneObject>> sceneObjects_;
-		std::vector<std::unique_ptr<Mesh3D>> ownedMeshes_;
-	};
+//////////////////////////////////////////////
+template <typename T> class EntityListBase {
+public:
+  ////////////////////////////////////
+  virtual T *add(ID id) { add(id, T{}); }
+
+  ////////////////////////////////////
+  virtual T *add(ID id, const T &obj) {
+    auto idx = IDIndex(id);
+    objects_[idx] = T{};
+    auto it = objects_.find(idx);
+    if (it == objects_.end()) {
+      it = objects_.emplace(std::make_pair(idx, obj)).first;
+    } else {
+      it->second = obj;
+    }
+    return &it->second;
+  }
+
+  ////////////////////////////////////
+  virtual T *get(ID id) {
+    auto it = objects_.find(id);
+    if (it == objects_.end()) {
+      return nullptr;
+    } else {
+      return &it->second;
+    }
+  }
+
+  ////////////////////////////////////
+  virtual void remove(ID id) { objects_.erase(id); }
+
+  ////////////////////////////////////
+  virtual void clear() { objects_.clear(); }
+
+  ////////////////////////////////////
+  virtual void clean(const IDTable &idTable) {
+    // TODO
+  }
+
+  ////////////////////////////////////
+  auto &getObjects() { return objects_; }
+
+private:
+  std::unordered_map<ID, T> objects_;
+};
+
+//////////////////////////////////////////////
+class Entity {
+public:
+	Entity() = default;
+	// disable copy
+	Entity(const Entity&) = delete;
+	Entity& operator=(const Entity&) = delete;
+	// move is okay though
+	Entity(Entity&&) = default;
+	Entity& operator=(Entity&&) = default;
+
+  template <typename T, typename... Args> T *addComponent(Args &&... args) {
+    components_.push_back(std::make_unique<T>(std::forward<Args>(args)...));
+    // static_assert(T::ComponentID < 8);
+  }
+
+  template <typename T> T *getComponent() {
+    for (auto &c : components_) {
+      if (c->getComponentID() == T::componentID()) {
+        return c.get();
+      }
+    }
+    return nullptr;
+  }
+
+  template <typename T> void removeComponent() {
+    components_.erase(std::remove_if(components_.begin(), components_.end(),
+                                     [](const auto &v) {
+                                       return v->getComponentID() ==
+                                              T::componentID;
+                                     }),
+                      components_.end());
+  }
+
+private:
+  SmallVector<std::unique_ptr<ComponentBase>, 8> components_;
+};
+
+//////////////////////////////////////////////
+class EntityList : public EntityListBase<Entity> {
+public:
+  ////////////////////////////////////
+  auto create() -> Entity * { return add(ids_.createID()); }
+
+private:
+  IDTable ids_;
+};
+
+struct SceneObject : public Component<SceneObject> {
+  virtual ~SceneObject();
+  void addChild(SceneObject *obj);
+  void removeChild(SceneObject *obj);
+  void updateBounds();
+  void updateWorldTransform(const mat4 &parentTransform = mat4{1.0f});
+
+  ID id;
+  SceneObject *parent{nullptr};
+  Mesh3D *mesh{nullptr};
+  Transform localTransform;
+  mat4 worldTransform;
+  std::vector<SceneObject *> children;
+  AABB worldBounds;
+  AABB localBounds;
+  bool hasWorldBounds{false};
+  // includes children
+  AABB getLocalBoundingBox() const;
+  AABB getApproximateWorldBoundingBox() const;
+};
 }

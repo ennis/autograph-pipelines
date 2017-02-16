@@ -2001,7 +2001,7 @@ Scene:
 Scene2D:
 	- Same, with 2D meshes
 	- ID => Scene2DObject
-RenderScene:
+RenderableScene:
 	- ID => Material and render options
 	- ID => RenderObject
 PhysicsScene:
@@ -2017,3 +2017,32 @@ ID maps:
 	can be sparse (list of IDs) or dense (array with holes)
 	can be direct (contiguous data) or indirect (array of pointers)
 
+ID invalidation:
+- remove an ID from the main map
+- on next iteration, check if the generation is still OK
+
+Common interface:
+- Add an object to a scene with the specified ID:
+	add(ID) -> T* (default-initialization)
+	add(ID, T) -> T* (initialization)
+	if the ID is already present, replace
+
+- Add-if-not-present:
+	addIf
+
+- Get an object
+	get(ID) -> T*
+	if the ID is not there, return nullptr
+	if the ID has expired, return nullptr
+
+- Remove an object
+	remove(ID)
+
+- Cleanup expired IDs
+	cleanup(IDTable)
+
+- Enumerate objects:
+	foreach([]())
+
+
+SceneUtils.cpp: load scene (geometry, materials, textures) from FBX

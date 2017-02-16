@@ -29,6 +29,14 @@ public:
     return obj_.get();
   }
 
+  void setWrapModeU(GLenum mode);
+  void setWrapModeV(GLenum mode);
+  void setWrapModeW(GLenum mode);
+  void setTextureMinFilter(GLenum filter);
+  void setTextureMagFilter(GLenum filter);
+  void setBorderColor(float r, float g, float b, float a);
+  void setBorderColor(const vec4& rgba);
+
 private:
   SamplerDesc desc_;
   GLHandle<SamplerDeleter> obj_;

@@ -14,6 +14,16 @@ drawSprite = Geometry2DPass
 	shaderFile = 'DrawSprite.glsl'
 }
 
+textureView = Geometry2DPass
+{
+	depthStencilState = {
+		depthTestEnable = false,
+		depthWriteEnable = false
+	},
+	shaderFile = 'TextureView.glsl'
+}
+
+
 drawMeshDefault = GeometryPass
 {
 	depthStencilState = {

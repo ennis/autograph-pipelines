@@ -8,6 +8,12 @@
 #include <autograph/gl/UploadBuffer.h>
 
 namespace ag {
+
+	struct Renderable
+	{
+		const gl::Texture* albedo;
+	};
+
 // scene renderer
 // Renders G-buffers
 class DeferredSceneRenderer {
@@ -38,7 +44,7 @@ public:
   ~DeferredSceneRenderer();
 
   void reloadShaders();
-  void renderScene(GBuffer &targets, Scene &scene, Camera &camera);
+  void renderScene(GBuffer &targets, EntityList &scene, Camera &camera);
 
 private:
   Shader deferredShader;
@@ -50,7 +56,7 @@ public:
   ~WireframeOverlayRenderer();
 
   void reloadShaders();
-  void renderSceneObject(gl::Framebuffer &target, Scene &scene,
+  void renderSceneObject(gl::Framebuffer &target, EntityList &scene,
                          SceneObject &object, Camera &camera,
                          bool depthTest = true);
 

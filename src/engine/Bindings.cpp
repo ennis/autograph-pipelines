@@ -107,10 +107,10 @@ sol::table openLuaBindings(sol::this_state s) {
       &SceneObject::getLocalBoundingBox, "getApproximateWorldBoundingBox",
       &SceneObject::getApproximateWorldBoundingBox);
 
-  module.new_usertype<Scene>("Scene", sol::call_constructor,
+/*  module.new_usertype<Scene>("Scene", sol::call_constructor,
                              sol::constructors<sol::types<>>{}, "addMesh",
                              &Scene::addMesh, "loadModel", &Scene::loadModel,
-                             "update", &Scene::update);
+                             "update", &Scene::update);*/
 
   // base types
   // issue: vec2.new will bounce back to the c++ side to call a trivial

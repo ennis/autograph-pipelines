@@ -99,8 +99,8 @@ struct AG_API RasterizerState {
 struct AG_API ScissorRect {
   int x;
   int y;
-  int width;
-  int height;
+  int w;
+  int h;
 };
 
 struct AG_API Viewport {
@@ -138,7 +138,7 @@ struct AG_API Uniforms {
 struct AG_API DrawStates {
   DepthStencilState depthStencilState;
   RasterizerState rasterizerState;
-  ScissorRect scissorRect;
+  std::array<ScissorRect, 8> scissorRects{{0}};
   std::array<Viewport, 8> viewports{{0}};
   std::array<BlendState, 8> blendStates;
   GLuint vertexArray;
@@ -149,7 +149,7 @@ struct AG_API StateGroup {
   StateGroupMask mask;
   DrawStates drawStates;
   Uniforms uniforms;
-  GLbitfield barrierBits {0};
+  GLbitfield barrierBits{0};
 };
 
 // bind a uniform state group to the opengl pipeline

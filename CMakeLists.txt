@@ -12,6 +12,7 @@ set(AG_VERSION_MINOR   0   CACHE STRING "Project minor version number.")
 set(AG_VERSION_PATCH   1   CACHE STRING "Project patch version number.")
 mark_as_advanced(VERSION_MAJOR VERSION_MINOR VERSION_PATCH)
 
+
 include("cmake/ReflectionGen.cmake")
 
 ############## Doxygen ##############

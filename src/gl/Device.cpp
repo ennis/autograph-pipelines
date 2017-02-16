@@ -2,6 +2,7 @@
 #include <autograph/gl/Fence.h>
 #include <autograph/gl/Framebuffer.h>
 #include <autograph/gl/UploadBuffer.h>
+#include <autograph/gl/Capture.h>
 #include <autograph/support/Debug.h>
 #include <cstring>
 #include <iostream>
@@ -53,7 +54,8 @@ AG_API void pushDebugGroup(const char *message) {
 AG_API void popDebugGroup() { glPopDebugGroup(); }
 
 AG_API BufferSlice uploadFrameData(const void *data, size_t size, size_t alignment) {
-  assert(isInitialized());
+  assert(isInitialized()); 
+  AG_FRAME_TRACE("data={}, size={}, alignment={}", data, size, alignment);
   BufferSlice out_slice;
   if (alignment == -1) {
 	  alignment = gGLImplementationLimits.uniform_buffer_alignment;
@@ -75,6 +77,7 @@ AG_API void endFrame() {
   assert(isInitialized());
   // sync on frame N-(max-in-flight)
   g_frame_id++;
+  AG_FRAME_TRACE("g_frame_id={}", g_frame_id);
   g_frame_fence.signal(g_frame_id);
   if (g_frame_id >= g_device_config.max_frames_in_flight) {
     g_frame_fence.wait(getFrameExpirationDate(
@@ -99,6 +102,7 @@ AG_API void initialize(const DeviceConfig &config) {
 
 AG_API void resizeDefaultFramebuffer(int w, int h) {
   assert(isInitialized());
+  AG_FRAME_TRACE("g_frame_id={}", g_frame_id);
   g_screen_fbo = Framebuffer::createDefault(w, h);
 }
 

@@ -1,9 +1,11 @@
 #include <autograph/gl/Fence.h>
+#include <autograph/gl/Capture.h>
 
 namespace ag {
 namespace gl {
 
 void Fence::signal(uint64_t value) {
+  AG_FRAME_TRACE("this={}, value={}", (const void*)this, value);
   auto sync = glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0);
   sync_points.push_back(sync_point{sync, value});
 }
@@ -15,6 +17,7 @@ GLenum Fence::advance(uint64_t timeout) {
   if (waitResult == GL_CONDITION_SATISFIED ||
       waitResult == GL_ALREADY_SIGNALED) {
     current_value = targetSyncPoint.target_value;
+	AG_FRAME_TRACE("this={}, current_value={}", (const void*)this, current_value);
     glDeleteSync(targetSyncPoint.sync);
     sync_points.pop_front();
   } else if (waitResult == GL_WAIT_FAILED)
@@ -23,6 +26,7 @@ GLenum Fence::advance(uint64_t timeout) {
 }
 
 void Fence::wait(uint64_t value) {
+  AG_FRAME_TRACE("this={}, value={}", (const void*)this, value);
   while (getValue() < value) {
     auto waitResult = advance(kFenceWaitTimeout);
     if (waitResult == GL_TIMEOUT_EXPIRED)

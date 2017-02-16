@@ -13,3 +13,18 @@ vec3 unpackNormal(vec4 packedNormal)
 {
 	return normalize(2.0 * (packedNormal.xyz - vec3(0.5)));
 }
+
+float checker(vec2 uv, float repeats) {
+  float cx = floor(repeats * uv.x);
+  float cy = floor(repeats * uv.y); 
+  float result = mod(cx + cy, 2.0);
+  return sign(result);
+}
+
+vec3 remap(float min, float max, vec3 x) {
+  return (x - vec3(min)) / vec3(max - min);
+}
+
+vec4 remap(float min, float max, vec4 x) {
+  return (x - vec4(min)) / vec4(max - min);
+}

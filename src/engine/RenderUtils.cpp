@@ -124,15 +124,15 @@ void RenderUtils::drawGrid2D(gl::Framebuffer &target,
   };
 
   //
-  int numVLines = w / spacing.x + 1;
-  int numHLines = h / spacing.y + 1;
+  int numVLines = (int)(w / spacing.x + 1);
+  int numHLines = (int)(h / spacing.y + 1);
   int numVertices = 2 * (2 + numVLines + numHLines);
   std::vector<Vertex2DColor> lines(numVertices);
 
   float xoff = fmod(center.x, spacing.x);
   float yoff = fmod(center.y, spacing.y);
-  int firstHLine = -center.y / spacing.y;
-  int firstVLine = -center.x / spacing.x;
+  int firstHLine = (int)(-center.y / spacing.y);
+  int firstVLine = (int)(-center.x / spacing.x);
 
   auto primaryColorPacked = glm::packUnorm4x8(primaryLinesColor);
   auto secondaryColorPacked = glm::packUnorm4x8(secondaryLinesColor);

@@ -429,7 +429,7 @@ public:
   Observable<int> selectionChanged;
 };
 
-class StringListSelectionModel : public ListSelectionModel {
+/*class StringListSelectionModel : public ListSelectionModel {
 public:
   StringListSelectionModel(span<const char *const> stringList)
       : stringList_{stringList} {
@@ -540,7 +540,7 @@ public:
 private:
   std::string label_;
   ComboBoxModel *model_;
-};
+};*/
 
 ////////////////////////////////////////////////////////
 // Graph model

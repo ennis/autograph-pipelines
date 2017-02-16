@@ -3,7 +3,7 @@ Minimal system:
    autograph/gl/*.h
    draw(xxxx)
    compute(xxxx)
- ☐ Core utilities, misc functions
+ ✔ Core utilities, misc functions @done (17-02-10 21:22)
    linearToSrgb
    AABB
    ImageFormat
@@ -32,14 +32,22 @@ Minimal system:
  ☐ Lua scripting for GUI and input
    autograph/script/Script.h => sol2
  ☐ Documentation
- ☐ Make a header that includes everything @high
+ ✔ Make a header that includes everything @high @done (17-02-10 21:29)
+     autograph/engine/All.h
+     autograph/gl/All.h
  ✔ Helper: render screen quad @high @done (17-01-20 18:09)
  ☐ Long-term: implement a gratin-like interface for image processing
    Possibly as lua scripts first
    At least, find somewhere else to test shaders
  ☐ Image save: separate pixel & target formats
  ☐ Image save: SRGB conversions
- ☐ Better UI for texture inspector
+ ✔ Texture inspector: range min/max @done (17-02-10 21:23)
+ ☐ Texture inspector: channel selection
+ ☐ Remove unused git submodules
+ ☐ Function for converting from screen to NDC coordinates
+ ☐ rename drawQuad => drawScreenQuad
+ ✔ drawRect: a,b,c,d,uv_a,uv_b,uv_c,uv_d @done (17-02-10 21:22)
+ ✔ drawRect @done (17-02-07 22:16)
 
 General:
  ✔ Implement cameras @high @minimal_subset @done (16-12-24 14:12)
@@ -59,8 +67,9 @@ General:
      current one is extremely unsafe
  ✔ gl::Buffer: constructor @done (17-01-15 12:28)
  ☐ binders: default samplers for texture bindings
- ✔ fix weird tearing bug @done (17-01-08 14:39)
-   Was Vsync?
+ ☐ fix weird diagonal tearing bug
+   Vsync?
+   Seems like a known nvidia problem
    
 Serialization:
  ☐ Save scene 
@@ -73,20 +82,23 @@ Autograph:
  ✔ Named uniforms @done (17-01-21 17:00)
  ☐ Implementation limits
  ✔ Draw call @done (16-12-18 20:52)
- ☐ Compute call @high
+ ✔ Compute call @high @done (17-02-10 21:32)
    autograph/gl/Compute.h
    gl::dispatchCompute()
  ☐ Compute helpers
    gl::dispatchComputeOnImage()
  ✔ State group @done (16-12-18 20:52)
  ☐ Geometry shader
+ ✔ Scissor state @easy @high @done (17-02-07 22:30)
+ ☐ Correctly handle scissor for MRTs
+ ☐ Viewport: set all viewports at once
  ☐ Make a header that includes everything @high
    autograph/gl/All.h
  ☐ The Lua shader system is good => include it in autograph, then release autograph
 
 Autograph extensions:
  ☐ Shader cache @low
- ☐ Texture / render target cache @low
+ ☐ Texture / render target cache
  ☐ Readback for video capture @low
  ☐ Effect/pipeline system
  ✔ RenderTarget utility class @done (17-01-15 12:35)
@@ -131,7 +143,7 @@ Effect/pipeline system:
 
 Scenes:
  ✔ Load mesh with assimp @done (16-12-18 20:53)
- ☐ Scene: hierarchy of transforms and associated visual elements (meshes, particle systems, billboards, etc.)
+ ✔ Scene: hierarchy of transforms and associated visual elements (meshes, particle systems, billboards, etc.) @done (17-02-10 21:29)
  ✔ Transform struct @done (16-12-18 20:53)
  ✔ Load scene tree with assimp (hierarchy of transforms with associated meshes) @done (17-01-15 12:27)
  ☐ IDMap and IDTable @low 
@@ -197,7 +209,6 @@ Long-term:
 
 List of errors made, and corrective measures:
 Error, first noticed where (intellisense, compile-time, runtime crash, runtime silent), corrective measures, impact on iteration time
-
  ☐ [runtime silent] GLSL: declare a new variable instead of assigning 
      ??? GLSL linter/compiler warning?
  ☐ [runtime crash] Lua: crash on include file not found, no check 
@@ -247,9 +258,12 @@ Error, first noticed where (intellisense, compile-time, runtime crash, runtime s
      Coherent API
  ☐ [runtime silent] uploadFrameData: pointer to pointer to data instead of pointer to data
      Probably a copy-paste error
+ ☐ [runtime silent] Incorrect screen to NDC transformation in C++
 
 Ideas:
  ☐ General: Lua shader robustness
+ ☐ GuiUtils.h
+   Immediate-mode GUIs for various objects
  ☐ Low-level 'Frame debugger'/'Frame inspector' => record calls made to gl::draw and gl::compute to identify suspicious behaviors
    ☐ Weird bindings
    ☐ Weird data size passed to uploadFrameData

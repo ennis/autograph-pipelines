@@ -714,6 +714,7 @@ void SmallVectorImpl<T>::swap(SmallVectorImpl<T> &RHS) {
 }
 
 template <typename T>
+//template <typename = std::enable_if_t<std::is_copy_assignable<T>::value>>
 SmallVectorImpl<T> &SmallVectorImpl<T>::
   operator=(const SmallVectorImpl<T> &RHS) {
   // Avoid self-assignment.

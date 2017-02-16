@@ -3,7 +3,9 @@
 #include <autograph/engine/RenderUtils.h>
 #include <autograph/engine/Shader.h>
 #include <autograph/gl/Device.h>
+#include <autograph/gl/Draw.h>
 #include <autograph/gl/GLHandle.h>
+#include <autograph/gl/Sampler.h>
 #include <autograph/support/Debug.h>
 #include <autograph/support/FileDialog.h>
 #include <autograph/support/ProjectRoot.h>
@@ -13,6 +15,25 @@
 namespace ag {
 
 static const char *imageFileFilters = "png,jpg,jpeg,bmp,tga,psd,gif";
+
+struct DebugOverlayGlobals {
+	Shader textureViewShader = Shader{"shaders/default:textureView"};
+	gl::Sampler textureViewSampler;
+};
+
+static DebugOverlayGlobals &getDebugGlobals() {
+  static DebugOverlayGlobals g;
+  static bool initialized = false;
+  if (!initialized) { 
+	  g.textureViewSampler.setTextureMinFilter(GL_NEAREST);
+	  g.textureViewSampler.setTextureMagFilter(GL_NEAREST);
+	  g.textureViewSampler.setWrapModeU(GL_CLAMP_TO_EDGE);
+	  g.textureViewSampler.setWrapModeV(GL_CLAMP_TO_EDGE);
+	  g.textureViewSampler.setWrapModeW(GL_CLAMP_TO_EDGE);
+	  initialized = true;
+  }
+  return g;
+}
 
 static const char *getInternalFormatName(GLenum internalFormat) {
   switch (internalFormat) {
@@ -201,13 +222,154 @@ static const char *getInternalFormatName(GLenum internalFormat) {
   }
 }
 
+struct OpenGLState {
+  GLint last_program;
+  GLint last_texture;
+  GLint last_active_texture;
+  GLint last_array_buffer;
+  GLint last_element_array_buffer;
+  GLint last_vertex_array;
+  GLint last_blend_src;
+  GLint last_blend_dst;
+  GLint last_blend_equation_rgb;
+  GLint last_blend_equation_alpha;
+  GLint last_viewport[4];
+  GLboolean last_enable_blend;
+  GLboolean last_enable_cull_face;
+  GLboolean last_enable_depth_test;
+  GLboolean last_enable_scissor_test;
+};
+
+static void saveOpenGLState(OpenGLState &outSavedState) {
+  glGetIntegerv(GL_CURRENT_PROGRAM, &outSavedState.last_program);
+  glGetIntegerv(GL_TEXTURE_BINDING_2D, &outSavedState.last_texture);
+  glGetIntegerv(GL_ACTIVE_TEXTURE, &outSavedState.last_active_texture);
+  glGetIntegerv(GL_ARRAY_BUFFER_BINDING, &outSavedState.last_array_buffer);
+  glGetIntegerv(GL_ELEMENT_ARRAY_BUFFER_BINDING,
+                &outSavedState.last_element_array_buffer);
+  glGetIntegerv(GL_VERTEX_ARRAY_BINDING, &outSavedState.last_vertex_array);
+  glGetIntegerv(GL_BLEND_SRC, &outSavedState.last_blend_src);
+  glGetIntegerv(GL_BLEND_DST, &outSavedState.last_blend_dst);
+  glGetIntegerv(GL_BLEND_EQUATION_RGB, &outSavedState.last_blend_equation_rgb);
+  glGetIntegerv(GL_BLEND_EQUATION_ALPHA,
+                &outSavedState.last_blend_equation_alpha);
+  glGetIntegerv(GL_VIEWPORT, outSavedState.last_viewport);
+  outSavedState.last_enable_blend = glIsEnabled(GL_BLEND);
+  outSavedState.last_enable_cull_face = glIsEnabled(GL_CULL_FACE);
+  outSavedState.last_enable_depth_test = glIsEnabled(GL_DEPTH_TEST);
+  outSavedState.last_enable_scissor_test = glIsEnabled(GL_SCISSOR_TEST);
+}
+
+static void restoreOpenGLState(const OpenGLState &savedState) {
+  glUseProgram(savedState.last_program);
+  glActiveTexture(savedState.last_active_texture);
+  glBindTexture(GL_TEXTURE_2D, savedState.last_texture);
+  glBindVertexArray(savedState.last_vertex_array);
+  glBindBuffer(GL_ARRAY_BUFFER, savedState.last_array_buffer);
+  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, savedState.last_element_array_buffer);
+  glBlendEquationSeparate(savedState.last_blend_equation_rgb,
+                          savedState.last_blend_equation_alpha);
+  glBlendFunc(savedState.last_blend_src, savedState.last_blend_dst);
+  if (savedState.last_enable_blend)
+    glEnable(GL_BLEND);
+  else
+    glDisable(GL_BLEND);
+  if (savedState.last_enable_cull_face)
+    glEnable(GL_CULL_FACE);
+  else
+    glDisable(GL_CULL_FACE);
+  if (savedState.last_enable_depth_test)
+    glEnable(GL_DEPTH_TEST);
+  else
+    glDisable(GL_DEPTH_TEST);
+  if (savedState.last_enable_scissor_test)
+    glEnable(GL_SCISSOR_TEST);
+  else
+    glDisable(GL_SCISSOR_TEST);
+  glViewport(savedState.last_viewport[0], savedState.last_viewport[1],
+             (GLsizei)savedState.last_viewport[2],
+             (GLsizei)savedState.last_viewport[3]);
+}
+
+static void beginFixedTooltip(const char* id)
+{
+	ImGui::PushStyleColor(ImGuiCol_WindowBg,
+		ImGui::GetStyle().Colors[ImGuiCol_PopupBg]);
+	ImGui::Begin(id, nullptr,
+		ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse |
+		ImGuiWindowFlags_ShowBorders | ImGuiWindowFlags_NoResize);
+}
+
+static void endFixedTooltip()
+{
+	ImGui::End();
+	ImGui::PopStyleColor();
+}
+
+template <typename Callback> static void customRendering(Callback callback) {
+  // ImGui::Dummy(ImVec2{ (float)w, (float)h });
+  auto drawList = ImGui::GetWindowDrawList();
+  auto pfn = new std::function<void(const ImDrawList *, const ImDrawCmd *)>{
+      std::move(callback)};
+  auto drawCallback = [](const ImDrawList *parentList, const ImDrawCmd *cmd) {
+    auto pfn = static_cast<
+        std::function<void(const ImDrawList *, const ImDrawCmd *)> *>(
+        cmd->UserCallbackData);
+    OpenGLState savedState;
+    saveOpenGLState(savedState);
+    (*pfn)(parentList, cmd);
+    restoreOpenGLState(savedState);
+    delete pfn;
+  };
+  drawList->AddCallback(drawCallback, pfn);
+}
+
+static void texturePreview(GLuint textureObj, int w, int h, float lod,
+                           int xoffset, int yoffset, float zoomLevel,
+                           float range_min = 0.0f, float range_max = 1.0f) {
+  ImGui::Dummy(ImVec2{(float)w, (float)h});
+  auto pos = ImGui::GetItemRectMin();
+  auto size = ImGui::GetItemRectSize();
+  customRendering([=](const ImDrawList *parentList, const ImDrawCmd *cmd) {
+    auto &fb = gl::getDefaultFramebuffer();
+    auto fb_width = fb.width();
+    auto fb_height = fb.height();
+    ag::gl::drawRect(
+        gl::getDefaultFramebuffer(), pos.x, pos.y, pos.x + size.x,
+        pos.y + size.y, (float)xoffset / (float)w, 1.0f / zoomLevel,
+        1.0f / zoomLevel, (float)yoffset / (float)h,
+        getDebugGlobals().textureViewShader,
+        gl::bind::scissor(0, (int)cmd->ClipRect.x,
+                          (int)(fb_height - cmd->ClipRect.w),
+                          (int)(cmd->ClipRect.z - cmd->ClipRect.x),
+                          (int)(cmd->ClipRect.w - cmd->ClipRect.y)),
+        gl::bind::texture(0, textureObj,
+			getDebugGlobals().textureViewSampler.object()),
+        gl::bind::uniform_float("uLod", lod),
+        gl::bind::uniform_vec2("uRange", vec2(range_min, range_max)),
+		gl::bind::uniform_vec4("uBorder", vec4(0.1f,0.1f,0.1f,1.0f)));
+  });
+}
+
 static void GLTextureViewWindow(GLuint textureObj, int w, int h,
                                 GLenum internalFormat, bool &opened) {
   auto internalFormatName = getInternalFormatName(internalFormat);
   auto windowName = fmt::format("Texture object {} ({}x{} {})", textureObj, w,
                                 h, internalFormatName);
+
   if (ImGui::Begin(windowName.c_str(), &opened, ImGuiWindowFlags_MenuBar)) {
-    ImGui::Image(reinterpret_cast<ImTextureID>(textureObj), ImVec2(w, h));
+    // ImGui::Image(reinterpret_cast<ImTextureID>(textureObj), ImVec2{ (float)w,
+    // (float)h });
+    float range_min =
+        ImGui::GetStateStorage()->GetFloat(ImGui::GetID("range_min"), 0.0f);
+    float range_max =
+        ImGui::GetStateStorage()->GetFloat(ImGui::GetID("range_max"), 1.0f);
+    float zoomLevel =
+        ImGui::GetStateStorage()->GetFloat(ImGui::GetID("zoom_level"), 1.0f);
+    int xoff = ImGui::GetStateStorage()->GetInt(ImGui::GetID("xoff"), 1.0f);
+    int yoff = ImGui::GetStateStorage()->GetInt(ImGui::GetID("yoff"), 1.0f);
+    texturePreview(textureObj, w, h, 1.0f, xoff, yoff, zoomLevel, range_min,
+                   range_max);
     vec4 pixel;
     int mx, my;
     bool hovered = false;
@@ -222,16 +384,37 @@ static void GLTextureViewWindow(GLuint textureObj, int w, int h,
                            4 * 4, &pixel);
     }
     if (ImGui::BeginMenuBar()) {
-      ImGui::Button(ICON_FA_SEARCH_MINUS);
+		if (ImGui::Button(ICON_FA_SEARCH_MINUS)) {
+			zoomLevel /= 2;
+	  }
       ImGui::SameLine();
-      ImGui::Button(ICON_FA_SEARCH_PLUS);
+	  if (ImGui::Button(ICON_FA_SEARCH_PLUS)) {
+		  zoomLevel *= 2;
+	  }
+      ImGui::SameLine();
+      ImGui::PushItemWidth(130.0f);
+	  float zoomLevelPercent = zoomLevel * 100.0f;
+	  ImGui::SliderFloat("Zoom", &zoomLevelPercent, 1.0f, 400.0f, "%g %%");
+	  zoomLevel = zoomLevelPercent / 100.0f;
+	  ImGui::SameLine();
+      ImGui::SliderFloat("Min", &range_min, 0.0f, 1.0f);
+      ImGui::SameLine();
+      ImGui::SliderFloat("Max", &range_max, 0.0f, 1.0f);
+      ImGui::PopItemWidth();
       ImGui::SameLine();
       if (hovered) {
+        ImGui::PushItemWidth(-1.0f);
         ImGui::Text("%05i,%05i => [%.03f, %.03f, %.03f, %.03f]", mx, my,
                     pixel.r, pixel.g, pixel.b, pixel.a);
+        ImGui::PopItemWidth();
       }
       ImGui::EndMenuBar();
     }
+    ImGui::GetStateStorage()->SetFloat(ImGui::GetID("range_min"), range_min);
+    ImGui::GetStateStorage()->SetFloat(ImGui::GetID("range_max"), range_max);
+    ImGui::GetStateStorage()->SetFloat(ImGui::GetID("zoom_level"), zoomLevel);
+    ImGui::GetStateStorage()->SetInt(ImGui::GetID("xoff"), xoff);
+    ImGui::GetStateStorage()->SetInt(ImGui::GetID("yoff"), yoff);
   }
   ImGui::End();
 }
@@ -483,15 +666,10 @@ static void pipelineStatesGUI() {
 }
 
 void drawDebugOverlay(double dt) {
-  ImGui::PushStyleColor(ImGuiCol_WindowBg,
-                        ImGui::GetStyle().Colors[ImGuiCol_PopupBg]);
-  ImGui::Begin("Frame", nullptr,
-               ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse |
-                   ImGuiWindowFlags_ShowBorders | ImGuiWindowFlags_NoResize);
+  beginFixedTooltip("frame");
   ImGui::TextDisabled("Frame time: %.06f ms (%.02f FPS)", dt * 1000.0f,
                       1.0f / dt);
-  ImGui::End();
-  ImGui::PopStyleColor();
+  endFixedTooltip();
   pipelineStatesGUI();
   GLObjectListGUI();
 }

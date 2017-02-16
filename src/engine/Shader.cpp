@@ -1,4 +1,5 @@
 #include <autograph/engine/Shader.h>
+#include <autograph/gl/Capture.h>
 #include <autograph/gl/VertexArray.h>
 #include <autograph/support/Debug.h>
 #include <iostream>
@@ -285,6 +286,7 @@ auto Shader::getDrawStates() -> const gl::DrawStates & {
 }
 
 void Shader::operator()(gl::StateGroup &stateGroup) {
+  AG_FRAME_TRACE("shader id={}", cached->origShaderID);
   stateGroup.drawStates = getDrawStates();
 }
 }

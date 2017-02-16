@@ -150,7 +150,7 @@ void Checkbox::render() {
   value_.set(v);
 }
 
-void ComboBox::render() {
+/*void ComboBox::render() {
   // count number of values from model
   // this is ridiculous
   int count = model_->elementCount();
@@ -189,6 +189,6 @@ void Button::render() {
   if (ImGui::Button(text_.c_str())) {
     clicked();
   }
-}
+}*/
 }
 }

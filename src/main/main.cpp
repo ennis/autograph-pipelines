@@ -10,26 +10,8 @@
 
 #include <glm/gtc/packing.hpp>
 
-#include <autograph/engine/Application.h>
-#include <autograph/engine/Arcball.h>
-#include <autograph/engine/CameraControl.h>
-#include <autograph/engine/ImageUtils.h>
-#include <autograph/engine/Input.h>
-#include <autograph/engine/MathUtils.h>
-#include <autograph/engine/Mesh.h>
-#include <autograph/engine/Meta.h>
-#include <autograph/engine/RenderTarget.h>
-#include <autograph/engine/RenderUtils.h>
-#include <autograph/engine/ResourcePool.h>
-#include <autograph/engine/Scene.h>
-#include <autograph/engine/ScriptContext.h>
-#include <autograph/engine/Shader.h>
-#include <autograph/engine/Window.h>
-#include <autograph/gl/Device.h>
-#include <autograph/gl/Draw.h>
-#include <autograph/gl/Framebuffer.h>
-#include <autograph/gl/Program.h>
-#include <autograph/gl/Texture.h>
+#include <autograph/engine/All.h>
+#include <autograph/gl/All.h>
 #include <autograph/support/Debug.h>
 #include <autograph/support/FileDialog.h>
 #include <autograph/support/ProjectRoot.h>
@@ -332,7 +314,6 @@ int main(int argc, char *argv[]) {
   bool reloadOk = false;
   bool lastOnRenderFailed = false;
   float currentFps = 0.0f;
-  Scene scene;
   Canvas canvas{1024, 1024};
   CanvasRenderer canvasRenderer;
   CameraControl camCtl;
@@ -358,14 +339,17 @@ int main(int argc, char *argv[]) {
       static_cast<void (Scene2D::*)(gl::Framebuffer &, float, float, float,
                                     float)>(&Scene2D::render));
 
-  auto &obj = scene.loadModel("mesh/youmu/youmu");
-  obj.localTransform.scaling = vec3{ 0.01f };
-  scene.update();
-  centerCameraOnObject(camCtl, obj);
+  EntityList scene;
+  auto ent = SceneUtils::load("mesh/youmu/youmu", scene);
+  auto rootObj = ent->getComponent<SceneObject>();
+  rootObj->localTransform.scaling = vec3{0.01f};
+  rootObj->updateWorldTransform();
+  rootObj->updateBounds();
+  centerCameraOnObject(camCtl, *rootObj);
 
   w.onRender([&](ag::Window &win, double dt) {
     auto screenSizeI = win.getFramebufferSize();
-	auto screenSize = vec2{ (float)screenSizeI.x,(float)screenSizeI.y };
+    auto screenSize = vec2{(float)screenSizeI.x, (float)screenSizeI.y};
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glEnable(GL_FRAMEBUFFER_SRGB);
     glViewport(0, 0, screenSizeI.x, screenSizeI.y);
@@ -373,19 +357,22 @@ int main(int argc, char *argv[]) {
     glClearDepth(1.0);
     glDepthMask(GL_TRUE);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
-	auto &renderUtils = getRenderUtils();
-	renderUtils.drawGrid2D(gl::getDefaultFramebuffer(), screenSize / 2.0f, vec2{ 25.0f }, 10);
+    auto &renderUtils = getRenderUtils();
+    renderUtils.drawGrid2D(gl::getDefaultFramebuffer(), screenSize / 2.0f,
+                           vec2{25.0f}, 10);
     canvasRenderer.renderCanvas(scene, canvas);
-	Camera cam = camCtl.getCamera();
-    scene.update();
-    for (auto &obj : scene.getObjects()) {
-		if (obj->mesh)
-		{
-			renderUtils.drawMesh(gl::getDefaultFramebuffer(), cam, *obj->mesh,
-				obj->worldTransform);
-			renderUtils.drawWireMesh(gl::getDefaultFramebuffer(), cam, *obj->mesh,
-				obj->worldTransform);
-		}
+    Camera cam = camCtl.getCamera();
+    rootObj->updateWorldTransform();
+    rootObj->updateBounds();
+
+    for (auto &id_obj : scene.getObjects()) {
+      auto sceneObj = id_obj.second.getComponent<SceneObject>();
+      if (sceneObj->mesh) {
+        renderUtils.drawMesh(gl::getDefaultFramebuffer(), cam, *sceneObj->mesh,
+                             sceneObj->worldTransform);
+        renderUtils.drawWireMesh(gl::getDefaultFramebuffer(), cam,
+                                 *sceneObj->mesh, sceneObj->worldTransform);
+      }
     }
   });
 

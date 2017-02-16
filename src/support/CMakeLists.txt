@@ -3,7 +3,8 @@ add_library(autograph_support STATIC
 	ProjectRoot.cpp 
 	Debug.cpp 
 	SmallVector.cpp
-	FileDialog.cpp)
+	FileDialog.cpp
+	IDTable.cpp)
 target_include_directories(autograph_support PUBLIC ${AG_PUBLIC_INCLUDE_DIR})
 target_link_libraries(autograph_support PUBLIC 
 	fmt
