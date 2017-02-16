@@ -9,10 +9,6 @@
 
 namespace ag {
 
-	struct Renderable
-	{
-		const gl::Texture* albedo;
-	};
 
 // scene renderer
 // Renders G-buffers

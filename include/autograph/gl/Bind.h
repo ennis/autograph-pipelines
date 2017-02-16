@@ -8,6 +8,7 @@
 #include <autograph/gl/StateGroup.h>
 #include <autograph/gl/Texture.h>
 #include <autograph/gl/VertexArray.h>
+#include <autograph/gl/Device.h>
 #include <gl_core_4_5.h>
 
 namespace ag {

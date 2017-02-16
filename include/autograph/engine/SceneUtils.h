@@ -3,7 +3,12 @@
 namespace ag {
 namespace SceneUtils {
 
-Entity* load(const char* id, EntityList& scene);
+struct Renderable : public Component<Renderable>
+{
+    const gl::Texture* albedo;
+};
+
+Entity* load(const char* id, EntityList& scene, ResourcePool& resourcePool);
 
 }
 }

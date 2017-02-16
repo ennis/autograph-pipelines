@@ -1,6 +1,7 @@
 #include "SceneRenderer.h"
 #include <autograph/engine/Shader.h>
 #include <autograph/engine/ShaderUtils.h>
+#include <autograph/engine/SceneUtils.h>
 #include <autograph/gl/Device.h>
 #include <autograph/gl/Draw.h>
 #include <autograph/support/Debug.h>
@@ -46,7 +47,7 @@ void DeferredSceneRenderer::renderScene(GBuffer &targets, EntityList &scene,
   for (auto &&kv : objects) {
     auto id = kv.first;
     auto scene_obj = kv.second.getComponent<SceneObject>();
-    auto scene_renderable = kv.second.getComponent<Renderable>();
+    auto scene_renderable = kv.second.getComponent<SceneUtils::Renderable>();
     if (!scene_obj)
       return;
     auto pMesh = scene_obj->mesh;

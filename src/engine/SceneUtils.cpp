@@ -1,3 +1,4 @@
+#include <autograph/engine/SceneUtils.h>
 #include <assimp/Importer.hpp>
 #include <assimp/ProgressHandler.hpp>
 #include <assimp/postprocess.h>
@@ -48,15 +49,42 @@ public:
         indices[i * 3 + 1] = mesh->mFaces[i].mIndices[1];
         indices[i * 3 + 2] = mesh->mFaces[i].mIndices[2];
       }
-      return ResourceWrapper<Mesh3D>{Mesh3D{vertices, indices}};
+      // import ref material
+      importMaterial(scene, scene->mMaterials[mesh->mMaterialIndex]);
+      return std::make_unique<ResourceWrapper<Mesh3D>>(Mesh3D{vertices, indices});
     });
   }
+
+    void importMaterial(const aiScene* scene, const aiMaterial* material)
+    {
+        // get material name
+        aiString matName;
+        material->Get(AI_MATKEY_NAME, matName);
+        // look for textures
+        aiString texAlbedoPath;
+
+        for (int i = 0; i < material->mNumProperties; ++i) {
+            if (material->mProperties[i]->mType == aiPTI_String) {
+                AG_DEBUG("[material {} matkey {}]", matName.C_Str(), material->mProperties[i]->mKey.C_Str());
+            }
+            //if (material->mProperties[i]->mSemantic != aiTextureType_NONE)
+        }
+
+        for (int i = 0; i < AI_TEXTURE_TYPE_MAX; ++i) {
+            auto res = material->GetTexture((aiTextureType)i, 0, &texAlbedoPath);
+            if (res == aiReturn_SUCCESS) {
+                AG_DEBUG("[material {} texindex{} path {}]", matName.C_Str(), i, texAlbedoPath.C_Str());
+            }
+        }
+
+    }
 
   //////////////////////////////////////////////////
   SceneObject *importAssimpNodeRecursive(const aiScene *scene, aiNode *node,
                                          SceneObject *parent) {
     auto entity = entities_.create();
     auto thisNode = entity->addComponent<SceneObject>();
+    thisNode->id = entity->getID();
     thisNode->parent = parent;
     aiVector3D scaling;
     aiVector3D position;
@@ -81,6 +109,7 @@ public:
         auto subEntity = entities_.create();
         auto subObj = subEntity->addComponent<SceneObject>();
         subObj->parent = thisNode;
+        subObj->id = subEntity->getID();
         subObj->mesh = importAssimpMesh(scene, node->mMeshes[i]);
         subObj->localBounds = GetMeshAABB(*subObj->mesh);
         thisNode->children.push_back(subObj);
@@ -95,7 +124,7 @@ public:
   }
 
   //////////////////////////////////////////////////
-  SceneObject *loadScene(const char *sceneFileId, SceneObject *parent) {
+  SceneObject *load(const char *sceneFileId, SceneObject *parent) {
     Assimp::Importer importer;
     auto actualPath = findResourceFile(sceneFileId, allowedMeshExtensions);
     if (actualPath.empty()) {
@@ -129,6 +158,13 @@ private:
 
 //////////////////////////////////////////////////
 
+Entity* load(const char* id, EntityList& scene, ResourcePool& resourcePool)
+{
+    AssimpSceneImporter asi{scene, resourcePool};
+    auto sceneobj = asi.load(id, nullptr);
+    if (!sceneobj) return nullptr;
+    return scene.get(sceneobj->id);
+}
 
 /*void updateScene() {
   updateWorldTransformsRecursive(mat4{1.0f}, *rootObj_);

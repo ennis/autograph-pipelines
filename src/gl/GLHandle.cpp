@@ -2,6 +2,7 @@
 #include <autograph/gl/GLHandle.h>
 #include <autograph/support/Debug.h>
 #include <vector>
+#include <algorithm>
 
 namespace ag {
 namespace gl {

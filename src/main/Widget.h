@@ -502,7 +502,7 @@ template <typename T> class EnumComboBoxModel : public ComboBoxModel {
   static_assert(std::is_enum<T>::value, "T must be an enumeration type");
 
 public:
-  EnumComboBoxModel() { enumData_ = meta::typeOf<T>()->as<meta::Enum>(); }
+  EnumComboBoxModel() { enumData_ = meta::typeOf<T>()->template as<meta::Enum>(); }
 
   const char *elementName(int index) override {
     if (index < elementCount())

@@ -27,7 +27,7 @@ void dispatchComputeOnImage2D(int width, int height, int groupSizeX, int groupSi
 
   auto divRoundUp = [](int numToRound, int multiple) {
     return (numToRound + multiple - 1) / multiple;
-  }
+  };
 
   StateGroup sg;
   sg.mask = StateGroupMask::All;

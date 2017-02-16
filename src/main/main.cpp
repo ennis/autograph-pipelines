@@ -144,150 +144,6 @@ sol::table eventToLua(sol::state &L, const ag::Event &ev) {
   return sol::table{};
 }
 
-template <typename T> bool isSameType(std::type_index ti) {
-  return ti == std::type_index{typeid(T)};
-}
-
-void imguiInputString(const char *label, std::string &str,
-                      size_t buf_size = 100) {
-  std::vector<char> strvec{str.begin(), str.end()};
-  strvec.resize(buf_size);
-  ImGui::InputText("", strvec.data(), strvec.size());
-  str.assign(strvec.begin(), strvec.end());
-}
-
-const char *getFriendlyName(const meta::Field &f) {
-  // if (auto a = f.getAttribute<meta::FriendlyName>()) {
-  //	return a->name;
-  //}
-  // else
-  return f.name;
-}
-
-const char *getFriendlyName(const meta::Enumerator &e) {
-  // if (auto a = e.getAttribute<meta::FriendlyName>()) {
-  //	return a->name;
-  //}
-  // else
-  return e.name;
-}
-
-void valueDebugGUI(std::type_index ti, void *data) {
-  ImGui::PushID(data);
-  // GUIs for primitive types
-  if (isSameType<float>(ti)) {
-    ImGui::SliderFloat("", reinterpret_cast<float *>(data), -10.0f, 10.0f);
-  } else if (isSameType<double>(ti)) {
-    // ImGui::SliderD("", reinterpret_cast<float*>(data), 0.0f, 10.0f);
-  } else if (isSameType<int>(ti)) {
-    ImGui::SliderInt("", reinterpret_cast<int *>(data), 0, 100);
-  } else if (isSameType<bool>(ti)) {
-    ImGui::Checkbox("", reinterpret_cast<bool *>(data));
-  }
-  // GUI for std::string
-  else if (isSameType<std::string>(ti)) {
-    auto &str = *reinterpret_cast<std::string *>(data);
-    imguiInputString("", str);
-  }
-  // GUIs for GLM vector types
-  else if (isSameType<vec2>(ti)) {
-    ImGui::SliderFloat2("", reinterpret_cast<float *>(data), -10.0f, 10.0f);
-  } else if (isSameType<vec3>(ti)) {
-    ImGui::SliderFloat3("", reinterpret_cast<float *>(data), -10.0f, 10.0f);
-  } else if (isSameType<vec4>(ti)) {
-    ImGui::SliderFloat4("", reinterpret_cast<float *>(data), -10.0f, 10.0f);
-  } else if (isSameType<ivec2>(ti)) {
-    ImGui::SliderInt2("", reinterpret_cast<int *>(data), 0, 100);
-  } else if (isSameType<ivec3>(ti)) {
-    ImGui::SliderInt3("", reinterpret_cast<int *>(data), 0, 100);
-  } else if (isSameType<ivec4>(ti)) {
-    ImGui::SliderInt4("", reinterpret_cast<int *>(data), 0, 100);
-  }
-  // GUIs for reflected enum types
-  else if (auto mo0 = meta::typeOf(ti)) {
-    if (auto mo = mo0->as<meta::Enum>()) {
-      int i = mo->findEnumeratorIndex(data);
-      auto items_getter = [](void *data, int idx,
-                             const char **out_text) -> bool {
-        auto mo = static_cast<const meta::Enum *>(data);
-        if (idx >= mo->enumerators.size())
-          return false;
-        *out_text = getFriendlyName(mo->enumerators[idx]);
-        return true;
-      };
-      ImGui::Combo("", &i, items_getter, const_cast<meta::Enum *>(mo),
-                   mo->enumerators.size());
-      mo->setValue(data, mo->enumerators[i].value);
-    } else if (auto mo = mo0->as<meta::Record>()) {
-      if (ImGui::CollapsingHeader(mo->name)) {
-        ImGui::Columns(2);
-        for (auto &&f : mo->publicFields) {
-          ImGui::Text("%s", getFriendlyName(f));
-          ImGui::NextColumn();
-          ImGui::PushItemWidth(-1.0f);
-          valueDebugGUI(f.typeindex, f.getPtr(data));
-          ImGui::NextColumn();
-        }
-        ImGui::Columns(1);
-      }
-    }
-  }
-  // GUIs for structs
-  else {
-    ImGui::TextDisabled("No metaobject");
-  }
-  ImGui::PopID();
-}
-
-template <typename T> void debugValue(T &value) {
-  valueDebugGUI(typeid(T), &value);
-}
-/*
-class ImageView : public ui::Widget {
-public:
-  ImageView(ui::Widget *parent, gl::Texture &tex) : Widget{parent}, tex_{tex}
-  {
-          t1.setText(fmt::format("{}x{} : {}", tex.width(), tex.height(),
-meta::getEnumeratorName(tex.format())));
-  }
-
-  void render() override {
-    float w = (float)tex_.width();
-    float h = (float)tex_.height();
-    float aspect = w / h;
-        t1.render();
-        t2.render();
-
-        float texTopLeftX = - (offsetX + dragDeltaX) / w;
-        float texTopLeftY = - (offsetY + dragDeltaY) / h;
-
-        ImGui::ImageButton(reinterpret_cast<ImTextureID>(tex_.object()), ImVec2{
-w,h }, ImVec2{ texTopLeftX, texTopLeftY },
-                ImVec2{ texTopLeftX+1.0f, texTopLeftY+1.0f });
-
-        if (ImGui::IsItemHovered() && ImGui::IsMouseDragging())
-        {
-                auto drag = ImGui::GetMouseDragDelta();
-                dragDeltaX = drag.x;
-                dragDeltaY = drag.y;
-                t2.setText(fmt::format("Drag: {},{}", dragDeltaX, dragDeltaY));
-        }
-        else {
-                offsetX += dragDeltaX; dragDeltaX = 0;
-                offsetY += dragDeltaY; dragDeltaY = 0;
-        }
-  }
-
-private:
-  ui::Text t1;
-  ui::Text t2;
-  float offsetX{ 0.0f };
-  float offsetY{ 0.0f };
-  float dragDeltaX{ 0.0f };
-  float dragDeltaY{ 0.0f };
-  gl::Texture &tex_;
-};*/
-
 void centerCameraOnObject(CameraControl &camCtl, const SceneObject &obj) {
   auto aabb = obj.getApproximateWorldBoundingBox();
   auto size = std::max({aabb.width(), aabb.height(), aabb.depth()});
@@ -317,6 +173,7 @@ int main(int argc, char *argv[]) {
   Canvas canvas{1024, 1024};
   CanvasRenderer canvasRenderer;
   CameraControl camCtl;
+  ResourcePool pool;
 
   // bindings
   lua.new_usertype<DeferredSceneRenderer>(
@@ -340,7 +197,7 @@ int main(int argc, char *argv[]) {
                                     float)>(&Scene2D::render));
 
   EntityList scene;
-  auto ent = SceneUtils::load("mesh/youmu/youmu", scene);
+  auto ent = SceneUtils::load("meshes/treasure_chest/model", scene, pool);
   auto rootObj = ent->getComponent<SceneObject>();
   rootObj->localTransform.scaling = vec3{0.01f};
   rootObj->updateWorldTransform();
@@ -362,6 +219,8 @@ int main(int argc, char *argv[]) {
                            vec2{25.0f}, 10);
     canvasRenderer.renderCanvas(scene, canvas);
     Camera cam = camCtl.getCamera();
+    // show scene editor
+    gui::sceneEditor(cam, scene, rootObj->id);
     rootObj->updateWorldTransform();
     rootObj->updateBounds();
 
@@ -374,6 +233,7 @@ int main(int argc, char *argv[]) {
                                  *sceneObj->mesh, sceneObj->worldTransform);
       }
     }
+
   });
 
   w.onEvent([&](ag::Window &win, const ag::Event &ev) {

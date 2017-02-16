@@ -2,7 +2,7 @@
 #include <autograph/Types.h>
 #include <autograph/Config.h>
 #include <fmt/format.h>
-#include <fmt/ostream.h>
+#include <ostream>
 
 //
 // Debug & logging utilities
@@ -10,6 +10,7 @@
 //
 
 // formatting operators for vector types
+
 inline std::ostream& operator<<(std::ostream& os, ag::vec2 v) {
 	os << '<' << v.x << ',' << v.y << '>';
 	return os;
@@ -34,6 +35,8 @@ inline std::ostream& operator<<(std::ostream& os, ag::ivec4 v) {
 	os << '<' << v.x << ',' << v.y << ',' << v.z << ',' << v.w << '>';
 	return os;
 }
+
+#include <fmt/ostream.h>
 
 namespace ag {
 

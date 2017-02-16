@@ -15,7 +15,9 @@ namespace ag {
 
 class ComponentBase {
 public:
-  virtual ~ComponentBase();
+  virtual ~ComponentBase()
+  {}
+
   virtual int getComponentID() = 0;
 
 protected:
@@ -36,24 +38,73 @@ private:
 //////////////////////////////////////////////
 template <typename T> class EntityListBase {
 public:
+
+};
+
+//////////////////////////////////////////////
+class Entity {
+public:
+    friend class EntityList;
+
+	Entity() = default;
+	// disable copy
+	Entity(const Entity&) = delete;
+	Entity& operator=(const Entity&) = delete;
+	// move is okay though
+	Entity(Entity&&) = default;
+	Entity& operator=(Entity&&) = default;
+
+  template <typename T, typename... Args> T *addComponent(Args &&... args) {
+    components_.push_back(std::make_unique<T>(std::forward<Args>(args)...));
+    // static_assert(T::ComponentID < 8);
+    return static_cast<T*>(components_.back().get());
+  }
+
+  template <typename T> T *getComponent() {
+    for (auto &c : components_) {
+      if (c->getComponentID() == T::componentID()) {
+        return static_cast<T*>(c.get());
+      }
+    }
+    return nullptr;
+  }
+
+  template <typename T> void removeComponent() {
+    components_.erase(std::remove_if(components_.begin(), components_.end(),
+                                     [](const auto &v) {
+                                       return v->getComponentID() ==
+                                              T::componentID;
+                                     }),
+                      components_.end());
+  }
+
+  ID getID() const { return id_; }
+
+private:
+  ID id_;
+  SmallVector<std::unique_ptr<ComponentBase>, 8> components_;
+};
+
+//////////////////////////////////////////////
+class EntityList
+{
+public:
   ////////////////////////////////////
-  virtual T *add(ID id) { add(id, T{}); }
+  auto create() -> Entity * { return add(ids_.createID()); }
 
   ////////////////////////////////////
-  virtual T *add(ID id, const T &obj) {
-    auto idx = IDIndex(id);
-    objects_[idx] = T{};
-    auto it = objects_.find(idx);
+  Entity *add(ID id) {
+    //auto idx = IDIndex(id);
+    auto it = objects_.find(id);
     if (it == objects_.end()) {
-      it = objects_.emplace(std::make_pair(idx, obj)).first;
-    } else {
-      it->second = obj;
+        it = objects_.emplace(std::make_pair(id, Entity{})).first;
     }
+    it->second.id_ = id;
     return &it->second;
   }
 
   ////////////////////////////////////
-  virtual T *get(ID id) {
+  Entity *get(ID id) {
     auto it = objects_.find(id);
     if (it == objects_.end()) {
       return nullptr;
@@ -77,54 +128,7 @@ public:
   auto &getObjects() { return objects_; }
 
 private:
-  std::unordered_map<ID, T> objects_;
-};
-
-//////////////////////////////////////////////
-class Entity {
-public:
-	Entity() = default;
-	// disable copy
-	Entity(const Entity&) = delete;
-	Entity& operator=(const Entity&) = delete;
-	// move is okay though
-	Entity(Entity&&) = default;
-	Entity& operator=(Entity&&) = default;
-
-  template <typename T, typename... Args> T *addComponent(Args &&... args) {
-    components_.push_back(std::make_unique<T>(std::forward<Args>(args)...));
-    // static_assert(T::ComponentID < 8);
-  }
-
-  template <typename T> T *getComponent() {
-    for (auto &c : components_) {
-      if (c->getComponentID() == T::componentID()) {
-        return c.get();
-      }
-    }
-    return nullptr;
-  }
-
-  template <typename T> void removeComponent() {
-    components_.erase(std::remove_if(components_.begin(), components_.end(),
-                                     [](const auto &v) {
-                                       return v->getComponentID() ==
-                                              T::componentID;
-                                     }),
-                      components_.end());
-  }
-
-private:
-  SmallVector<std::unique_ptr<ComponentBase>, 8> components_;
-};
-
-//////////////////////////////////////////////
-class EntityList : public EntityListBase<Entity> {
-public:
-  ////////////////////////////////////
-  auto create() -> Entity * { return add(ids_.createID()); }
-
-private:
+  std::unordered_map<ID, Entity> objects_;
   IDTable ids_;
 };
 

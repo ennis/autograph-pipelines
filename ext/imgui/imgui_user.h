@@ -2,8 +2,6 @@
 
 #include "imgui_icons.h"
 
-namespace Lumix { namespace FS { class OsFile; } }
-
 
 struct lua_State;
 
@@ -83,3 +81,4 @@ IMGUI_API bool ImageZoomAndPan(ImTextureID user_texture_id, const ImVec2 &size,
 
 
 #include "imgui_dock.h"
+

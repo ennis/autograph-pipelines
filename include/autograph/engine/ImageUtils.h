@@ -46,6 +46,8 @@ AG_API Image loadImage(const char *id,
 struct TextureResource : public Resource {
   virtual ~TextureResource() {}
 
+    virtual void* getPtr() override { return &tex;}
+
   gl::Texture tex;
 };
 

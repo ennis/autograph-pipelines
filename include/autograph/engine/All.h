@@ -4,6 +4,7 @@
 #include "CameraControl.h"
 #include "DebugOverlay.h"
 #include "ImageUtils.h"
+#include "ImGuiUtils.h"
 #include "Input.h"
 #include "MathUtils.h"
 #include "Mesh.h"

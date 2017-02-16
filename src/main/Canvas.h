@@ -54,7 +54,7 @@ struct Canvas {
 class CanvasRenderer {
 public:
   CanvasRenderer();
-  void renderCanvas(Scene &scene, Canvas &canvas);
+  void renderCanvas(EntityList &scene, Canvas &canvas);
   void reloadShaders();
 
 private:

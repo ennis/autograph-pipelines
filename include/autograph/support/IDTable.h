@@ -7,8 +7,8 @@
 namespace ag {
 
 using ID = uint64_t;
-int IDIndex(ID id) { return static_cast<int>(id & 0xFFFFFFFF); }
-int IDGeneration(ID id) { return static_cast<int>(id >> 32); }
+inline int IDIndex(ID id) { return static_cast<int>(id & 0xFFFFFFFF); }
+inline int IDGeneration(ID id) { return static_cast<int>(id >> 32); }
 
 class AG_API IDTable {
 public:

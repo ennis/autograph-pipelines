@@ -1,5 +1,6 @@
 #include <autograph/engine/DebugOverlay.h>
 #include <autograph/engine/Window.h>
+#include <autograph/engine/ImGuiUtils.h>
 #include <autograph/gl/Capture.h>
 #include <autograph/gl/Device.h>
 #include <autograph/support/Debug.h>
@@ -348,6 +349,7 @@ void Window::show() {
     double t = glfwGetTime();
     double dt = t - tlast;
     tlast = t;
+    gui::beginFrame();
     if (renderFunc_)
       renderFunc_(*this, dt);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -356,6 +358,7 @@ void Window::show() {
     if (showDebugOverlay_) {
       drawDebugOverlay(dt);
     }
+    gui::endFrame();
     ImGui::Render();
     ImGui_ImplGlfwGL3_NewFrame();
     ag::gl::endFrame();

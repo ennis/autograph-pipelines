@@ -17,20 +17,20 @@ namespace ag {
 static const char *imageFileFilters = "png,jpg,jpeg,bmp,tga,psd,gif";
 
 struct DebugOverlayGlobals {
-	Shader textureViewShader = Shader{"shaders/default:textureView"};
-	gl::Sampler textureViewSampler;
+  Shader textureViewShader = Shader{"shaders/default:textureView"};
+  gl::Sampler textureViewSampler;
 };
 
 static DebugOverlayGlobals &getDebugGlobals() {
   static DebugOverlayGlobals g;
   static bool initialized = false;
-  if (!initialized) { 
-	  g.textureViewSampler.setTextureMinFilter(GL_NEAREST);
-	  g.textureViewSampler.setTextureMagFilter(GL_NEAREST);
-	  g.textureViewSampler.setWrapModeU(GL_CLAMP_TO_EDGE);
-	  g.textureViewSampler.setWrapModeV(GL_CLAMP_TO_EDGE);
-	  g.textureViewSampler.setWrapModeW(GL_CLAMP_TO_EDGE);
-	  initialized = true;
+  if (!initialized) {
+    g.textureViewSampler.setTextureMinFilter(GL_NEAREST);
+    g.textureViewSampler.setTextureMagFilter(GL_NEAREST);
+    g.textureViewSampler.setWrapModeU(GL_CLAMP_TO_EDGE);
+    g.textureViewSampler.setWrapModeV(GL_CLAMP_TO_EDGE);
+    g.textureViewSampler.setWrapModeW(GL_CLAMP_TO_EDGE);
+    initialized = true;
   }
   return g;
 }
@@ -291,19 +291,17 @@ static void restoreOpenGLState(const OpenGLState &savedState) {
              (GLsizei)savedState.last_viewport[3]);
 }
 
-static void beginFixedTooltip(const char* id)
-{
-	ImGui::PushStyleColor(ImGuiCol_WindowBg,
-		ImGui::GetStyle().Colors[ImGuiCol_PopupBg]);
-	ImGui::Begin(id, nullptr,
-		ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse |
-		ImGuiWindowFlags_ShowBorders | ImGuiWindowFlags_NoResize);
+static void beginFixedTooltip(const char *id) {
+  ImGui::PushStyleColor(ImGuiCol_WindowBg,
+                        ImGui::GetStyle().Colors[ImGuiCol_PopupBg]);
+  ImGui::Begin(id, nullptr,
+               ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse |
+                   ImGuiWindowFlags_ShowBorders | ImGuiWindowFlags_NoResize);
 }
 
-static void endFixedTooltip()
-{
-	ImGui::End();
-	ImGui::PopStyleColor();
+static void endFixedTooltip() {
+  ImGui::End();
+  ImGui::PopStyleColor();
 }
 
 template <typename Callback> static void customRendering(Callback callback) {
@@ -344,10 +342,10 @@ static void texturePreview(GLuint textureObj, int w, int h, float lod,
                           (int)(cmd->ClipRect.z - cmd->ClipRect.x),
                           (int)(cmd->ClipRect.w - cmd->ClipRect.y)),
         gl::bind::texture(0, textureObj,
-			getDebugGlobals().textureViewSampler.object()),
+                          getDebugGlobals().textureViewSampler.object()),
         gl::bind::uniform_float("uLod", lod),
         gl::bind::uniform_vec2("uRange", vec2(range_min, range_max)),
-		gl::bind::uniform_vec4("uBorder", vec4(0.1f,0.1f,0.1f,1.0f)));
+        gl::bind::uniform_vec4("uBorder", vec4(0.1f, 0.1f, 0.1f, 1.0f)));
   });
 }
 
@@ -384,19 +382,23 @@ static void GLTextureViewWindow(GLuint textureObj, int w, int h,
                            4 * 4, &pixel);
     }
     if (ImGui::BeginMenuBar()) {
-		if (ImGui::Button(ICON_FA_SEARCH_MINUS)) {
-			zoomLevel /= 2;
-	  }
+      if (ImGui::Button(ICON_FA_SEARCH_MINUS)) {
+        zoomLevel /= 2;
+      }
       ImGui::SameLine();
-	  if (ImGui::Button(ICON_FA_SEARCH_PLUS)) {
-		  zoomLevel *= 2;
-	  }
+      if (ImGui::Button(ICON_FA_SEARCH_PLUS)) {
+        zoomLevel *= 2;
+      }
+      ImGui::SameLine();
+      if (ImGui::Button(ICON_FA_ARROWS_ALT)) {
+        zoomLevel = 1.0f;
+      }
       ImGui::SameLine();
       ImGui::PushItemWidth(130.0f);
-	  float zoomLevelPercent = zoomLevel * 100.0f;
-	  ImGui::SliderFloat("Zoom", &zoomLevelPercent, 1.0f, 400.0f, "%g %%");
-	  zoomLevel = zoomLevelPercent / 100.0f;
-	  ImGui::SameLine();
+      float zoomLevelPercent = zoomLevel * 100.0f;
+      ImGui::SliderFloat("Zoom", &zoomLevelPercent, 1.0f, 400.0f, "%g %%");
+      zoomLevel = zoomLevelPercent / 100.0f;
+      ImGui::SameLine();
       ImGui::SliderFloat("Min", &range_min, 0.0f, 1.0f);
       ImGui::SameLine();
       ImGui::SliderFloat("Max", &range_max, 0.0f, 1.0f);
