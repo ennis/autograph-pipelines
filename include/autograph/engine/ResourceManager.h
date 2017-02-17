@@ -9,6 +9,9 @@ public:
   void addResourceDirectory(std::string dir);
   std::string findResourceFile(const char *id,
                                ag::span<const char *const> allowedExtensions);
+  std::string findResourceFileWithPrefixes(const char *id,
+                               ag::span<const char *const> allowedExtensions,
+                               ag::span<const char *const> prefixes);
   span<const std::string> getResourceDirectories();
 
 private:

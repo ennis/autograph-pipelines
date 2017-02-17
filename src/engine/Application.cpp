@@ -26,6 +26,17 @@ static void ensureApplicationStateInitialized() {
   }
 }
 
+
+AG_API std::string getParentDirectory(const char *id) 
+{
+  std::string idstr{id};
+  auto pos = idstr.find_last_of('/');
+  if (pos == std::string::npos) {
+      return "";
+  }
+  return idstr.substr(0, pos);
+}
+
 AG_API std::string findResourceFile(const char *id,
                                     span<const char *> allowedExtensions) {
   ensureApplicationStateInitialized();

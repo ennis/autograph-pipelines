@@ -6,6 +6,7 @@
 #include <autograph/engine/ResourcePool.h>
 #include <autograph/engine/Scene.h>
 #include <autograph/engine/SceneUtils.h>
+#include <autograph/engine/ImageUtils.h>
 
 namespace ag {
 namespace SceneUtils {
@@ -77,6 +78,15 @@ public:
         AG_DEBUG("[material {} texindex{} path {}]", matName.C_Str(), i,
                  texAlbedoPath.C_Str());
       }
+    }
+
+    // try to load the textures associated with the model
+    // look for 
+    //    <directory>/<modelname>_albedo
+    std::string texAlbedoResId = std::string{sceneFileId_} + "_albedo";
+    auto texAlbedo = resourcePool_.get<gl::Texture>(texAlbedoResId.c_str());
+    if (texAlbedo) {
+        AG_DEBUG("texture {} found", texAlbedoResId);
     }
   }
 

@@ -16,19 +16,40 @@ span<const std::string> ResourceManager::getResourceDirectories() {
   return ag::span<const std::string>{resourceDirectories_};
 }
 
-std::string ResourceManager::findResourceFile(
-    const char *id, ag::span<const char *const> allowedExtensions) {
+std::string ResourceManager::findResourceFile(const char *id, ag::span<const char * const> allowedExtensions)
+{
+    return findResourceFileWithPrefixes(id, allowedExtensions, {});
+}
+
+std::string ResourceManager::findResourceFileWithPrefixes(
+    const char *id, ag::span<const char *const> allowedExtensions,
+    ag::span<const char *const> prefixes) {
   namespace fs = std::experimental::filesystem;
-  for (auto &dir : resourceDirectories_) {
-    fs::path baseDir{dir};
+  std::string ret;
+
+  auto findWithExts = [&](fs::path &baseDir) {
     for (auto ext : allowedExtensions) {
       auto fullPath = (baseDir / id).replace_extension(ext);
       if (fs::is_regular_file(fullPath)) {
         // got our file
         AG_DEBUG("{} -> {}", id, fullPath.string());
-        return fullPath.string();
-      } else {
-        // AG_DEBUG("{} not found", fullPath.string());
+        ret = fullPath.string();
+        return true;
+      }
+    }
+    return false;
+  };
+
+  for (auto &dir : resourceDirectories_) {
+    fs::path baseDir{dir};
+    if (prefixes.empty()) {
+      if (findWithExts(baseDir))
+        return ret;
+    } else {
+      for (auto prefix : prefixes) {
+        auto baseDirWithPrefix = baseDir / prefix;
+        if (findWithExts(baseDirWithPrefix))
+          return ret;
       }
     }
   }
@@ -40,6 +61,12 @@ std::string ResourceManager::findResourceFile(
   AG_DEBUG("    Tried extensions:");
   for (auto ext : allowedExtensions) {
     AG_DEBUG("    - {}", ext);
+  }
+  if (!prefixes.empty()) {
+    AG_DEBUG("    Tried prefixes:");
+    for (auto prefix : prefixes) {
+      AG_DEBUG("    - {}", prefix);
+    }
   }
   return {};
 }
