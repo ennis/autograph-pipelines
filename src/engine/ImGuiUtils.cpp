@@ -75,8 +75,10 @@ static void transformGizmo(const Camera &camera, Transform &tr) {
     break;
   }*/
 
+  auto oldpos = tr.position;
+
   ImGuizmo::Manipulate(&camera.viewMat[0][0], &camera.projMat[0][0],
-                       currentGizmoOperation, currentGizmoMode, &matrix[0][0],
+                       currentGizmoOperation, ImGuizmo::LOCAL, &matrix[0][0],
                        nullptr, useSnap ? &snap[0] : nullptr);
 
   // convert matrix back to transform components

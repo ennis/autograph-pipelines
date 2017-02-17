@@ -11,6 +11,9 @@ SceneObject::~SceneObject() {
   if (parent) {
     parent->removeChild(this);
   }
+  for (auto c: children) {
+      c->parent = nullptr;
+  }
 }
 
 void SceneObject::addChild(SceneObject *obj) {

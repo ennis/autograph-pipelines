@@ -197,7 +197,7 @@ int main(int argc, char *argv[]) {
                                     float)>(&Scene2D::render));
 
   EntityList scene;
-  auto ent = SceneUtils::load("mesh/youmu/youmu", scene, pool);
+  auto ent = SceneUtils::load("mesh/treasure_chest/model", scene, pool);
   auto rootObj = ent->getComponent<SceneObject>();
   rootObj->localTransform.scaling = vec3{0.01f};
   rootObj->updateWorldTransform();
@@ -217,6 +217,7 @@ int main(int argc, char *argv[]) {
     auto &renderUtils = getRenderUtils();
     renderUtils.drawGrid2D(gl::getDefaultFramebuffer(), screenSize / 2.0f,
                            vec2{25.0f}, 10);
+    camCtl.setAspectRatio(screenSize.x/screenSize.y);
     Camera cam = camCtl.getCamera();
     // show scene editor
     gui::sceneEditor(cam, scene, rootObj->id);

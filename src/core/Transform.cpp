@@ -21,7 +21,7 @@ namespace ag
 
 	 // matrice 4x4 correspondante
   mat4 Transform::getMatrix() const {
-    return glm::translate(glm::scale(glm::toMat4(rotation), scaling), position);
+      return glm::scale(glm::translate(glm::mat4{1.0f}, position) * glm::toMat4(rotation), scaling);
   }
 
   // matrice de transformation des normales
