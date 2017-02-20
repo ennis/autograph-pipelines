@@ -9,7 +9,7 @@ class EntityManager {
 public:
   ////////////////////////////////////
   ID createEntity() { return ids_.createID(); }
-  ID deleteEntity(ID eid) { ids_.deleteID(eid); }
+  void deleteEntity(ID eid) { ids_.deleteID(eid); }
 
 private:
   IDTable ids_;

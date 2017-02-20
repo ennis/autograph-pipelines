@@ -28,10 +28,13 @@ void centerCameraOnObject(CameraControl &camCtl, const SceneObject &obj) {
   auto cx = (aabb.xmax + aabb.xmin) / 2.f;
   auto cy = (aabb.ymax + aabb.ymin) / 2.f;
   auto cz = (aabb.zmax + aabb.zmin) / 2.f;
-  camCtl.setNearFarPlanes(0.01f, 2.0f*cz);
+  const float fov = 45.0f;
+  float camDist = (0.5f * size) / std::tan(0.5f*glm::radians(fov));
   camCtl.lookAt(cx, cy, cz);
-  camCtl.lookDistance(1.5f * size);
-  camCtl.setFieldOfView(45.0f);
+  camCtl.lookDistance(camDist);
+  camCtl.setNearFarPlanes(0.1f*camDist, 10.0f*camDist);
+  camCtl.setFieldOfView(fov);
+  AG_DEBUG("near {} far {}", 0.5f*camDist, 2.0f*camDist);
 }
 
 ///////////////////////////////////////////////////////////////
@@ -55,7 +58,7 @@ int main(int argc, char *argv[]) {
   DeferredSceneRenderer::GBuffer deferredGBuffers{ 640, 480 };
   DeferredSceneRenderer deferredSceneRenderer;
 
-  ID rootEntity = loadScene("mesh/youmu/youmu", entityManager,  scene, renderableScene, lightScene, pool);
+  ID rootEntity = loadScene("mesh/sponza/sponza", entityManager,  scene, renderableScene, lightScene, pool);
   SceneObject *rootSceneObj = scene.get(rootEntity);
   if (rootSceneObj) {
 	rootSceneObj->localTransform.scaling = vec3{1.0f};
