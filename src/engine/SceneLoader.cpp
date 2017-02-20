@@ -17,19 +17,19 @@ static const char *allowedMeshExtensions[] = {".dae", ".fbx", ".obj", ".3ds"};
 class AssimpSceneImporter {
 public:
   AssimpSceneImporter(EntityManager &entities, Scene &scene,
-                      RenderableScene &renderableScene,
-						LightScene &lights,
+                      RenderableScene &renderableScene, LightScene &lights,
                       ResourcePool &resourcePool)
       : entities_{entities}, scene_{scene}, renderableScene_{renderableScene},
-	  lights_{ lights },
-        resourcePool_{resourcePool} 
-  {}
+        lights_{lights}, resourcePool_{resourcePool} {}
 
   //////////////////////////////////////////////////
-  Mesh3D *importAssimpMesh(const aiScene *aiscene, int index, StdMaterial* outMaterial) {
+  Mesh3D *importAssimpMesh(const aiScene *aiscene, int index,
+                           StdMaterial *outMaterial) {
     std::string sceneMeshId =
         std::string{sceneFileId_} + ":mesh" + std::to_string(index);
-	importMaterial(aiscene, aiscene->mMaterials[aiscene->mMeshes[index]->mMaterialIndex], outMaterial);
+    importMaterial(aiscene,
+                   aiscene->mMaterials[aiscene->mMeshes[index]->mMaterialIndex],
+                   outMaterial);
     return resourcePool_.get_fn<Mesh3D>(sceneMeshId.c_str(), [&](auto) {
       auto mesh = aiscene->mMeshes[index];
       std::vector<Vertex3D> vertices;
@@ -63,41 +63,42 @@ public:
     });
   }
 
-  void importMaterial(const aiScene *aiscene, const aiMaterial *material, StdMaterial* outMaterial) {
+  void importMaterial(const aiScene *aiscene, const aiMaterial *material,
+                      StdMaterial *outMaterial) {
     // get material name
     aiString matName;
-	aiString texPath;
+    aiString texPath;
     material->Get(AI_MATKEY_NAME, matName);
 
-   /* for (unsigned i = 0; i < material->mNumProperties; ++i) {
-      if (material->mProperties[i]->mType == aiPTI_String) {
-        AG_DEBUG("[material {} matkey {}]", matName.C_Str(),
-                 material->mProperties[i]->mKey.C_Str());
-      }
-      // if (material->mProperties[i]->mSemantic != aiTextureType_NONE)
-    }*/
+    /* for (unsigned i = 0; i < material->mNumProperties; ++i) {
+       if (material->mProperties[i]->mType == aiPTI_String) {
+         AG_DEBUG("[material {} matkey {}]", matName.C_Str(),
+                  material->mProperties[i]->mKey.C_Str());
+       }
+       // if (material->mProperties[i]->mSemantic != aiTextureType_NONE)
+     }*/
 
     // load all possible textures
     for (unsigned i = 0; i < AI_TEXTURE_TYPE_MAX; ++i) {
       auto res = material->GetTexture((aiTextureType)i, 0, &texPath);
       if (res == aiReturn_SUCCESS) {
         AG_DEBUG("[material {} texindex{} path {}]", matName.C_Str(), i,
-			texPath.C_Str());
+                 texPath.C_Str());
         // Search procedure for textures:
         // First, get an ID from  the given path (by taking the path stem), and
         // look for it using the default search procedure for resources.
         // If it is not found, resort to absolute file path.
-        std::experimental::filesystem::path p{ texPath.C_Str()};
+        std::experimental::filesystem::path p{texPath.C_Str()};
         auto resourceId = getParentDirectory(sceneFileId_) + p.stem().string();
         auto tex = resourcePool_.get<gl::Texture>(resourceId.c_str());
         switch (i) {
         case aiTextureType_NONE:
           break;
         case aiTextureType_DIFFUSE:
-			outMaterial->albedo = tex;
-			break;
+          outMaterial->albedo = tex;
+          break;
         case aiTextureType_SPECULAR:
-			outMaterial->metallic = tex;
+          outMaterial->metallic = tex;
           break;
         case aiTextureType_AMBIENT:
           break;
@@ -106,13 +107,13 @@ public:
         case aiTextureType_HEIGHT:
           break;
         case aiTextureType_NORMALS:
-			outMaterial->normals = tex;
+          outMaterial->normals = tex;
           break;
         case aiTextureType_SHININESS:
-			outMaterial->roughness = tex;
-			break;
+          outMaterial->roughness = tex;
+          break;
         case aiTextureType_OPACITY:
-			//outMaterial->albedo = tex;
+          // outMaterial->albedo = tex;
           break;
         case aiTextureType_DISPLACEMENT:
           break;
@@ -128,15 +129,14 @@ public:
   }
 
   //////////////////////////////////////////////////
-  SceneObject* importAssimpNodeRecursive(const aiScene *aiscene, aiNode *node,
-                                         SceneObject *parent) 
-  {
+  SceneObject *importAssimpNodeRecursive(const aiScene *aiscene, aiNode *node,
+                                         SceneObject *parent) {
     ID id = entities_.createEntity();
-	SceneObject* thisNode = scene_.add(id);
-	thisNode->entityID = id;
-	thisNode->name = node->mName.C_Str();
+    SceneObject *thisNode = scene_.add(id);
+    thisNode->entityID = id;
+    thisNode->name = node->mName.C_Str();
     thisNode->parent = parent;
-	StdMaterial* mat = renderableScene_.add(id);
+    StdMaterial *mat = renderableScene_.add(id);
     aiVector3D scaling;
     aiVector3D position;
     aiQuaternion rotation;
@@ -158,9 +158,9 @@ public:
       for (unsigned i = 0; i < node->mNumMeshes; ++i) {
         // create sub-objects for the meshes
         auto subEntity = entities_.createEntity();
-		SceneObject* subObj = scene_.add(subEntity);
-		StdMaterial* subMat = renderableScene_.add(subEntity);
-		subObj->entityID = subEntity;
+        SceneObject *subObj = scene_.add(subEntity);
+        StdMaterial *subMat = renderableScene_.add(subEntity);
+        subObj->entityID = subEntity;
         subObj->parent = thisNode;
         subObj->mesh = importAssimpMesh(aiscene, node->mMeshes[i], subMat);
         subObj->localBounds = GetMeshAABB(*subObj->mesh);
@@ -175,18 +175,19 @@ public:
     return thisNode;
   }
 
-  Light* importLight(const aiLight* ailight, SceneObject *parent)
-  {
-	  ID lightEntity = entities_.createEntity();
-	  SceneObject* lightSceneObj = scene_.add(lightEntity);
-	  Light* lightObj = lights_.add(lightEntity);
-	  lightSceneObj->entityID = lightEntity;
-	  lightSceneObj->name = ailight->mName.C_Str();
-	  lightSceneObj->hasWorldBounds = false;
-	  lightSceneObj->localTransform.position = vec3{ ailight->mPosition.x, ailight->mPosition.y,ailight->mPosition.z };
-	  if (parent)
-		  parent->addChild(lightSceneObj);
-	  return lightObj;
+  Light *importLight(const aiLight *ailight, SceneObject *parent) {
+    ID lightEntity = entities_.createEntity();
+    SceneObject *lightSceneObj = scene_.add(lightEntity);
+    Light *lightObj = lights_.add(lightEntity);
+    lightSceneObj->entityID = lightEntity;
+    lightSceneObj->name = ailight->mName.C_Str();
+    lightSceneObj->hasWorldBounds = false;
+    lightSceneObj->localTransform.position =
+        vec3{ailight->mPosition.x, ailight->mPosition.y, ailight->mPosition.z};
+    if (parent)
+      parent->addChild(lightSceneObj);
+    AG_DEBUG("[light {}]", ailight->mName.C_Str());
+    return lightObj;
   }
 
   //////////////////////////////////////////////////
@@ -198,21 +199,23 @@ public:
     }
     const aiScene *aiscene = importer.ReadFile(
         actualPath.c_str(),
-			aiProcess_OptimizeMeshes | aiProcess_OptimizeGraph |
+        aiProcess_OptimizeMeshes | aiProcess_OptimizeGraph |
             aiProcess_Triangulate | aiProcess_JoinIdenticalVertices |
             aiProcess_CalcTangentSpace | aiProcess_SortByPType);
     if (!aiscene) {
-      errorMessage("failed to load scene ({}): {}", sceneFileId, importer.GetErrorString());
-	  
+      errorMessage("failed to load scene ({}): {}", sceneFileId,
+                   importer.GetErrorString());
+
       return nullptr;
     }
-	// import lights
-	for (int i = 0; i < aiscene->mNumLights; ++i) {
-		importLight(aiscene->mLights[i], parent);
-	}
+    // import lights
+    for (int i = 0; i < aiscene->mNumLights; ++i) {
+      importLight(aiscene->mLights[i], parent);
+    }
 
     sceneFileId_ = sceneFileId;
-    auto rootSceneObj = importAssimpNodeRecursive(aiscene, aiscene->mRootNode, parent);
+    auto rootSceneObj =
+        importAssimpNodeRecursive(aiscene, aiscene->mRootNode, parent);
     if (parent) {
       parent->children.push_back(rootSceneObj);
     }
@@ -224,23 +227,20 @@ public:
 
 private:
   const char *sceneFileId_{nullptr};
-  EntityManager& entities_;
+  EntityManager &entities_;
   Scene &scene_;
-  RenderableScene& renderableScene_;
-  LightScene& lights_;
+  RenderableScene &renderableScene_;
+  LightScene &lights_;
   ResourcePool &resourcePool_;
 };
 
 //////////////////////////////////////////////////
 
-ID loadScene(const char *id,
-	EntityManager& entities,
-	Scene &scene,		
-	RenderableScene& renderableScene,	
-  LightScene& lights, 
-	ResourcePool &resourcePool) 
-{
-  AssimpSceneImporter asi{entities, scene, renderableScene, lights, resourcePool};
+ID loadScene(const char *id, EntityManager &entities, Scene &scene,
+             RenderableScene &renderableScene, LightScene &lights,
+             ResourcePool &resourcePool) {
+  AssimpSceneImporter asi{entities, scene, renderableScene, lights,
+                          resourcePool};
   auto root = asi.load(id, nullptr);
   return root->entityID;
 }

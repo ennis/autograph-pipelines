@@ -1,7 +1,7 @@
 #pragma once
 #include <autograph/Camera.h>
+#include <autograph/AABB.h>
 #include <glm/gtx/rotate_vector.hpp>
-#include <autograph/support/Debug.h>
 
 namespace ag {
 
@@ -24,23 +24,22 @@ public:
   void setFieldOfView(float fov);
   void setNearFarPlanes(float nearPlane, float farPlane);
   auto getCamera() const -> Camera;
+  void centerOnObject(const AABB &objectBounds);
 
 private:
-	auto getLookAt() const -> mat4;
-	auto toCartesian() const -> vec3;
+  auto getLookAt() const -> mat4;
+  auto toCartesian() const -> vec3;
 
-	float fov_{45.0f};
-	float aspectRatio_{1.0f};	// should be screenWidth / screenHeight
-	float nearPlane_{0.001f};
-	float farPlane_{10.0f};
-	float zoomLevel_{ 1.0f };
-	float radius_{ 1.0f };
-	float theta_{ 0.0f };
-	float phi_{ kPiOverTwo<float> };
-	vec3 target_{0.0f, 0.0f, 0.0f};
+  float fov_{45.0f};
+  float aspectRatio_{1.0f}; // should be screenWidth / screenHeight
+  float nearPlane_{0.001f};
+  float farPlane_{10.0f};
+  float zoomLevel_{1.0f};
+  float radius_{1.0f};
+  float theta_{0.0f};
+  float phi_{kPiOverTwo<float>};
+  vec3 target_{0.0f, 0.0f, 0.0f};
 };
 
 /////////////////////////////////////////////////////
-
-
 }

@@ -10,6 +10,7 @@
 #include "Mesh.h"
 #include "Meta.h"
 #include "Observable.h"
+#include "Profiler.h"
 #include "RenderTarget.h"
 #include "RenderUtils.h"
 #include "RenderableScene.h"

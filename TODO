@@ -51,7 +51,12 @@ Minimal system:
  ☐ getParentDirectory(id) is misleading => maybe create a class for resource paths?
      ResourceID: resource path or full path in filesystem
  ☐ Suggestion: fuse DeferredSceneRenderer and DeferredSceneRenderer::GBuffers
- ☐ Profiler
+ ✔ Profiler @done (17-02-20 21:42)
+ ☐ GPU profiler
+ ☐ Profiler: timeline view
+ ☐ Unify profiler and GPU capture 
+ ☐ Multi-window
+   ☐ Move main loop into application (Application::mainLoop()) 
 
 General:
  ✔ Implement cameras @high @minimal_subset @done (16-12-24 14:12)

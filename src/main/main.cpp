@@ -4,12 +4,7 @@
 #include <memory>
 #include <string>
 #include <unordered_map>
-
-#include <imgui.h>
-#include <imgui_internal.h>
-
 #include <glm/gtc/packing.hpp>
-
 #include <autograph/engine/All.h>
 #include <autograph/gl/All.h>
 #include <autograph/support/Debug.h>
@@ -22,21 +17,6 @@
 
 using namespace ag;
 
-void centerCameraOnObject(CameraControl &camCtl, const SceneObject &obj) {
-  auto aabb = obj.getApproximateWorldBounds();
-  auto size = std::max({aabb.width(), aabb.height(), aabb.depth()});
-  auto cx = (aabb.xmax + aabb.xmin) / 2.f;
-  auto cy = (aabb.ymax + aabb.ymin) / 2.f;
-  auto cz = (aabb.zmax + aabb.zmin) / 2.f;
-  const float fov = 45.0f;
-  float camDist = (0.5f * size) / std::tan(0.5f*glm::radians(fov));
-  camCtl.lookAt(cx, cy, cz);
-  camCtl.lookDistance(camDist);
-  camCtl.setNearFarPlanes(0.1f*camDist, 10.0f*camDist);
-  camCtl.setFieldOfView(fov);
-  AG_DEBUG("near {} far {}", 0.5f*camDist, 2.0f*camDist);
-}
-
 ///////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////
 // MAIN
@@ -44,6 +24,7 @@ int main(int argc, char *argv[]) {
   using namespace ag;
   addResourceDirectory(getActualPath("resources/"));
 
+  ////////////////////////////////////////////////////
   // Global vars
   Window w{640, 480, "???"};
   ScriptContext lua;
@@ -55,21 +36,30 @@ int main(int argc, char *argv[]) {
   LightScene lightScene;
   RenderableScene renderableScene;
   ResourcePool pool;
-  DeferredSceneRenderer::GBuffer deferredGBuffers{ 640, 480 };
+  DeferredSceneRenderer::GBuffer deferredGBuffers{640, 480};
   DeferredSceneRenderer deferredSceneRenderer;
 
-  ID rootEntity = loadScene("mesh/sponza/sponza", entityManager,  scene, renderableScene, lightScene, pool);
+  ////////////////////////////////////////////////////
+  // Scene
+  ID rootEntity = loadScene("mesh/sponza/sponza", entityManager, scene,
+                            renderableScene, lightScene, pool);
   SceneObject *rootSceneObj = scene.get(rootEntity);
   if (rootSceneObj) {
-	rootSceneObj->localTransform.scaling = vec3{1.0f};
-	rootSceneObj->calculateWorldTransform();
-	rootSceneObj->calculateWorldBounds();
-    centerCameraOnObject(camCtl, *rootSceneObj);
+    rootSceneObj->localTransform.scaling = vec3{1.0f};
+    rootSceneObj->calculateWorldTransform();
+    rootSceneObj->calculateWorldBounds();
+    camCtl.centerOnObject(rootSceneObj->getApproximateWorldBounds());
   }
 
+  ////////////////////////////////////////////////////
+  // Render
   w.onRender([&](ag::Window &win, double dt) {
+    ////////////////////////////////////////////////////
     auto screenSizeI = win.getFramebufferSize();
     auto screenSize = vec2{(float)screenSizeI.x, (float)screenSizeI.y};
+    camCtl.setAspectRatio(screenSize.x / screenSize.y);
+    Camera cam = camCtl.getCamera();
+    ////////////////////////////////////////////////////
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glEnable(GL_FRAMEBUFFER_SRGB);
     glViewport(0, 0, screenSizeI.x, screenSizeI.y);
@@ -78,32 +68,48 @@ int main(int argc, char *argv[]) {
     glDepthMask(GL_TRUE);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
     auto &renderUtils = getRenderUtils();
-    renderUtils.drawGrid2D(gl::getDefaultFramebuffer(), screenSize / 2.0f,
-                           vec2{25.0f}, 10);
-    camCtl.setAspectRatio(screenSize.x / screenSize.y);
-    Camera cam = camCtl.getCamera();
+    {
+      AG_PROFILE_SCOPE("Draw grid")
+      renderUtils.drawGrid2D(gl::getDefaultFramebuffer(), screenSize / 2.0f,
+                             vec2{25.0f}, 10);
+    }
     // show scene editor
-    gui::sceneEditor(cam, entityManager, scene, renderableScene, pool, rootEntity);
-	rootSceneObj->calculateWorldTransform();
-	rootSceneObj->calculateWorldBounds();
-    canvasRenderer.renderCanvas(scene, canvas);
-	deferredSceneRenderer.renderScene(deferredGBuffers, scene, renderableScene, cam);
+    gui::sceneEditor(cam, entityManager, scene, renderableScene, pool,
+                     rootEntity);
+    {
+      AG_PROFILE_SCOPE("Scene graph update")
+      rootSceneObj->calculateWorldTransform();
+      rootSceneObj->calculateWorldBounds();
+    }
 
-    for (auto &idSceneObj : scene.getObjects()) {
-		auto& sceneObj = idSceneObj.second;
-      if (sceneObj.mesh) {
-        renderUtils.drawMesh(gl::getDefaultFramebuffer(), cam, *sceneObj.mesh,
-			sceneObj.worldTransform);
-        renderUtils.drawWireMesh(gl::getDefaultFramebuffer(), cam,
-                                 *sceneObj.mesh, sceneObj.worldTransform);
+    {
+      AG_PROFILE_SCOPE("Rendering")
+      canvasRenderer.renderCanvas(scene, canvas);
+      deferredSceneRenderer.renderScene(deferredGBuffers, scene,
+                                        renderableScene, cam);
+    }
+
+    {
+      AG_PROFILE_SCOPE("Rendering - debug")
+      for (auto &idSceneObj : scene.getObjects()) {
+        auto &sceneObj = idSceneObj.second;
+        if (sceneObj.mesh) {
+          renderUtils.drawMesh(gl::getDefaultFramebuffer(), cam, *sceneObj.mesh,
+                               sceneObj.worldTransform);
+          renderUtils.drawWireMesh(gl::getDefaultFramebuffer(), cam,
+                                   *sceneObj.mesh, sceneObj.worldTransform);
+        }
       }
     }
   });
 
-  w.onEvent([&](ag::Window& win, const ag::Event& ev) {
-	  if (ev.type == EventType::WindowResize) {
-		  deferredGBuffers = DeferredSceneRenderer::GBuffer{ ev.resize.width, ev.resize.height };
-	  }
+  ////////////////////////////////////////////////////
+  // window events
+  w.onEvent([&](ag::Window &win, const ag::Event &ev) {
+    if (ev.type == EventType::WindowResize) {
+      deferredGBuffers =
+          DeferredSceneRenderer::GBuffer{ev.resize.width, ev.resize.height};
+    }
   });
 
   w.show();

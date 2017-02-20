@@ -20,6 +20,7 @@ set(SRC
 	DebugOverlay.cpp
     ImGuiUtils.cpp
     Meta.cpp
+    Profiler.cpp
 )
 	
 add_library(autograph_engine STATIC ${SRC} )

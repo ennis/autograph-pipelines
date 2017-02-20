@@ -1,12 +1,13 @@
+#include <gl_core_4_5.h>
+#include <GLFW/glfw3.h>
 #include <autograph/engine/DebugOverlay.h>
-#include <autograph/engine/Window.h>
 #include <autograph/engine/ImGuiUtils.h>
+#include <autograph/engine/Profiler.h>
+#include <autograph/engine/Window.h>
 #include <autograph/gl/Capture.h>
 #include <autograph/gl/Device.h>
 #include <autograph/support/Debug.h>
 #include <autograph/support/ProjectRoot.h>
-#include <gl_core_4_5.h>
-#include <GLFW/glfw3.h>
 #include <imgui.h>
 #include <imgui_icons.h>
 #include <imgui_impl_glfw_gl3.h>
@@ -207,6 +208,12 @@ void Window::keyHandler(int key, int scancode, int action, int mods) {
     // capture next frame
     gl::setNextFrameCapture();
   }
+  if (mods == (GLFW_MOD_CONTROL ) && key == GLFW_KEY_F8 &&
+      action == GLFW_PRESS) {
+    // toggle profiler
+    profiler_ = !profiler_;
+	AG_DEBUG("Profiler {}", profiler_ ? "ON" : "OFF");
+  }
 }
 
 void Window::charHandler(unsigned int codepoint) {
@@ -344,26 +351,40 @@ void Window::show() {
   double tlast = glfwGetTime();
   ImGui_ImplGlfwGL3_NewFrame();
   while (!glfwWindowShouldClose(window_)) {
+    if (profiler_)
+      Profiler::beginFrame();
     auto framebufferSize = getFramebufferSize();
     ag::gl::resizeDefaultFramebuffer(framebufferSize.x, framebufferSize.y);
     double t = glfwGetTime();
     double dt = t - tlast;
     tlast = t;
     gui::beginFrame();
-    if (renderFunc_)
+    if (renderFunc_) {
+      AG_PROFILE_SCOPE("render")
       renderFunc_(*this, dt);
+    }
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glDisable(GL_STENCIL_TEST);
     glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
     if (showDebugOverlay_) {
+      AG_PROFILE_SCOPE("Debug overlay")
       drawDebugOverlay(dt);
     }
+	if (profiler_)
+		Profiler::showGui();
     gui::endFrame();
-    ImGui::Render();
+    {
+      AG_PROFILE_SCOPE("IMGUI")
+      ImGui::Render();
+    }
     ImGui_ImplGlfwGL3_NewFrame();
     ag::gl::endFrame();
-    glfwSwapBuffers(window_);
+    {
+      AG_PROFILE_SCOPE("Present")
+      glfwSwapBuffers(window_);
+    }
     glfwPollEvents();
+    Profiler::endFrame();
   }
 }
 

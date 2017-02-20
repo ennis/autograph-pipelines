@@ -2128,3 +2128,8 @@ ResourceID:
 	- build from path + list of extensions
 	- cached: full filesystem path (if it exists),  
  
+Profiler API:
+
+Profiler::beginFrame(): start a new profile
+Profiler::endFrame(): end collection, save profile
+Profiler::getData(): return profile data saved after calling endFrame()
