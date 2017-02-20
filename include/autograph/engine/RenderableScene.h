@@ -1,27 +1,36 @@
 #pragma once
-#include <autograph/engine/ResourcePool.h>
-#include <autograph/support/IDTable.h>
-#include <memory>
-#include <vector>
+#include <autograph/engine/EntityManager.h>
 
 namespace ag {
 
-enum class RenderLayer 
+enum RenderLayer {
+  RL_Deferred = 0,
+  RL_ForwardOpaque = 1,
+  RL_ForwardTranslucent = 2,
+  RL_Custom = 3,
+};
+
+enum class StdTexture {
+  Albedo,
+  NormalMap,
+  Roughness,
+  Metallic,
+  AmbientOcclusion,
+  Lightmap
+};
+
+struct StdMaterial 
 {
-  Deferred,
-  ForwardOpaque,
-  ForwardTranslucent
+  gl::Texture *albedo = nullptr;
+  gl::Texture *normals = nullptr;
+  gl::Texture *roughness = nullptr;
+  gl::Texture *metallic = nullptr;
+  gl::Texture *ambientOcclusion = nullptr;
+  gl::Texture *lightmap = nullptr;
 };
 
-struct RenderableObject {
-  ID id;
-  RenderLayer layer{Deferred};
-  bool castsShadows{true};
-  bool receivesShadows{true};
-  ag::SmallVector<gl::Texture*, 8> textures;
-};
-
-class RenderableScene : public SceneBase<RenderableObject> {
+class RenderableScene : public ComponentManager<StdMaterial> 
+{
 };
 
 }

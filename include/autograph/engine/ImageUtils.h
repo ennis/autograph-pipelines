@@ -11,6 +11,9 @@ struct Image {
   std::unique_ptr<uint8_t[]> data;
 };
 
+static const char *allowedImageExtensions[] = { ".png", ".jpeg", ".bmp", ".jpg",
+".tga" };
+
 //
 // Loads an image resource in main memory
 // Will fail if the target format doesn't have

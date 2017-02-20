@@ -1,6 +1,7 @@
 #pragma once
 #include <autograph/Camera.h>
 #include <autograph/engine/Scene.h>
+#include <autograph/engine/RenderableScene.h>
 #include <autograph/engine/Shader.h>
 #include <autograph/gl/Framebuffer.h>
 #include <autograph/gl/Program.h>
@@ -18,15 +19,10 @@ public:
   public:
     GBuffer() {}
     GBuffer(int width, int height);
-
     void release();
-
     gl::Texture &getDepthTarget() { return depthStencil; }
-
     gl::Texture &getNormalsTarget() { return normals; }
-
     gl::Texture &getDiffuseTarget() { return diffuse; }
-
     gl::Framebuffer &getFramebuffer() { return fbo; }
 
   private:
@@ -40,7 +36,7 @@ public:
   ~DeferredSceneRenderer();
 
   void reloadShaders();
-  void renderScene(GBuffer &targets, EntityList &scene, Camera &camera);
+  void renderScene(GBuffer &targets, Scene &scene, RenderableScene& renderableScene, Camera &camera);
 
 private:
   Shader deferredShader;
@@ -52,7 +48,7 @@ public:
   ~WireframeOverlayRenderer();
 
   void reloadShaders();
-  void renderSceneObject(gl::Framebuffer &target, EntityList &scene,
+  void renderSceneObject(gl::Framebuffer &target, Scene &scene,
                          SceneObject &object, Camera &camera,
                          bool depthTest = true);
 

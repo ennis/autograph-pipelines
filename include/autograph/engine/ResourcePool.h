@@ -7,7 +7,7 @@
 namespace ag {
 struct Resource {
   virtual ~Resource() {}
-    virtual void* getPtr() = 0;
+  virtual void *getPtr() = 0;
 
   std::string id;
   std::chrono::system_clock::time_point lastReload;
@@ -17,14 +17,10 @@ template <typename T> struct ResourceTraits;
 
 // wrap a type as a resource
 template <typename T> struct ResourceWrapper : public Resource {
-    ResourceWrapper(T res) : resource(std::move(res))
-    {
-    }
+  ResourceWrapper(T res) : resource(std::move(res)) {}
 
   T resource;
-  void* getPtr() override {
-      return &resource;
-  }
+  void *getPtr() override { return &resource; }
 };
 
 /*template <typename T> struct ResourceTraits<ResourceWrapper<T>> {
@@ -67,7 +63,7 @@ public:
       pRes->lastReload = std::chrono::system_clock::now();
       resourceMap_[id] = std::move(res);
     }
-    return static_cast<T*>(pRes->getPtr());
+    return static_cast<T *>(pRes->getPtr());
   }
 
 private:

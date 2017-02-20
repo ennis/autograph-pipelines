@@ -1,7 +1,7 @@
 #include "SceneRenderer.h"
 #include <autograph/engine/Shader.h>
 #include <autograph/engine/ShaderUtils.h>
-#include <autograph/engine/SceneUtils.h>
+#include <autograph/engine/RenderUtils.h>
 #include <autograph/gl/Device.h>
 #include <autograph/gl/Draw.h>
 #include <autograph/support/Debug.h>
@@ -33,31 +33,32 @@ void DeferredSceneRenderer::reloadShaders() {
   deferredShader = Shader{"shaders/default:deferred"};
 }
 
-void DeferredSceneRenderer::renderScene(GBuffer &targets, EntityList &scene,
-                                        Camera &camera) {
+void DeferredSceneRenderer::renderScene(
+	GBuffer &targets, 
+	Scene &scene, 
+	RenderableScene& renderableScene, 
+	Camera &camera) 
+{
   // Per-object uniforms
-  CameraPerObjectUniforms camUniforms{camera};
+	CameraUniforms camUniforms{camera};
   gl::clearTexture(targets.getDiffuseTarget(), vec4{0.0f, 0.0f, 0.0f, 1.0f});
   gl::clearDepthTexture(targets.getDepthTarget(), 1.0f);
-  camUniforms.viewMatrix = camera.viewMat;
-  camUniforms.projMatrix = camera.projMat;
-  camUniforms.viewProjMatrix = camera.projMat * camera.viewMat;
 
   auto &objects = scene.getObjects();
   for (auto &&kv : objects) {
     auto id = kv.first;
-    auto scene_obj = kv.second.getComponent<SceneObject>();
-    auto scene_renderable = kv.second.getComponent<SceneUtils::Renderable>();
-    if (!scene_obj)
-      return;
-    auto pMesh = scene_obj->mesh;
+    auto& sceneObj = kv.second;
+	auto material = renderableScene.get(id);
+    auto pMesh = sceneObj.mesh;
     if (!pMesh)
       continue;
+	gl::Texture* albedoTex = material ? material->albedo : nullptr;
     using namespace gl;
     using namespace gl::bind;
-    camUniforms.modelMatrix = scene_obj->worldTransform;
     draw(targets.getFramebuffer(), *pMesh, deferredShader,
-         uniformFrameData(0, &camUniforms));
+         uniformFrameData(0, &camUniforms),
+		 texture(0, albedoTex ? albedoTex->object() : 0, getRenderUtils().samplerLinear.object()),
+		 uniform_mat4("uModelMatrix", sceneObj.worldTransform));
 
     // AG_DEBUG("renderScene, object ID {} mesh {}", obj->id, (void*)obj->mesh);
   }
@@ -74,7 +75,7 @@ void WireframeOverlayRenderer::reloadShaders() {
 
 // render one scene object and its children
 void WireframeOverlayRenderer::renderSceneObject(gl::Framebuffer &target,
-                                                 EntityList &scene,
+                                                 Scene &scene,
                                                  SceneObject &object,
                                                  Camera &camera,
                                                  bool depthTest) {
@@ -103,7 +104,7 @@ void WireframeOverlayRenderer::renderSceneObject(gl::Framebuffer &target,
              0, uploadFrameData(&objectUniforms, sizeof(objectUniforms))));
   }
   for (auto c : object.children) {
-    renderSceneObject(target, scene, *c, camera, depthTest);
+      renderSceneObject(target, scene, *c, camera, depthTest);
   }
 }
 }

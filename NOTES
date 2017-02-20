@@ -2046,3 +2046,85 @@ Common interface:
 
 
 SceneUtils.cpp: load scene (geometry, materials, textures) from FBX
+
+
+SceneObject: position + mesh
+Renderable: default textures
+	albedo
+	roughness
+	etc.
+<Custom components>: custom control maps and textures
+
+VS
+Material: how to render stuff (abstract class)
+
+
+Mental model of a scene:
+A scene is composed of entities
+
+SceneObject = transform hierarchy
+updates:
+	- when an object is deleted (ID invalidated)
+		- implicit: remove on next iteration
+	- when a sceneObject component is deleted
+		- implicit: remove on next iteration
+
+traversal:
+	- N ID-queries into the Scene
+	- N component query
+
+
+Optimization:
+	ideally, a component query should be as fast as a member access
+	same for ID queries
+
+Use case:
+	- traversal of the transform hierarchy should be easy
+	- obj->findChildByName("...")->getChild(0) ... 
+	- VS scene.get(scene.get(obj->findChildByName("whatever"))->getComponent<SceneObject>()->getChild(0))->getComponent<SceneObject>()
+	- obj->findChildByName("...")->getComponent<SceneObject>(scene)->
+
+
+ResourceID:
+	- isFilesystemResource()	// the path maps to a file on the disk
+	- isInternalResource() // has a path or not
+	- isFilesystemPath()
+	- makeInternalResourceID(name)
+	- getResourcePath()	-> resource or filesystem path
+	- getFilesystemPath()
+	- <comparison operators>
+	resourceID: (<resource path> | <filesystem path>):internalID
+
+ResourcePool v2:
+get<Type>(resID) -> Type*
+- Look for a Loader for Type (ResourceTraits<Type>)
+
+get<Type>(resID, loadFn: resID -> std::unique_ptr<Type>())
+
+
+what's in an ID?
+ models/level1/treasure_chest/treasure_chest:submesh_0
+ 1. A relative filesystem path:
+ 	C:/.../resources/models/level1/treasure_chest/treasure_chest.fbx
+ 2. A relative filesystem directory:
+ 	C:/.../resources/models/level1/treasure_chest/
+ 1.1. An absolute filesystem path
+ 	...
+ 3. An URL
+ 4. A path inside an archive
+ 5. An identifier for an in-memory resource
+
+operations:
+ ID -> filesystem path
+ ID -> binary stream
+ append private identifier
+ append path component
+ get parent path
+ convert to relative path
+
+issue: same ID but different extensions?
+
+ResourceID:
+	- build from path + list of extensions
+	- cached: full filesystem path (if it exists),  
+ 

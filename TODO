@@ -48,6 +48,10 @@ Minimal system:
  ☐ rename drawQuad => drawScreenQuad
  ✔ drawRect: a,b,c,d,uv_a,uv_b,uv_c,uv_d @done (17-02-10 21:22)
  ✔ drawRect @done (17-02-07 22:16)
+ ☐ getParentDirectory(id) is misleading => maybe create a class for resource paths?
+     ResourceID: resource path or full path in filesystem
+ ☐ Suggestion: fuse DeferredSceneRenderer and DeferredSceneRenderer::GBuffers
+ ☐ Profiler
 
 General:
  ✔ Implement cameras @high @minimal_subset @done (16-12-24 14:12)
@@ -92,9 +96,9 @@ Autograph:
  ✔ Scissor state @easy @high @done (17-02-07 22:30)
  ☐ Correctly handle scissor for MRTs
  ☐ Viewport: set all viewports at once
- ☐ Make a header that includes everything @high
+ ✔ Make a header that includes everything @high @done (17-02-18 13:03)
    autograph/gl/All.h
- ☐ The Lua shader system is good => include it in autograph, then release autograph
+ ☐ The Lua shader system is 'good' => include it in autograph, then release autograph
 
 Autograph extensions:
  ☐ Shader cache @low
@@ -115,7 +119,7 @@ Effect/pipeline system:
  ✘ Create screen passes @cancelled (17-01-21 17:00) 
    Use gl::drawQuad
  ☐ Run screen passes @high @minimal_subset
- ☐ Run compute passes
+ ✔ Run compute passes @done (17-02-18 13:04)
  ☐ Geometry shader support @high
  ☐ Tess shader support
  ✔ Run draw passes @done (16-12-18 20:52)
@@ -150,6 +154,18 @@ Scenes:
  ☐ Intrusive lists @low
  ☐ Transform: setScale(float), setPosition
  ☐ SceneObject: shorthand setScale(...), setPosition(...)
+ ☐ Move SceneObject in its own header
+ ☐ Move Renderable in its own header
+     Renderable = default material?
+     Material
+     StandardMaterial : public Material
+ ✘ rename EntityList -> Scene @cancelled (17-02-19 19:21)
+ ☐ Scene: Should not need a root 
+ ✘ Scene.h: Scene, Component<Derived> @cancelled (17-02-19 19:21)
+ ☐ Scene loader: choose what to load 
+     only geometry
+     geometry + textures
+     geometry + custom materials
 
 Editor/painter:
  ✔ Camera control @high @done (17-01-15 12:25)
@@ -259,6 +275,7 @@ Error, first noticed where (intellisense, compile-time, runtime crash, runtime s
  ☐ [runtime silent] uploadFrameData: pointer to pointer to data instead of pointer to data
      Probably a copy-paste error
  ☐ [runtime silent] Incorrect screen to NDC transformation in C++
+ ✔ [runtime silent] Wrong matrix multiplication order when computing model matrix from Transform (fixed) @done (17-02-17 19:00)
 
 Ideas:
  ☐ General: Lua shader robustness
@@ -279,13 +296,14 @@ Ideas:
    Included as a library
  ☐ Ctrl+F12: 'dev tools' 
    ☐ Access to frame inspector, script inspector, texture inspector, shader testbench, etc.
-   ☐ GL object tracker
+   ✔ GL object tracker @done (17-02-19 15:44)
      ✔ Issue: can't store a reference to the wrapper object because it may move in memory @done (17-02-04 14:15)
        Dynamically allocate gl::Texture ? 
        GL objects have pointer-to-implementations?
        ** Just track GLHandles
-   ☐ Shader tracker
+   ✔ Shader tracker @done (17-02-19 15:44)
       Dynamically inspect and modify the state of Shader instances
       Need the shader cache for that (since we can't keep track of all Shader instances)
    ☐ Texture inspector: evaluate expression on pixels 
      Input: GLSL code, compile shader, run a pass, draw the result
+   ☐ Fix the resource pool mess

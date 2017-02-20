@@ -62,12 +62,12 @@ AG_API gl::Texture loadTextureByPath(const char *path,
   return tex;
 }
 
-static const char *allowedImageExtensions[] = {".png", ".jpeg", ".bmp", ".jpg",
-                                               ".tga"};
-
 AG_API gl::Texture loadTexture(const char *id, ImageFormat targetFormat) {
-  return loadTextureByPath(findResourceFile(id, allowedImageExtensions).c_str(),
-                           targetFormat);
+  auto path = findResourceFile(id, allowedImageExtensions);
+  if (!path.empty()) {
+    return loadTextureByPath(path.c_str(), targetFormat);
+  }
+  return gl::Texture{};
 }
 
 AG_API Image loadImage(const char *id, ImageFormat targetFormat) {
@@ -75,7 +75,8 @@ AG_API Image loadImage(const char *id, ImageFormat targetFormat) {
                          targetFormat);
 }
 
-AG_API void saveImageByPath(const char *path, const void *pixelData, int width, int height, ImageFormat format) {
+AG_API void saveImageByPath(const char *path, const void *pixelData, int width,
+                            int height, ImageFormat format) {
   if (format != ImageFormat::R8G8B8A8_SNORM &&
       format != ImageFormat::R8G8B8A8_UNORM &&
       format != ImageFormat::R8G8B8A8_SRGB) {

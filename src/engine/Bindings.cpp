@@ -100,12 +100,12 @@ sol::table openLuaBindings(sol::this_state s) {
 
   module.new_usertype<Mesh3D>("Mesh3D");
 
-  module.new_usertype<SceneObject>(
+  /*module.new_usertype<SceneObject>(
       "SceneObject", "id", sol::property(&SceneObject::id), "mesh",
       &SceneObject::mesh, "localTransform", &SceneObject::localTransform,
       "worldTransform", &SceneObject::worldTransform, "getLocalBoundingBox",
       &SceneObject::getLocalBoundingBox, "getApproximateWorldBoundingBox",
-      &SceneObject::getApproximateWorldBoundingBox);
+      &SceneObject::getApproximateWorldBoundingBox);*/
 
 /*  module.new_usertype<Scene>("Scene", sol::call_constructor,
                              sol::constructors<sol::types<>>{}, "addMesh",

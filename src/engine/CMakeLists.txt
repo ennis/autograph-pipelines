@@ -10,7 +10,7 @@ set(SRC
 	CameraControl.cpp
 	RenderUtils.cpp
 	Scene.cpp
-	SceneUtils.cpp
+	SceneLoader.cpp
 	Mesh.cpp
 	ScriptContext.cpp
 	RenderTarget.cpp

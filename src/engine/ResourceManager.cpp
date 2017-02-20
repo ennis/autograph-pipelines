@@ -27,6 +27,13 @@ std::string ResourceManager::findResourceFileWithPrefixes(
   namespace fs = std::experimental::filesystem;
   std::string ret;
 
+  // first, check if ID is a regular filesystem path
+  fs::path path{ id };
+  if (fs::is_regular_file(path)) {
+	  return id;
+  }
+
+  // ID is not a filesystem path
   auto findWithExts = [&](fs::path &baseDir) {
     for (auto ext : allowedExtensions) {
       auto fullPath = (baseDir / id).replace_extension(ext);

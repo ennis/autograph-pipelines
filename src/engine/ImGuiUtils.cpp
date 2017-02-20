@@ -1,28 +1,27 @@
+#include <ImGuizmo.h>
 #include <autograph/Camera.h>
 #include <autograph/Transform.h>
 #include <autograph/engine/ImGuiUtils.h>
 #include <autograph/engine/Scene.h>
+#include <autograph/engine/SceneLoader.h>
+#include <autograph/support/FileDialog.h>
+#include <autograph/support/ProjectRoot.h>
+#include <glm/gtx/quaternion.hpp>
 #include <imgui.h>
 #include <imgui_internal.h>
-#include <ImGuizmo.h>
-#include <glm/gtx/quaternion.hpp>
 
 namespace ag {
 namespace gui {
-void beginFrame() {
-    ImGuizmo::BeginFrame();
-}
+void beginFrame() { ImGuizmo::BeginFrame(); }
 
-void endFrame() {
-}
+void endFrame() {}
 
-static void editTransform(Transform &tr)
-{
-	vec3 rotEuler = glm::eulerAngles(tr.rotation);
-	ImGui::InputFloat3("Tr", &tr.position[0]);
-	ImGui::InputFloat3("Rt", &rotEuler[0]);
-	ImGui::InputFloat3("Sc", &tr.scaling[0]);
-	tr.rotation = quat{ rotEuler };
+static void editTransform(Transform &tr) {
+  vec3 rotEuler = glm::eulerAngles(tr.rotation);
+  ImGui::InputFloat3("Tr", &tr.position[0]);
+  ImGui::InputFloat3("Rt", &rotEuler[0]);
+  ImGui::InputFloat3("Sc", &tr.scaling[0]);
+  tr.rotation = quat{rotEuler};
 }
 
 static void transformGizmo(const Camera &camera, Transform &tr) {
@@ -75,21 +74,17 @@ static void transformGizmo(const Camera &camera, Transform &tr) {
     break;
   }*/
 
-  auto oldpos = tr.position;
-
   ImGuizmo::Manipulate(&camera.viewMat[0][0], &camera.projMat[0][0],
                        currentGizmoOperation, currentGizmoMode, &matrix[0][0],
                        nullptr, useSnap ? &snap[0] : nullptr);
-
   // convert matrix back to transform components
   tr = Transform::fromMatrix(matrix);
 }
 
-static void sceneObjectGui(EntityList &scene, SceneObject *sceneObj) {
-	Entity* ent = scene.get(sceneObj->id);
-	ImGui::PushID(sceneObj->id);
-  if (ImGui::TreeNode(ent->getName().c_str())) {
-	  editTransform(sceneObj->localTransform);
+static void sceneObjectGui(Scene &scene, SceneObject *sceneObj) {
+  ImGui::PushID(sceneObj);
+  if (ImGui::TreeNode(sceneObj->name.c_str())) {
+    editTransform(sceneObj->localTransform);
     for (auto c : sceneObj->children) {
       sceneObjectGui(scene, c);
     }
@@ -98,15 +93,23 @@ static void sceneObjectGui(EntityList &scene, SceneObject *sceneObj) {
   ImGui::PopID();
 }
 
-void sceneEditor(const Camera &cam, EntityList &scene, ID rootEntityID) {
+void sceneEditor(const Camera &cam, EntityManager& entityManager, Scene &scene, RenderableScene& renderableScene, ResourcePool& resourcePool, ID rootEntityID) {
   ImGui::Begin("Scene editor");
-  Entity *rootEntity = scene.get(rootEntityID);
-  SceneObject *rootSceneObject = rootEntity->getComponent<SceneObject>();
+
+  if (ImGui::Button("Load scene...")) {
+	auto res = openFileDialog("", getProjectRootDirectory().c_str());
+	if (res) {
+		//ID ent = loadScene(res->c_str(), entityManager, scene, renderableScene, resourcePool);
+	}
+  }
+
+  SceneObject *rootSceneObject = scene.get(rootEntityID);
   editTransform(rootSceneObject->localTransform);
   transformGizmo(cam, rootSceneObject->localTransform);
   sceneObjectGui(scene, rootSceneObject);
   ImGui::End();
 }
+
 
 }
 }

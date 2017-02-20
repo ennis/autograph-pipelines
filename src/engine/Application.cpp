@@ -34,7 +34,7 @@ AG_API std::string getParentDirectory(const char *id)
   if (pos == std::string::npos) {
       return "";
   }
-  return idstr.substr(0, pos);
+  return idstr.substr(0, pos+1);
 }
 
 AG_API std::string findResourceFile(const char *id,
