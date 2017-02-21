@@ -22,7 +22,7 @@ void RenderUtils::reloadShaders() {
   drawMeshShader = Shader{"shaders/default:drawMeshDefault"};
   drawWireMeshShader = Shader{"shaders/default:drawWireMesh"};
   drawWireMeshNoDepthShader = Shader{"shaders/default:drawWireMeshNoDepth"};
-  drawWireMesh2DColorShader = Shader{ "shaders/default:drawWireMesh2DColor" };
+  drawWireMesh2DColorShader = Shader{"shaders/default:drawWireMesh2DColor"};
 }
 
 // Draw mesh with default view-dependent shading
@@ -109,8 +109,8 @@ void RenderUtils::drawGrid2D(gl::Framebuffer &target,
                              vec2 center,  // screen coords
                              vec2 spacing, // screen coords
                              int primaryLinesEveryN, vec4 axisColorX,
-                             vec4 axisColorY, 
-							vec4 primaryLinesColor, vec4 secondaryLinesColor) {
+                             vec4 axisColorY, vec4 primaryLinesColor,
+                             vec4 secondaryLinesColor) {
   struct Vertex2DColor {
     vec2 pos;
     uint32_t color;
@@ -140,7 +140,7 @@ void RenderUtils::drawGrid2D(gl::Framebuffer &target,
   for (int i = 0; i < numVLines; ++i) {
     int idx = 2 * i;
     bool primary = ((firstVLine + i) % primaryLinesEveryN == 0);
-	float x = i * spacing.x + xoff;
+    float x = i * spacing.x + xoff;
     lines[idx].pos = ndc(x, 0);
     lines[idx].color = primary ? primaryColorPacked : secondaryColorPacked;
     lines[idx + 1].pos = ndc(x, h);
@@ -149,8 +149,8 @@ void RenderUtils::drawGrid2D(gl::Framebuffer &target,
 
   for (int i = 0; i < numHLines; ++i) {
     int idx = 2 * (numVLines + i);
-    bool primary = ((firstHLine+i) % primaryLinesEveryN == 0);
-	float y = i * spacing.y + yoff;
+    bool primary = ((firstHLine + i) % primaryLinesEveryN == 0);
+    float y = i * spacing.y + yoff;
     lines[idx].pos = ndc(0, y);
     lines[idx].color = primary ? primaryColorPacked : secondaryColorPacked;
     lines[idx + 1].pos = ndc(w, y);
@@ -170,8 +170,9 @@ void RenderUtils::drawGrid2D(gl::Framebuffer &target,
   lines[idx + 3].color = axisColorYPacked;
 
   auto vbuf = gl::uploadFrameArray(lines.data(), lines.size());
-  draw(target, gl::drawArrays(GL_LINES, 0, numVertices), drawWireMesh2DColorShader,
-	  gl::bind::vertexBuffer(0, vbuf, sizeof(Vertex2DColor)));
+  draw(target, gl::drawArrays(GL_LINES, 0, numVertices),
+       drawWireMesh2DColorShader,
+       gl::bind::vertexBuffer(0, vbuf, sizeof(Vertex2DColor)));
 }
 
 AG_API RenderUtils &getRenderUtils() {

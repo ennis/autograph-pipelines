@@ -30,8 +30,7 @@ uint8_t linearToSRGBComponent(float cl) {
 
 u8vec4 linearToSRGB(vec4 color) {
   uint8_t a = (uint8_t)(255.0f * color.a);
-  return u8vec4{linearToSRGBComponent(color.r), 
-				linearToSRGBComponent(color.g),
+  return u8vec4{linearToSRGBComponent(color.r), linearToSRGBComponent(color.g),
                 linearToSRGBComponent(color.b), a};
 }
 }

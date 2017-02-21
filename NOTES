@@ -2084,6 +2084,7 @@ Use case:
 	- VS scene.get(scene.get(obj->findChildByName("whatever"))->getComponent<SceneObject>()->getChild(0))->getComponent<SceneObject>()
 	- obj->findChildByName("...")->getComponent<SceneObject>(scene)->
 
+_______________________________________________
 
 ResourceID:
 	- isFilesystemResource()	// the path maps to a file on the disk
@@ -2127,9 +2128,67 @@ issue: same ID but different extensions?
 ResourceID:
 	- build from path + list of extensions
 	- cached: full filesystem path (if it exists),  
+
+
  
+_______________________________________________
+
 Profiler API:
 
 Profiler::beginFrame(): start a new profile
 Profiler::endFrame(): end collection, save profile
 Profiler::getData(): return profile data saved after calling endFrame()
+
+
+
+_______________________________________________
+
+API cleanup / simplification
+
+- Lower the number of required headers
+	<autograph/Math.h>
+		+ Math stuff (AABB, Camera, Types, Math utils, glm)
+		+ Independant of any library
+		+ Should not be called core (common? shared? math?)
+	<autograph/Graphics.h>
+		+ Low-level graphics stuff
+	<autograph/Engine.h>
+		+ Application stuff: 
+			+ input
+			+ windows
+			+ main loop
+			+ frames
+		+ High-level systems 
+			- Scenes
+			- GUI utils
+			- Debug overlay
+			- CVars
+			- Lua Shaders
+			- Resource management
+			- Window management
+	<autograph/Support.h>
+	<autograph/support/*.h>
+		+ On-demand support classes (debug, etc.)
+
+- normalize naming conventions
+	+ Math:
+		-> namespace ag
+	+ Graphics:
+		-> namespace ag::graphics? (instead of ag::gl)
+		-> no namespace?
+	+ Engine:
+		-> one namespace per global module
+			ag::Profiler
+			ag::GuiUtils
+			ag::Application
+			ag::RenderUtils
+		-> rule of thumb: 
+			namespace = for global modules
+		-> otherwise
+			namespace ag
+		-> prefer global functions instead of singletons?
+
+- API robustness:
+	+ avoid exposing containers (e.g. reference to vector)
+		prefer Count/Index function pairs 
+

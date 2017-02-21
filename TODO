@@ -57,6 +57,9 @@ Minimal system:
  ☐ Unify profiler and GPU capture 
  ☐ Multi-window
    ☐ Move main loop into application (Application::mainLoop()) 
+ ☐ Issue: engine profiler needs GPU profiler, which should be in the GL (graphics) module
+   ☐ Resolution: timers only in GL module
+ ☐ Move arcball to core-math module
 
 General:
  ✔ Implement cameras @high @minimal_subset @done (16-12-24 14:12)
@@ -312,3 +315,5 @@ Ideas:
    ☐ Texture inspector: evaluate expression on pixels 
      Input: GLSL code, compile shader, run a pass, draw the result
    ☐ Fix the resource pool mess
+   ☐ Global tuning variables (CVars)
+     ☐ CVar<float>(name, init);
