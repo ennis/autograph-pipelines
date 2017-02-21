@@ -7,6 +7,9 @@
 namespace ag {
 namespace Profiler {
 
+// Start (absolute)
+// Start (relative to beginning of frame)
+// 
 struct Scope {
   auto duration() const {
     std::chrono::duration<double> s = end - start;

@@ -11,6 +11,7 @@
 #include <autograph/support/ProjectRoot.h>
 #include <imgui.h>
 #include <imgui_internal.h>
+#include <cinttypes>
 
 namespace ag {
 

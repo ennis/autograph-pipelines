@@ -41,7 +41,7 @@ int main(int argc, char *argv[]) {
 
   ////////////////////////////////////////////////////
   // Scene
-  ID rootEntity = loadScene("mesh/sponza/sponza", entityManager, scene,
+  ID rootEntity = loadScene("mesh/youmu/youmu", entityManager, scene,
                             renderableScene, lightScene, pool);
   SceneObject *rootSceneObj = scene.get(rootEntity);
   if (rootSceneObj) {

@@ -66,6 +66,33 @@ void event(const char *id) {
 
 const ProfilingData *getProfilingData() { return &data; }
 
+static void profileGraph(const Scope* scope)
+{
+	float minTime = 0.0f;	// in seconds
+	float maxTime = 1.0f;
+	float h = ImGui::GetItemsLineHeightWithSpacing();
+	float w = ImGui::GetContentRegionAvailWidth();
+	auto p = ImGui::GetCursorScreenPos();
+
+	auto getTimelineX = [&](float reltime) {
+		return (reltime - minTime) / (maxTime - minTime) * w;
+	};
+
+	auto drawList = ImGui::GetWindowDrawList();
+
+	while (scope)
+	{
+		float startpos = getTimelineX(0.3f);	// TODO
+		float endpos = getTimelineX(0.6f);
+		drawList->AddRectFilled(ImVec2{ p.x+startpos, p.y }, ImVec2{ p.x+ endpos, p.y+h }, ImGui::GetColorU32(ImGuiCol_Button));
+		drawList->AddText(ImVec2{ p.x + startpos, p.y }, ImGui::GetColorU32(ImGuiCol_Text), scope->name.c_str());
+		if (scope->firstChild)
+			profileGraph(scope->firstChild);
+		scope = scope->next;
+	}
+	ImGui::Dummy(ImVec2{ w,h });
+}
+
 static void scopeGui(const Scope *scope) {
   if (scope) {
     bool opened = false;
@@ -94,13 +121,15 @@ static void scopeGui(const Scope *scope) {
 }
 
 void showGui() {
-    ImGui::ShowTestWindow();
+  ImGui::ShowTestWindow();
   bool opened = true;
   ImGui::Begin("Profiler", &opened, ImGuiWindowFlags_MenuBar);
   ImGui::BeginMenuBar();
   if (ImGui::Button("Capture current frame")) {
     // TODO
   }
+  //auto windowWidth = ImGui::GetWindowContentRegionWidth();
+  //auto availHeight = ImGui::GetContentRegionAvail().y;
   ImGui::EndMenuBar();
   ImGui::Columns(3);
   ImGui::Text("Scope");
@@ -112,6 +141,7 @@ void showGui() {
   ImGui::Separator();
   scopeGui(data.rootScope);
   ImGui::Columns(1);
+  profileGraph(data.rootScope);
   ImGui::End();
 }
 }
