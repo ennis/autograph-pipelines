@@ -69,7 +69,7 @@ int main(int argc, char *argv[]) {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
     auto &renderUtils = getRenderUtils();
     {
-      AG_PROFILE_SCOPE("Draw grid")
+      AG_GPU_PROFILE_SCOPE("Draw grid")
       renderUtils.drawGrid2D(gl::getDefaultFramebuffer(), screenSize / 2.0f,
                              vec2{25.0f}, 10);
     }
@@ -83,14 +83,18 @@ int main(int argc, char *argv[]) {
     }
 
     {
-      AG_PROFILE_SCOPE("Rendering")
+      AG_GPU_PROFILE_SCOPE("Rendering/Canvas")
       canvasRenderer.renderCanvas(scene, canvas);
+    }
+
+    {
+      AG_GPU_PROFILE_SCOPE("Rendering/Deferred")
       deferredSceneRenderer.renderScene(deferredGBuffers, scene,
                                         renderableScene, cam);
     }
 
     {
-      AG_PROFILE_SCOPE("Rendering - debug")
+      AG_GPU_PROFILE_SCOPE("Rendering/Debug")
       for (auto &idSceneObj : scene.getObjects()) {
         auto &sceneObj = idSceneObj.second;
         if (sceneObj.mesh) {

@@ -488,15 +488,46 @@ static void GLTextureGUI(GLuint textureObj) {
 
 static void GLObjectListGUI() {
   ImGui::Begin("GL objects");
+  static int selected = -1;
   auto objCount = gl::getGLObjectCount();
+  if (selected >= objCount)
+      selected = objCount-1;
+
+  //////////////////////////////////////////
+  ImGui::BeginChild("Object list",
+                    ImVec2(ImGui::GetWindowContentRegionWidth() * 0.5f, ImGui::GetContentRegionAvail().y),
+                    true, ImGuiWindowFlags_HorizontalScrollbar);
+  ImGui::Columns(3);
+  ImGui::Text("Object ID"); ImGui::NextColumn();
+  ImGui::Text("Type"); ImGui::NextColumn();
+  ImGui::Text("Frame created"); ImGui::NextColumn();
+  ImGui::Separator();
   for (int i = 0; i < objCount; ++i) {
     ImGui::PushID(i);
     auto obj = gl::getGLObjectData(i);
-    ImGui::Text("GL object (%i):%i [frame %i]", obj->type, obj->obj,
-                obj->creationFrame);
-    if (obj->type == GL_TEXTURE)
-      GLTextureGUI(obj->obj);
+    auto objStr = fmt::format("({}):{}", obj->type, obj->obj);
+    bool isSelected = selected == i;
+    if (ImGui::Selectable(objStr.c_str(), &isSelected, ImGuiSelectableFlags_SpanAllColumns)) {
+        selected = i;
+    }
+    ImGui::NextColumn();
+    ImGui::Text("%s", gl::getGLObjectTypeName(obj->type));
+    ImGui::NextColumn();
+    ImGui::Text("%" PRIi64, obj->creationFrame);
+    ImGui::NextColumn();
     ImGui::PopID();
+  }
+  ImGui::EndChild();
+
+  //////////////////////////////////////////
+  if (selected != -1)
+  {
+      ImGui::SameLine();
+      ImGui::BeginChild("Object GUI", ImVec2(0, 300), false);
+      auto obj = gl::getGLObjectData(selected);
+      if (obj->type == GL_TEXTURE)
+        GLTextureGUI(obj->obj);
+      ImGui::EndChild();
   }
 
   ImGui::End();

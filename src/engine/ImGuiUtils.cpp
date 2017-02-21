@@ -81,35 +81,76 @@ static void transformGizmo(const Camera &camera, Transform &tr) {
   tr = Transform::fromMatrix(matrix);
 }
 
-static void sceneObjectGui(Scene &scene, SceneObject *sceneObj) {
-  ImGui::PushID(sceneObj);
-  if (ImGui::TreeNode(sceneObj->name.c_str())) {
-    editTransform(sceneObj->localTransform);
-    for (auto c : sceneObj->children) {
-      sceneObjectGui(scene, c);
+static void sceneObjectHierarchyGui(Scene &scene, SceneObject &sceneObj,
+                                    ID &selectedID) {
+  const char *node_name = "<no name>";
+  if (!sceneObj.name.empty())
+    node_name = sceneObj.name.c_str();
+  ImGui::PushID(&sceneObj);
+  ImGuiTreeNodeFlags node_flags =
+      ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_OpenOnDoubleClick;
+  if (sceneObj.entityID == selectedID)
+    node_flags |= ImGuiTreeNodeFlags_Selected;
+  bool opened = false;
+  if (sceneObj.children.empty()) {
+    ImGui::TreeNodeEx(&sceneObj, node_flags | ImGuiTreeNodeFlags_Leaf |
+                                     ImGuiTreeNodeFlags_NoTreePushOnOpen,
+                      "%s", node_name);
+    if (ImGui::IsItemClicked())
+      selectedID = sceneObj.entityID;
+  } else {
+    opened =
+        ImGui::TreeNodeEx(&sceneObj, node_flags, "%s", node_name);
+    if (ImGui::IsItemClicked())
+      selectedID = sceneObj.entityID;
+  }
+  if (opened) {
+    for (auto c : sceneObj.children) {
+      sceneObjectHierarchyGui(scene, *c, selectedID);
     }
     ImGui::TreePop();
   }
   ImGui::PopID();
 }
 
-void sceneEditor(const Camera &cam, EntityManager& entityManager, Scene &scene, RenderableScene& renderableScene, ResourcePool& resourcePool, ID rootEntityID) {
-  ImGui::Begin("Scene editor");
+void sceneEditor(const Camera &cam, EntityManager &entityManager, Scene &scene,
+                 RenderableScene &renderableScene, ResourcePool &resourcePool,
+                 ID rootEntityID) {
 
+  bool opened = true;
+  ImGui::Begin("Scene", &opened, ImGuiWindowFlags_MenuBar);
+
+  ImGui::BeginMenuBar();
   if (ImGui::Button("Load scene...")) {
-	auto res = openFileDialog("", getProjectRootDirectory().c_str());
-	if (res) {
-		//ID ent = loadScene(res->c_str(), entityManager, scene, renderableScene, resourcePool);
-	}
+    auto res = openFileDialog("", getProjectRootDirectory().c_str());
+    if (res) {
+      // ID ent = loadScene(res->c_str(), entityManager, scene, renderableScene,
+      // resourcePool);
+    }
   }
+  ImGui::EndMenuBar();
 
   SceneObject *rootSceneObject = scene.get(rootEntityID);
-  editTransform(rootSceneObject->localTransform);
-  transformGizmo(cam, rootSceneObject->localTransform);
-  sceneObjectGui(scene, rootSceneObject);
+  static ID selectedID = 0;
+
+  ImGui::BeginChild("Hierarchy",
+                    ImVec2(ImGui::GetWindowContentRegionWidth() * 0.5f, ImGui::GetContentRegionAvail().y),
+                    true, ImGuiWindowFlags_HorizontalScrollbar);
+  sceneObjectHierarchyGui(scene, *rootSceneObject, selectedID);
+  ImGui::EndChild();
+
+  SceneObject *selected = scene.get(selectedID);
+  if (selected) {
+    ImGui::SameLine();
+    ImGui::BeginChild("Components", ImVec2(0, 300), false);
+    if (ImGui::CollapsingHeader("Transform")) {
+      editTransform(selected->localTransform);
+    }
+    transformGizmo(cam, selected->localTransform);
+    ImGui::EndChild();
+  }
+
   ImGui::End();
 }
-
-
 }
 }

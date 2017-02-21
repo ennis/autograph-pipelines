@@ -18,6 +18,7 @@ void trackGLObject(GLuint obj, GLenum type);
 void releaseGLObject(GLuint obj, GLenum type);
 int getGLObjectCount();
 const GLObjectTrackingData *getGLObjectData(int index);
+const char *getGLObjectTypeName(GLenum type);
 
 // Wrapper to use GLuint as a unique_ptr handle type
 // http://stackoverflow.com/questions/6265288/unique-ptr-custom-storage-type-example/6272139#6272139

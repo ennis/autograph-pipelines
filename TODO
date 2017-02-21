@@ -93,6 +93,7 @@ Autograph:
  ✔ Binders @done (16-12-18 20:52)
  ✔ Named uniforms @done (17-01-21 17:00)
  ☐ Implementation limits
+ ☐ Query objects
  ✔ Draw call @done (16-12-18 20:52)
  ✔ Compute call @high @done (17-02-10 21:32)
    autograph/gl/Compute.h
@@ -162,8 +163,8 @@ Scenes:
  ☐ Intrusive lists @low
  ☐ Transform: setScale(float), setPosition
  ☐ SceneObject: shorthand setScale(...), setPosition(...)
- ☐ Move SceneObject in its own header
- ☐ Move Renderable in its own header
+ ✔ Move SceneObject in its own header @done (17-02-21 14:21)
+ ✔ Move Renderable in its own header @done (17-02-21 14:21)
      Renderable = default material?
      Material
      StandardMaterial : public Material

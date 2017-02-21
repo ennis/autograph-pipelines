@@ -39,7 +39,7 @@ const char *getGLObjectTypeName(GLenum type) {
 static std::vector<GLObjectTrackingData> GLObjects;
 
 void trackGLObject(GLuint obj, GLenum type) {
-  AG_DEBUG("Tracking GL object {}:{}", getGLObjectTypeName(type), obj);
+  //AG_DEBUG("Tracking GL object {}:{}", getGLObjectTypeName(type), obj);
   GLObjectTrackingData data;
   data.type = type;
   data.obj = obj;

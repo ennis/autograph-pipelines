@@ -15,7 +15,7 @@ static ProfilingData data;
 void beginFrame() {
   isProfiling = true;
   curProfile.clear();
-  enterScope("<root>");
+  enterScope("<root>", true);
 }
 
 void endFrame() {
@@ -28,13 +28,18 @@ void endFrame() {
   data.rootScope = prevScope;
 }
 
-void enterScope(const char *scopeName) {
+void enterScope(const char *scopeName, bool gpu) {
   if (!isProfiling)
     return;
   auto scope = std::make_unique<Scope>();
   scope->start = std::chrono::high_resolution_clock::now();
   scope->name = scopeName;
   scope->parent = curScope;
+  if (gpu) {
+    scope->gpuProfile = true;
+    glGetInteger64v(GL_TIMESTAMP, &scope->gpuClientTimestampStart);
+    scope->gpuTimestampStartQuery.asyncTimestamp();
+  }
   if (curScope && !curScope->firstChild)
     curScope->firstChild = scope.get();
   else if (prevScope)
@@ -47,8 +52,10 @@ void exitScope() {
   if (!isProfiling)
     return;
   curScope->end = std::chrono::high_resolution_clock::now();
+  if (curScope->gpuProfile)
+    curScope->gpuTimestampEndQuery.asyncTimestamp();
   prevScope = curScope;
-  curScope = const_cast<Scope*>(curScope->parent);
+  curScope = const_cast<Scope *>(curScope->parent);
 }
 
 void event(const char *id) {
@@ -61,8 +68,21 @@ const ProfilingData *getProfilingData() { return &data; }
 
 static void scopeGui(const Scope *scope) {
   if (scope) {
-    if (ImGui::TreeNode(scope->name.c_str())) {
-      ImGui::Text("Duration %f", scope->duration());
+    bool opened = false;
+    if (scope->firstChild)
+     opened = ImGui::TreeNode(scope->name.c_str());
+    else
+     ImGui::BulletText("%s", scope->name.c_str());
+    // CPU time
+    ImGui::NextColumn();
+    ImGui::Text("%f", scope->duration());
+    ImGui::NextColumn();
+    // GPU time
+    if (scope->gpuProfile)
+      ImGui::Text("%f", scope->durationGpu());
+    ImGui::NextColumn();
+
+    if (opened) {
       auto child = scope->firstChild;
       while (child) {
         scopeGui(child);
@@ -74,8 +94,24 @@ static void scopeGui(const Scope *scope) {
 }
 
 void showGui() {
-  ImGui::Begin("Profiler");
+    ImGui::ShowTestWindow();
+  bool opened = true;
+  ImGui::Begin("Profiler", &opened, ImGuiWindowFlags_MenuBar);
+  ImGui::BeginMenuBar();
+  if (ImGui::Button("Capture current frame")) {
+    // TODO
+  }
+  ImGui::EndMenuBar();
+  ImGui::Columns(3);
+  ImGui::Text("Scope");
+  ImGui::NextColumn();
+  ImGui::Text("CPU time");
+  ImGui::NextColumn();
+  ImGui::Text("GPU time");
+  ImGui::NextColumn();
+  ImGui::Separator();
   scopeGui(data.rootScope);
+  ImGui::Columns(1);
   ImGui::End();
 }
 }

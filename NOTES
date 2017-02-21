@@ -2139,6 +2139,9 @@ Profiler::beginFrame(): start a new profile
 Profiler::endFrame(): end collection, save profile
 Profiler::getData(): return profile data saved after calling endFrame()
 
+GPU profiling:
+Insert timestamp query in command stream
+Next frame: wait for data available
 
 
 _______________________________________________
@@ -2191,4 +2194,15 @@ API cleanup / simplification
 - API robustness:
 	+ avoid exposing containers (e.g. reference to vector)
 		prefer Count/Index function pairs 
+
+
+_______________________________________________
+
+Long-term low-level rendering API:
+
+Common API for Vulkan/OpenGL
+
+- CommandContext
+- ???
+- Profit
 
