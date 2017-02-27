@@ -1,5 +1,6 @@
 #pragma once
 #include <autograph/engine/EntityManager.h>
+#include <autograph/gl/Texture.h>
 
 namespace ag {
 

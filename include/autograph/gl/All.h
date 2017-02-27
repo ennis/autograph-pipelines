@@ -8,6 +8,7 @@
 #include "Fence.h"
 #include "Framebuffer.h"
 #include "Program.h"
+#include "Query.h"
 #include "Sampler.h"
 #include "ShaderStage.h"
 #include "StateGroup.h"

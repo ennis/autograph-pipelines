@@ -11,45 +11,35 @@ struct Image {
   std::unique_ptr<uint8_t[]> data;
 };
 
-static const char *allowedImageExtensions[] = { ".png", ".jpeg", ".bmp", ".jpg",
-".tga" };
+//
+// Save a texture
+// AG_API void saveImageByPath(const char *path, const Image& img);
+
+// Note: ideally, should take two formats:
+// - one for the format of the input pixel data
+// - one for the storage format
+AG_API void saveImageByPath(const char *path, const void *pixelData, int width,
+                            int height, ImageFormat format);
 
 //
 // Loads an image resource in main memory
 // Will fail if the target format doesn't have
 //		-  8-bit unorm/snorm/int/srgb components
 //		OR 32-bit float components
-AG_API Image loadImageByPath(
-    const char *path, ImageFormat targetFormat = ImageFormat::R8G8B8A8_SRGB);
+AG_API Image loadImage(const char *id,
+                       ImageFormat targetFormat = ImageFormat::R8G8B8A8_SRGB);
 
 //
 // Loads a texture
 AG_API gl::Texture
-loadTextureByPath(const char *path,
-                  ImageFormat targetFormat = ImageFormat::R8G8B8A8_SRGB);
-
-
-//
-// Save a texture
-//AG_API void saveImageByPath(const char *path, const Image& img);
-
-// Note: ideally, should take two formats:
-// - one for the format of the input pixel data
-// - one for the storage format
-AG_API void saveImageByPath(const char *path, const void* pixelData, int width, int height, ImageFormat format);
-
-// Helpers
-AG_API gl::Texture
 loadTexture(const char *id,
             ImageFormat targetFormat = ImageFormat::R8G8B8A8_SRGB);
-AG_API Image loadImage(const char *id,
-                       ImageFormat targetFormat = ImageFormat::R8G8B8A8_SRGB);
 
 ///////////////////////////////////////////////////
 struct TextureResource : public Resource {
   virtual ~TextureResource() {}
 
-    virtual void* getPtr() override { return &tex;}
+  virtual void *getPtr() override { return &tex; }
 
   gl::Texture tex;
 };

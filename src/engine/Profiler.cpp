@@ -6,15 +6,17 @@
 namespace ag {
 namespace Profiler {
 static bool isProfiling = false;
-static Scope *prevScope = nullptr;
-static Scope *curScope = nullptr;
-static std::vector<std::unique_ptr<Scope>> prevProfile;
-static std::vector<std::unique_ptr<Scope>> curProfile;
-static ProfilingData data;
+static int prevScope = -1;
+static int curScope = -1;
+static std::vector<Scope> scopes;
+static ProfileData lastData;
+static ProfileData frozenData;
 
 void beginFrame() {
   isProfiling = true;
-  curProfile.clear();
+  scopes.clear();
+  prevScope = -1;
+  curScope = -1;
   enterScope("<root>", true);
 }
 
@@ -23,39 +25,42 @@ void endFrame() {
     return;
   exitScope();
   isProfiling = false;
-  prevProfile = std::move(curProfile);
-  data.frameId = 0;
-  data.rootScope = prevScope;
+  lastData.frameId = 0;
+  lastData.frameStartTime = scopes[0].start;
+  lastData.frameEndTime = std::chrono::high_resolution_clock::now();
+  lastData.scopes_ = std::move(scopes);
 }
 
 void enterScope(const char *scopeName, bool gpu) {
   if (!isProfiling)
     return;
-  auto scope = std::make_unique<Scope>();
-  scope->start = std::chrono::high_resolution_clock::now();
-  scope->name = scopeName;
-  scope->parent = curScope;
+  Scope s;
+  int si = (int)scopes.size();
+  s.start = std::chrono::high_resolution_clock::now();
+  s.name = scopeName;
+  s.parent = curScope;
   if (gpu) {
-    scope->gpuProfile = true;
-    glGetInteger64v(GL_TIMESTAMP, &scope->gpuClientTimestampStart);
-    scope->gpuTimestampStartQuery.asyncTimestamp();
+    s.gpuProfile = true;
+    glGetInteger64v(GL_TIMESTAMP, &s.gpuClientTimestampRef);
+    s.gpuTimestampStartQuery.asyncTimestamp();
   }
-  if (curScope && !curScope->firstChild)
-    curScope->firstChild = scope.get();
-  else if (prevScope)
-    prevScope->next = scope.get();
-  curScope = scope.get();
-  curProfile.push_back(std::move(scope));
+  if (curScope != -1 && scopes[curScope].firstChild == -1)
+	  scopes[curScope].firstChild = si;
+  else if (prevScope != -1)
+	  scopes[prevScope].next = si;
+  curScope = si;
+  scopes.push_back(std::move(s));
 }
 
 void exitScope() {
   if (!isProfiling)
     return;
-  curScope->end = std::chrono::high_resolution_clock::now();
-  if (curScope->gpuProfile)
-    curScope->gpuTimestampEndQuery.asyncTimestamp();
+  auto& cs = scopes[curScope];
+  cs.end = std::chrono::high_resolution_clock::now();
+  if (cs.gpuProfile)
+	  cs.gpuTimestampEndQuery.asyncTimestamp();
   prevScope = curScope;
-  curScope = const_cast<Scope *>(curScope->parent);
+  curScope = cs.parent;
 }
 
 void event(const char *id) {
@@ -64,56 +69,70 @@ void event(const char *id) {
   // TODO
 }
 
-const ProfilingData *getProfilingData() { return &data; }
+const ProfileData *getProfilingData() { return &lastData; }
 
-static void profileGraph(const Scope* scope)
-{
-	float minTime = 0.0f;	// in seconds
-	float maxTime = 1.0f;
-	float h = ImGui::GetItemsLineHeightWithSpacing();
-	float w = ImGui::GetContentRegionAvailWidth();
-	auto p = ImGui::GetCursorScreenPos();
 
-	auto getTimelineX = [&](float reltime) {
-		return (reltime - minTime) / (maxTime - minTime) * w;
-	};
+static void profileGraphGui(const ProfileData &pfData, const Scope *scope) {
+  float h = ImGui::GetItemsLineHeightWithSpacing();
+  float w = ImGui::GetContentRegionAvailWidth();
+  auto p = ImGui::GetCursorScreenPos();
 
-	auto drawList = ImGui::GetWindowDrawList();
+  auto getTimelineX = [&](TimePoint time) {
+    return (std::chrono::duration<float>{time - pfData.frameStartTime} /
+            std::chrono::duration<float>{pfData.frameEndTime -
+                                         pfData.frameStartTime}) *
+           w;
+  };
 
-	while (scope)
-	{
-		float startpos = getTimelineX(0.3f);	// TODO
-		float endpos = getTimelineX(0.6f);
-		drawList->AddRectFilled(ImVec2{ p.x+startpos, p.y }, ImVec2{ p.x+ endpos, p.y+h }, ImGui::GetColorU32(ImGuiCol_Button));
-		drawList->AddText(ImVec2{ p.x + startpos, p.y }, ImGui::GetColorU32(ImGuiCol_Text), scope->name.c_str());
-		if (scope->firstChild)
-			profileGraph(scope->firstChild);
-		scope = scope->next;
+  auto drawList = ImGui::GetWindowDrawList();
+
+  while (scope) {
+    float startpos = getTimelineX(scope->start);
+    float endpos = getTimelineX(scope->end);
+    ImVec2 rmin = ImVec2{p.x + startpos, p.y};
+    ImVec2 rmax = ImVec2{p.x + endpos, p.y + h};
+    drawList->AddRectFilled(rmin, rmax, ImGui::GetColorU32(ImGuiCol_Button));
+    drawList->PushClipRect(rmin, rmax);
+    drawList->AddText(rmin, ImGui::GetColorU32(ImGuiCol_Text),
+                      scope->name.c_str());
+	drawList->PopClipRect();
+	ImGui::SetCursorScreenPos(rmin);
+	ImGui::Dummy(ImVec2{ endpos-startpos, h });
+	if (ImGui::IsItemHovered()) {
+		ImGui::BeginTooltip();
+		ImGui::Text("%s", scope->name.c_str());
+		ImGui::EndTooltip();
 	}
-	ImGui::Dummy(ImVec2{ w,h });
+    if (scope->firstChild)
+      profileGraphGui(pfData, pfData.firstChild(scope));
+    scope = pfData.next(scope);
+  }
 }
 
-static void scopeGui(const Scope *scope) {
+static void scopeGui(const ProfileData &pfData, const Scope *scope) {
   if (scope) {
     bool opened = false;
-    if (scope->firstChild)
-     opened = ImGui::TreeNode(scope->name.c_str());
+    if (scope->firstChild != -1)
+      opened = ImGui::TreeNode(scope->name.c_str());
     else
-     ImGui::BulletText("%s", scope->name.c_str());
+      ImGui::BulletText("%s", scope->name.c_str());
     // CPU time
     ImGui::NextColumn();
-    ImGui::Text("%f", scope->duration());
+    std::chrono::duration<double> cpu_fp_s = scope->duration();
+    ImGui::Text("%f", cpu_fp_s);
     ImGui::NextColumn();
     // GPU time
-    if (scope->gpuProfile)
-      ImGui::Text("%f", scope->durationGpu());
+    if (scope->gpuProfile) {
+      std::chrono::duration<double> gpu_fp_s = scope->durationGpu();
+      ImGui::Text("%f", gpu_fp_s);
+    }
     ImGui::NextColumn();
 
     if (opened) {
-      auto child = scope->firstChild;
+		auto child = pfData.firstChild(scope);
       while (child) {
-        scopeGui(child);
-        child = child->next;
+        scopeGui(pfData, child);
+		child = pfData.next(child);
       }
       ImGui::TreePop();
     }
@@ -121,15 +140,15 @@ static void scopeGui(const Scope *scope) {
 }
 
 void showGui() {
-  ImGui::ShowTestWindow();
   bool opened = true;
+  static bool freezeFrame;
   ImGui::Begin("Profiler", &opened, ImGuiWindowFlags_MenuBar);
   ImGui::BeginMenuBar();
-  if (ImGui::Button("Capture current frame")) {
-    // TODO
+  if (ImGui::Button("Freeze current frame")) {
+
   }
-  //auto windowWidth = ImGui::GetWindowContentRegionWidth();
-  //auto availHeight = ImGui::GetContentRegionAvail().y;
+  // auto windowWidth = ImGui::GetWindowContentRegionWidth();
+  // auto availHeight = ImGui::GetContentRegionAvail().y;
   ImGui::EndMenuBar();
   ImGui::Columns(3);
   ImGui::Text("Scope");
@@ -139,9 +158,11 @@ void showGui() {
   ImGui::Text("GPU time");
   ImGui::NextColumn();
   ImGui::Separator();
-  scopeGui(data.rootScope);
+  scopeGui(lastData, lastData.root());
   ImGui::Columns(1);
-  profileGraph(data.rootScope);
+  if (lastData.root()) {
+    profileGraphGui(lastData, lastData.root());
+  }
   ImGui::End();
 }
 }

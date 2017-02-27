@@ -2125,9 +2125,19 @@ operations:
 
 issue: same ID but different extensions?
 
-ResourceID:
-	- build from path + list of extensions
-	- cached: full filesystem path (if it exists),  
+Canonical ID:
+	- full filesystem path or relative path
+		- relative path = path relative to resource roots directories
+	- network path / URL
+	- path includes extension 
+	- internal ID
+
+Canonical ID: 
+	- either a filesystem path, an URL or a relative path, with sub-path (optionally)
+	- no guarantee of being valid
+	- function open() -> ReadStream
+	- function resolve() -> 
+
 
 
  

@@ -48,17 +48,16 @@ Minimal system:
  ☐ rename drawQuad => drawScreenQuad
  ✔ drawRect: a,b,c,d,uv_a,uv_b,uv_c,uv_d @done (17-02-10 21:22)
  ✔ drawRect @done (17-02-07 22:16)
- ☐ getParentDirectory(id) is misleading => maybe create a class for resource paths?
+ ✘ getParentDirectory(id) is misleading => maybe create a class for resource paths? @cancelled (17-02-26 11:47)
      ResourceID: resource path or full path in filesystem
  ☐ Suggestion: fuse DeferredSceneRenderer and DeferredSceneRenderer::GBuffers
  ✔ Profiler @done (17-02-20 21:42)
  ☐ GPU profiler
  ☐ Profiler: timeline view
- ☐ Unify profiler and GPU capture 
  ☐ Multi-window
    ☐ Move main loop into application (Application::mainLoop()) 
- ☐ Issue: engine profiler needs GPU profiler, which should be in the GL (graphics) module
-   ☐ Resolution: timers only in GL module
+ ✔ Issue: engine profiler needs GPU profiler, which should be in the GL (graphics) module @done (17-02-26 11:47)
+   ✔ Resolution: timers only in GL module @done (17-02-26 11:47)
  ☐ Move arcball to core-math module
 
 General:

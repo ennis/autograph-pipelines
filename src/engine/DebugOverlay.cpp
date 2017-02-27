@@ -1,5 +1,7 @@
+#include <autograph/engine/CVar.h>
 #include <autograph/engine/DebugOverlay.h>
 #include <autograph/engine/ImageUtils.h>
+#include <autograph/engine/ImGuiUtils.h>
 #include <autograph/engine/RenderUtils.h>
 #include <autograph/engine/Shader.h>
 #include <autograph/gl/Device.h>
@@ -9,9 +11,9 @@
 #include <autograph/support/Debug.h>
 #include <autograph/support/FileDialog.h>
 #include <autograph/support/ProjectRoot.h>
+#include <cinttypes>
 #include <imgui.h>
 #include <imgui_internal.h>
-#include <cinttypes>
 
 namespace ag {
 
@@ -365,8 +367,8 @@ static void GLTextureViewWindow(GLuint textureObj, int w, int h,
         ImGui::GetStateStorage()->GetFloat(ImGui::GetID("range_max"), 1.0f);
     float zoomLevel =
         ImGui::GetStateStorage()->GetFloat(ImGui::GetID("zoom_level"), 1.0f);
-    int xoff = ImGui::GetStateStorage()->GetInt(ImGui::GetID("xoff"), 1.0f);
-    int yoff = ImGui::GetStateStorage()->GetInt(ImGui::GetID("yoff"), 1.0f);
+    int xoff = ImGui::GetStateStorage()->GetInt(ImGui::GetID("xoff"), 0);
+    int yoff = ImGui::GetStateStorage()->GetInt(ImGui::GetID("yoff"), 0);
     texturePreview(textureObj, w, h, 1.0f, xoff, yoff, zoomLevel, range_min,
                    range_max);
     vec4 pixel;
@@ -445,7 +447,7 @@ static void GLTextureGUI(GLuint textureObj) {
         openFileDialog(imageFileFilters, getProjectRootDirectory().c_str());
     if (file) {
       try {
-        auto img = loadImageByPath(file->c_str());
+        auto img = loadImage(file->c_str());
         if (img.desc.width == w && img.desc.height == h) {
           // dimensions match, continue
           // as usual, let OpenGL do the pixel conversion
@@ -492,24 +494,29 @@ static void GLObjectListGUI() {
   static int selected = -1;
   auto objCount = gl::getGLObjectCount();
   if (selected >= objCount)
-      selected = objCount-1;
+    selected = objCount - 1;
 
   //////////////////////////////////////////
   ImGui::BeginChild("Object list",
-                    ImVec2(ImGui::GetWindowContentRegionWidth() * 0.5f, ImGui::GetContentRegionAvail().y),
+                    ImVec2(ImGui::GetWindowContentRegionWidth() * 0.5f,
+                           ImGui::GetContentRegionAvail().y),
                     true, ImGuiWindowFlags_HorizontalScrollbar);
   ImGui::Columns(3);
-  ImGui::Text("Object ID"); ImGui::NextColumn();
-  ImGui::Text("Type"); ImGui::NextColumn();
-  ImGui::Text("Frame created"); ImGui::NextColumn();
+  ImGui::Text("Object ID");
+  ImGui::NextColumn();
+  ImGui::Text("Type");
+  ImGui::NextColumn();
+  ImGui::Text("Frame created");
+  ImGui::NextColumn();
   ImGui::Separator();
   for (int i = 0; i < objCount; ++i) {
     ImGui::PushID(i);
     auto obj = gl::getGLObjectData(i);
     auto objStr = fmt::format("({}):{}", obj->type, obj->obj);
     bool isSelected = selected == i;
-    if (ImGui::Selectable(objStr.c_str(), &isSelected, ImGuiSelectableFlags_SpanAllColumns)) {
-        selected = i;
+    if (ImGui::Selectable(objStr.c_str(), &isSelected,
+                          ImGuiSelectableFlags_SpanAllColumns)) {
+      selected = i;
     }
     ImGui::NextColumn();
     ImGui::Text("%s", gl::getGLObjectTypeName(obj->type));
@@ -521,14 +528,13 @@ static void GLObjectListGUI() {
   ImGui::EndChild();
 
   //////////////////////////////////////////
-  if (selected != -1)
-  {
-      ImGui::SameLine();
-      ImGui::BeginChild("Object GUI", ImVec2(0, 300), false);
-      auto obj = gl::getGLObjectData(selected);
-      if (obj->type == GL_TEXTURE)
-        GLTextureGUI(obj->obj);
-      ImGui::EndChild();
+  if (selected != -1) {
+    ImGui::SameLine();
+    ImGui::BeginChild("Object GUI", ImVec2(0, 300), false);
+    auto obj = gl::getGLObjectData(selected);
+    if (obj->type == GL_TEXTURE)
+      GLTextureGUI(obj->obj);
+    ImGui::EndChild();
   }
 
   ImGui::End();
@@ -551,23 +557,14 @@ static void ComboGLenum(const char *label, GLenum *outValue,
   ImGui::Combo(label, &curIdx,
                [](void *data, int idx, const char **out_text) {
                  auto values = *static_cast<span<NameValuePair> *>(data);
-                 if (idx < values.size()) {
+                 if (idx < (int)values.size()) {
                    *out_text = values[idx].first;
                    return true;
                  }
                  return false;
                },
-               &values, values.size());
+               &values, (int)values.size());
   *outValue = values[curIdx].second;
-}
-
-static void inputTextMultilineString(const char *label, std::string &str,
-                                     size_t buf_size = 100) {
-  std::vector<char> strvec{str.begin(), str.end()};
-  strvec.resize(buf_size);
-  auto size = ImGui::GetContentRegionAvail();
-  ImGui::InputTextMultiline("", strvec.data(), strvec.size(), size);
-  str.assign(strvec.begin(), strvec.end());
 }
 
 static void pipelineStateGUI(PipelineState *ps) {
@@ -666,7 +663,7 @@ static void pipelineStateGUI(PipelineState *ps) {
     auto shaderEditPopup = [&](const char *label, std::string &source) {
       if (ImGui::BeginResizablePopup(label, shaderEditWinSize)) {
         ImGui::PushItemWidth(-1);
-        inputTextMultilineString("", source, bufSize);
+        gui::inputTextMultilineString("", source, bufSize);
         ImGui::PopItemWidth();
         ImGui::EndPopup();
       }
@@ -706,5 +703,6 @@ void drawDebugOverlay(double dt) {
   endFixedTooltip();
   pipelineStatesGUI();
   GLObjectListGUI();
+  showCVarGui();
 }
 }

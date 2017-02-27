@@ -1,5 +1,6 @@
 #pragma once
 #include "GLHandle.h"
+#include <chrono>
 
 namespace ag {
 namespace gl {
@@ -27,18 +28,12 @@ public:
     glGetQueryObjecti64v(obj_.get(), GL_QUERY_RESULT_AVAILABLE, &res);
     return res != 0;
   }
-  // Get timestamp in nanoseconds, wait for the result
-  int64_t getGpuTimestampNs() const {
-    int64_t res;
-    glGetQueryObjecti64v(obj_.get(), GL_QUERY_RESULT, &res);
-    return res;
-  }
-  // Get timestamp in seconds
-  double getGpuTimestamp() const
+  // Get timestamp in nanoseconds
+  std::chrono::nanoseconds getGpuTimestampNs() const
   {
     int64_t res;
     glGetQueryObjecti64v(obj_.get(), GL_QUERY_RESULT, &res);
-    return (double)res / 1000000000.0;
+	return std::chrono::nanoseconds{ res };
   }
 
 private:

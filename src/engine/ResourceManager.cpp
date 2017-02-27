@@ -1,73 +1,117 @@
 #include <autograph/Types.h>
 #include <autograph/engine/ResourceManager.h>
 #include <autograph/support/Debug.h>
+#include <autograph/support/string_view.h>
 #include <experimental/filesystem>
 
 namespace ag {
+
+	namespace fs = std::experimental::filesystem;
+
 /////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////
-ResourceManager::ResourceManager() {}
 
-void ResourceManager::addResourceDirectory(std::string dir) {
-  resourceDirectories_.push_back(std::move(dir));
+namespace ResourceManager {
+static std::vector<std::string> resourceDirectories_;
+
+// returns the main path part of the ID, or the empty string if it has none
+AG_API std::string getPathPart(const char *id) {
+  ag::string_view idstr{id};
+  return idstr.substr(0, idstr.find_last_of('$')).to_string();
 }
 
-span<const std::string> ResourceManager::getResourceDirectories() {
-  return ag::span<const std::string>{resourceDirectories_};
+AG_API std::string getPathPart(const std::string &id) {
+  return getPathPart(id.c_str());
 }
 
-std::string ResourceManager::findResourceFile(const char *id, ag::span<const char * const> allowedExtensions)
-{
-    return findResourceFileWithPrefixes(id, allowedExtensions, {});
+// returns the subpath part of the ID, or the empty string if it has none
+AG_API std::string getSubpathPart(const char *id) {
+  ag::string_view idstr{id};
+  auto p = idstr.find_last_of('$');
+  if (p == std::string::npos) {
+    return {};
+  } else {
+    return idstr.substr(p + 1);
+  }
 }
 
-std::string ResourceManager::findResourceFileWithPrefixes(
-    const char *id, ag::span<const char *const> allowedExtensions,
-    ag::span<const char *const> prefixes) {
+AG_API std::string getSubpathPart(const std::string &id) {
+  return getSubpathPart(id.c_str());
+}
+
+AG_API std::string getParentPath(const char *id) {
+  fs::path path = getPathPart(id);
+  return path.parent_path().generic_string();
+}
+
+AG_API std::string getParentPath(const std::string &id) {
+  return getParentPath(id.c_str());
+}
+
+AG_API void addResourceDirectory(const std::string &fullPath) {
+  addResourceDirectory(fullPath.c_str());
+}
+
+AG_API void addResourceDirectory(const char *fullPath) {
+  resourceDirectories_.emplace_back(fullPath);
+}
+
+AG_API int getResourceDirectoriesCount() {
+  return (int)resourceDirectories_.size();
+}
+
+AG_API std::string getResourceDirectory(int index) {
+  return resourceDirectories_[index];
+}
+
+AG_API std::string getFilesystemPath(const char *id) {
+  return getFilesystemPath(id, {});
+}
+
+AG_API std::string getFilesystemPath(const std::string &id) {
+  return getFilesystemPath(id.c_str());
+}
+
+AG_API std::string getFilesystemPath(const char *id,
+                                     ag::span<const char *const> prefixes) {
   namespace fs = std::experimental::filesystem;
+
+  std::string pathPart = getPathPart(id);
   std::string ret;
 
-  // first, check if ID is a regular filesystem path
-  fs::path path{ id };
+  // first, check if ID is a well-specified filesystem path
+  fs::path path{pathPart};
   if (fs::is_regular_file(path)) {
-	  return id;
+    return pathPart;
   }
-
-  // ID is not a filesystem path
-  auto findWithExts = [&](fs::path &baseDir) {
-    for (auto ext : allowedExtensions) {
-      auto fullPath = (baseDir / id).replace_extension(ext);
-      if (fs::is_regular_file(fullPath)) {
-        // got our file
-        AG_DEBUG("{} -> {}", id, fullPath.string());
-        ret = fullPath.string();
-        return true;
-      }
-    }
-    return false;
-  };
 
   for (auto &dir : resourceDirectories_) {
     fs::path baseDir{dir};
     if (prefixes.empty()) {
-      if (findWithExts(baseDir))
+      auto fullPath = baseDir / pathPart;
+      if (fs::is_regular_file(fullPath)) {
+        // got our file
+        AG_DEBUG("{} -> {}", pathPart, fullPath.string());
+        ret = fullPath.string();
         return ret;
+      }
     } else {
       for (auto prefix : prefixes) {
-        auto baseDirWithPrefix = baseDir / prefix;
-        if (findWithExts(baseDirWithPrefix))
+        auto fullPath = baseDir / prefix / pathPart;
+        if (fs::is_regular_file(fullPath)) {
+          // got our file
+          AG_DEBUG("{} -> {}", pathPart, fullPath.string());
+          ret = fullPath.string();
           return ret;
+        }
       }
     }
   }
-  AG_DEBUG("findResourceFile: {} not found", id);
+
+  AG_DEBUG("findResourceFile: {} not found", pathPart);
   AG_DEBUG("    Tried directories:");
   for (auto &dir : resourceDirectories_) {
     AG_DEBUG("    - {}", dir);
-  }
-  AG_DEBUG("    Tried extensions:");
-  for (auto ext : allowedExtensions) {
-    AG_DEBUG("    - {}", ext);
   }
   if (!prefixes.empty()) {
     AG_DEBUG("    Tried prefixes:");
@@ -76,5 +120,6 @@ std::string ResourceManager::findResourceFileWithPrefixes(
     }
   }
   return {};
+}
 }
 }

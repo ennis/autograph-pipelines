@@ -220,8 +220,6 @@ sol::table openLuaBindings(sol::this_state s) {
   module.new_usertype<RenderUtils>("RenderUtils", sol::call_constructor,
                                    sol::constructors<sol::types<>>());
 
-  module["loadTextureByPath"] = &loadTextureByPath;
-  module["loadImageByPath"] = &loadImageByPath;
   module["loadTexture"] = &loadTexture;
   module["loadImage"] = &loadImage;
 

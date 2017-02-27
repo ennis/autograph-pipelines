@@ -84,7 +84,7 @@ public:
 
 
 private:
-  struct sync_point {
+  struct AG_REFLECT sync_point {
     GLsync sync;
     uint64_t target_value;
   };

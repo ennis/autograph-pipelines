@@ -2,6 +2,7 @@
 #include "Application.h"
 #include "Arcball.h"
 #include "CameraControl.h"
+#include "CVar.h"
 #include "DebugOverlay.h"
 #include "ImageUtils.h"
 #include "ImGuiUtils.h"

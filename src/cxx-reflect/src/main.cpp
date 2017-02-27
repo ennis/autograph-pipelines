@@ -58,7 +58,9 @@ public:
     // Filter decls in system headers and compiler-generated decls
     if (DLoc.isInvalid() || SM.isInSystemHeader(DLoc))
       return false;
-
+	// Filter private decls
+	if (D->getAccess() != AS_public)
+		return false;
     // A decl is included in the reflection database if:
     // 1. The decl has the cxxr::reflect attribute
     // 2. The innermost parent scope of the decl that has a 'reflect' or
@@ -132,7 +134,7 @@ public:
     if (!RD->isCompleteDefinition())
       return true;
     recordDecls.push_back(RD);
-    RD->print(llvm::errs(), 2, false);
+    //RD->print(llvm::errs(), 2, false);
     return true;
   }
 

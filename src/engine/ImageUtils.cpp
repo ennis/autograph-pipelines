@@ -34,16 +34,21 @@ static std::unique_ptr<uint8_t[]> loadImageByPathRaw(const char *path,
   return std::unique_ptr<uint8_t[]>{raw_data};
 }
 
-AG_API Image loadImageByPath(const char *path, ImageFormat targetFormat) {
+AG_API Image loadImage(const char *id, ImageFormat targetFormat) {
   // TODO DDS loader
   // TODO mip maps, subresources
   // TODO faces
   // TODO FP formats
   // TODO conversions
+  auto path = ResourceManager::getFilesystemPath(id);
+  if (path.empty()) {
+    throw std::runtime_error{"loadImage: file not found"};
+  }
   Image img;
   int comp;
   // TODO filter out unsupported formats
-  img.data = loadImageByPathRaw(path, img.desc.width, img.desc.height, comp, 4);
+  img.data = loadImageByPathRaw(path.c_str(), img.desc.width, img.desc.height,
+                                comp, 4);
   img.desc.numMipmaps = 1;
   img.desc.dimensions = ImageDimensions::Image2D;
   img.desc.depth = 1;
@@ -51,28 +56,18 @@ AG_API Image loadImageByPath(const char *path, ImageFormat targetFormat) {
   return img;
 }
 
-AG_API gl::Texture loadTextureByPath(const char *path,
-                                     ImageFormat targetFormat) {
+AG_API gl::Texture loadTexture(const char *id, ImageFormat targetFormat) {
+  auto path = ResourceManager::getFilesystemPath(id);
+  if (path.empty()) {
+    throw std::runtime_error{"loadTexture: file not found"};
+  }
   int comp;
   int w, h;
-  auto data = loadImageByPathRaw(path, w, h, comp, 4);
+  auto data = loadImageByPathRaw(path.c_str(), w, h, comp, 4);
   auto tex = gl::Texture::create2D(targetFormat, w, h);
   glTextureSubImage2D(tex.object(), 0, 0, 0, w, h, GL_RGBA,
                       GL_UNSIGNED_INT_8_8_8_8_REV, data.get());
   return tex;
-}
-
-AG_API gl::Texture loadTexture(const char *id, ImageFormat targetFormat) {
-  auto path = findResourceFile(id, allowedImageExtensions);
-  if (!path.empty()) {
-    return loadTextureByPath(path.c_str(), targetFormat);
-  }
-  return gl::Texture{};
-}
-
-AG_API Image loadImage(const char *id, ImageFormat targetFormat) {
-  return loadImageByPath(findResourceFile(id, allowedImageExtensions).c_str(),
-                         targetFormat);
 }
 
 AG_API void saveImageByPath(const char *path, const void *pixelData, int width,

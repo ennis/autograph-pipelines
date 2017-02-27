@@ -1,5 +1,5 @@
 #include "Bindings.h"
-#include <autograph/engine/Application.h>
+#include <autograph/engine/ResourceManager.h>
 #include <autograph/engine/ScriptContext.h>
 #include <vector>
 
@@ -15,7 +15,9 @@ ScriptContext::ScriptContext() {
 				sol::lib::bit32);
 
   // register application resource paths
-  for (auto &resPath : getResourceDirectories()) {
+  int numResourceDirs = ResourceManager::getResourceDirectoriesCount();
+  for (int i = 0; i < numResourceDirs; ++i) {
+	auto resPath = ResourceManager::getResourceDirectory(i);
     addPackagePath((resPath + "?.lua").c_str());
     addPackagePath((resPath + "scripts/?.lua").c_str());
   }
@@ -46,8 +48,7 @@ ScriptContext::ScriptContext(const char *initScript) : ScriptContext{} {
 }
 
 sol::table ScriptContext::scriptFile(const char *id) {
-  static const char *extensions[] = {".lua"};
-  auto path = findResourceFile(id, extensions);
+  auto path = ResourceManager::getFilesystemPath(id);
   return script_file(path);
 }
 }

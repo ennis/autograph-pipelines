@@ -17,12 +17,13 @@
 
 using namespace ag;
 
+
 ///////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////
 // MAIN
 int main(int argc, char *argv[]) {
   using namespace ag;
-  addResourceDirectory(getActualPath("resources/"));
+  ResourceManager::addResourceDirectory(getActualPath("resources/"));
 
   ////////////////////////////////////////////////////
   // Global vars
@@ -41,7 +42,7 @@ int main(int argc, char *argv[]) {
 
   ////////////////////////////////////////////////////
   // Scene
-  ID rootEntity = loadScene("mesh/youmu/youmu", entityManager, scene,
+  ID rootEntity = loadScene("mesh/interiorroom/interior.obj", entityManager, scene,
                             renderableScene, lightScene, pool);
   SceneObject *rootSceneObj = scene.get(rootEntity);
   if (rootSceneObj) {
@@ -74,7 +75,7 @@ int main(int argc, char *argv[]) {
                              vec2{25.0f}, 10);
     }
     // show scene editor
-    gui::sceneEditor(cam, entityManager, scene, renderableScene, pool,
+    gui::sceneEditor(cam, entityManager, scene, renderableScene, lightScene, pool,
                      rootEntity);
     {
       AG_PROFILE_SCOPE("Scene graph update")

@@ -11,8 +11,6 @@
 
 namespace ag {
 
-static const char *allowedMeshExtensions[] = {".dae", ".fbx", ".obj", ".3ds"};
-
 //////////////////////////////////////////////////
 class AssimpSceneImporter {
 public:
@@ -85,12 +83,15 @@ public:
         AG_DEBUG("[material {} texindex{} path {}]", matName.C_Str(), i,
                  texPath.C_Str());
         // Search procedure for textures:
-        // First, get an ID from  the given path (by taking the path stem), and
+        // First, get an ID from the given path (by taking the filename), and
         // look for it using the default search procedure for resources.
         // If it is not found, resort to absolute file path.
-        std::experimental::filesystem::path p{texPath.C_Str()};
-        auto resourceId = getParentDirectory(sceneFileId_) + p.stem().string();
-        auto tex = resourcePool_.get<gl::Texture>(resourceId.c_str());
+		namespace fs = std::experimental::filesystem;
+		fs::path p{texPath.C_Str()};
+		auto path = (fs::path{ ResourceManager::getParentPath(sceneFileId_) } / p.filename()).generic_string();
+		if (ResourceManager::getFilesystemPath(path).empty())	
+			continue;	// path not found in filesystem, continue
+        auto tex = resourcePool_.get<gl::Texture>(path.c_str());
         switch (i) {
         case aiTextureType_NONE:
           break;
@@ -193,7 +194,7 @@ public:
   //////////////////////////////////////////////////
   SceneObject *load(const char *sceneFileId, SceneObject *parent) {
     Assimp::Importer importer;
-    auto actualPath = findResourceFile(sceneFileId, allowedMeshExtensions);
+    auto actualPath = ResourceManager::getFilesystemPath(sceneFileId);
     if (actualPath.empty()) {
       return nullptr;
     }
@@ -209,7 +210,7 @@ public:
       return nullptr;
     }
     // import lights
-    for (int i = 0; i < aiscene->mNumLights; ++i) {
+    for (unsigned i = 0; i < aiscene->mNumLights; ++i) {
       importLight(aiscene->mLights[i], parent);
     }
 
