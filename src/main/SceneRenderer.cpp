@@ -57,7 +57,7 @@ void DeferredSceneRenderer::renderScene(
     using namespace gl::bind;
     draw(targets.getFramebuffer(), *pMesh, deferredShader,
          uniformFrameData(0, &camUniforms),
-		 texture(0, albedoTex ? albedoTex->object() : 0, getRenderUtils().samplerLinear.object()),
+		 texture(0, albedoTex ? albedoTex->object() : 0, RenderUtils::getLinearSampler().object()),
 		 uniform_mat4("uModelMatrix", sceneObj.worldTransform));
 
     // AG_DEBUG("renderScene, object ID {} mesh {}", obj->id, (void*)obj->mesh);

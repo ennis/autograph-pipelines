@@ -59,6 +59,7 @@ Minimal system:
  ✔ Issue: engine profiler needs GPU profiler, which should be in the GL (graphics) module @done (17-02-26 11:47)
    ✔ Resolution: timers only in GL module @done (17-02-26 11:47)
  ☐ Move arcball to core-math module
+ ☐ RenderUtils => move to namespace
 
 General:
  ✔ Implement cameras @high @minimal_subset @done (16-12-24 14:12)
@@ -81,6 +82,8 @@ General:
  ☐ fix weird diagonal tearing bug
    Vsync?
    Seems like a known nvidia problem
+ ☐ Graphical testing framework @high
+   To check for regressions
    
 Serialization:
  ☐ Save scene 
@@ -107,9 +110,10 @@ Autograph:
  ✔ Make a header that includes everything @high @done (17-02-18 13:03)
    autograph/gl/All.h
  ☐ The Lua shader system is 'good' => include it in autograph, then release autograph
+ ☐ Optimize state changes and GL calls
 
 Autograph extensions:
- ☐ Shader cache @low
+ ✔ Shader cache @low @done (17-03-02 21:22)
  ☐ Texture / render target cache
  ☐ Readback for video capture @low
  ☐ Effect/pipeline system

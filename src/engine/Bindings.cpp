@@ -217,8 +217,8 @@ sol::table openLuaBindings(sol::this_state s) {
       "lookDistance", &CameraControl::lookDistance);
 
   // RenderUtils
-  module.new_usertype<RenderUtils>("RenderUtils", sol::call_constructor,
-                                   sol::constructors<sol::types<>>());
+  /*module.new_usertype<RenderUtils>("RenderUtils", sol::call_constructor,
+                                   sol::constructors<sol::types<>>());*/
 
   module["loadTexture"] = &loadTexture;
   module["loadImage"] = &loadImage;

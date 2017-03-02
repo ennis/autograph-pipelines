@@ -68,10 +68,9 @@ int main(int argc, char *argv[]) {
     glClearDepth(1.0);
     glDepthMask(GL_TRUE);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
-    auto &renderUtils = getRenderUtils();
     {
       AG_GPU_PROFILE_SCOPE("Draw grid")
-      renderUtils.drawGrid2D(gl::getDefaultFramebuffer(), screenSize / 2.0f,
+      RenderUtils::drawGrid2D(gl::getDefaultFramebuffer(), screenSize / 2.0f,
                              vec2{25.0f}, 10);
     }
     // show scene editor
@@ -99,10 +98,8 @@ int main(int argc, char *argv[]) {
       for (auto &idSceneObj : scene.getObjects()) {
         auto &sceneObj = idSceneObj.second;
         if (sceneObj.mesh) {
-          renderUtils.drawMesh(gl::getDefaultFramebuffer(), cam, *sceneObj.mesh,
+			RenderUtils::drawMesh(gl::getDefaultFramebuffer(), cam, *sceneObj.mesh,
                                sceneObj.worldTransform);
-          renderUtils.drawWireMesh(gl::getDefaultFramebuffer(), cam,
-                                   *sceneObj.mesh, sceneObj.worldTransform);
         }
       }
     }

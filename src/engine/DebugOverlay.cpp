@@ -326,7 +326,7 @@ template <typename Callback> static void customRendering(Callback callback) {
 }
 
 static void texturePreview(GLuint textureObj, int w, int h, float lod,
-                           int xoffset, int yoffset, float zoomLevel,
+                           int xoffset, int yoffset, float zoomLevel, bool mirror = false,
                            float range_min = 0.0f, float range_max = 1.0f) {
   ImGui::Dummy(ImVec2{(float)w, (float)h});
   auto pos = ImGui::GetItemRectMin();
@@ -335,10 +335,15 @@ static void texturePreview(GLuint textureObj, int w, int h, float lod,
     auto &fb = gl::getDefaultFramebuffer();
     auto fb_width = fb.width();
     auto fb_height = fb.height();
+	float uv_l = (float)xoffset / (float)w;
+	float uv_t = 1.0f / zoomLevel;
+	float uv_r = 1.0f / zoomLevel;
+	float uv_b  = (float)yoffset / (float)h;
+	if (mirror) std::swap(uv_t, uv_b);
     ag::gl::drawRect(
         gl::getDefaultFramebuffer(), pos.x, pos.y, pos.x + size.x,
-        pos.y + size.y, (float)xoffset / (float)w, 1.0f / zoomLevel,
-        1.0f / zoomLevel, (float)yoffset / (float)h,
+        pos.y + size.y, uv_l, uv_t,
+		uv_r, uv_b,
         getDebugGlobals().textureViewShader,
         gl::bind::scissor(0, (int)cmd->ClipRect.x,
                           (int)(fb_height - cmd->ClipRect.w),
@@ -367,9 +372,11 @@ static void GLTextureViewWindow(GLuint textureObj, int w, int h,
         ImGui::GetStateStorage()->GetFloat(ImGui::GetID("range_max"), 1.0f);
     float zoomLevel =
         ImGui::GetStateStorage()->GetFloat(ImGui::GetID("zoom_level"), 1.0f);
+	bool mirror =
+		ImGui::GetStateStorage()->GetBool(ImGui::GetID("mirror"), false);
     int xoff = ImGui::GetStateStorage()->GetInt(ImGui::GetID("xoff"), 0);
     int yoff = ImGui::GetStateStorage()->GetInt(ImGui::GetID("yoff"), 0);
-    texturePreview(textureObj, w, h, 1.0f, xoff, yoff, zoomLevel, range_min,
+    texturePreview(textureObj, w, h, 1.0f, xoff, yoff, zoomLevel, mirror, range_min,
                    range_max);
     vec4 pixel;
     int mx, my;
@@ -396,6 +403,8 @@ static void GLTextureViewWindow(GLuint textureObj, int w, int h,
       if (ImGui::Button(ICON_FA_ARROWS_ALT)) {
         zoomLevel = 1.0f;
       }
+	  ImGui::SameLine();
+	  ImGui::Checkbox("Mirror", &mirror);
       ImGui::SameLine();
       ImGui::PushItemWidth(130.0f);
       float zoomLevelPercent = zoomLevel * 100.0f;
@@ -415,6 +424,7 @@ static void GLTextureViewWindow(GLuint textureObj, int w, int h,
       }
       ImGui::EndMenuBar();
     }
+	ImGui::GetStateStorage()->SetBool(ImGui::GetID("mirror"), mirror);
     ImGui::GetStateStorage()->SetFloat(ImGui::GetID("range_min"), range_min);
     ImGui::GetStateStorage()->SetFloat(ImGui::GetID("range_max"), range_max);
     ImGui::GetStateStorage()->SetFloat(ImGui::GetID("zoom_level"), zoomLevel);

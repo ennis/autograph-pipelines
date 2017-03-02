@@ -2,6 +2,7 @@
 #include <autograph/Camera.h>
 #include <autograph/Transform.h>
 #include <autograph/engine/ImGuiUtils.h>
+#include <autograph/engine/RenderUtils.h>
 #include <autograph/engine/Scene.h>
 #include <autograph/engine/SceneLoader.h>
 #include <autograph/support/FileDialog.h>
@@ -114,8 +115,8 @@ static void sceneObjectHierarchyGui(Scene &scene, SceneObject &sceneObj,
 }
 
 void sceneEditor(const Camera &cam, EntityManager &entityManager, Scene &scene,
-                 RenderableScene &renderableScene, LightScene& lights, ResourcePool &resourcePool,
-                 ID rootEntityID) {
+                 RenderableScene &renderableScene, LightScene &lights,
+                 ResourcePool &resourcePool, ID rootEntityID) {
 
   bool opened = true;
   ImGui::Begin("Scene", &opened, ImGuiWindowFlags_MenuBar);
@@ -124,7 +125,8 @@ void sceneEditor(const Camera &cam, EntityManager &entityManager, Scene &scene,
   if (ImGui::Button("Load scene...")) {
     auto res = openFileDialog("", getProjectRootDirectory().c_str());
     if (res) {
-      ID ent = loadScene(res->c_str(), entityManager, scene, renderableScene, lights, resourcePool);
+      ID ent = loadScene(res->c_str(), entityManager, scene, renderableScene,
+                         lights, resourcePool);
     }
   }
   ImGui::EndMenuBar();
@@ -148,6 +150,13 @@ void sceneEditor(const Camera &cam, EntityManager &entityManager, Scene &scene,
     }
     transformGizmo(cam, selected->localTransform);
     ImGui::EndChild();
+
+    if (selected->mesh) {
+      RenderUtils::drawWireMesh(gl::getDefaultFramebuffer(), cam,
+                                *selected->mesh, selected->worldTransform);
+    }
+	RenderUtils::drawBoundingBox(gl::getDefaultFramebuffer(), cam,
+		selected->getApproximateWorldBounds());
   }
 
   ImGui::End();
@@ -174,29 +183,28 @@ void inputTextMultilineString(const char *label, std::string &str,
 }
 
 void enumComboBox(const char *label, int *outValue,
-	span<const std::pair<const char *, int>> values)
-{
-	auto enumToIndex = [&](GLenum e) {
-		int i = 0;
-		for (auto &p : values) {
-			if (p.second == e)
-				return i;
-			++i;
-		}
-		return -1;
-	};
-	int curIdx = enumToIndex(*outValue);
-	ImGui::Combo(label, &curIdx,
-		[](void *data, int idx, const char **out_text) {
-		auto values = *static_cast<span<NameValuePair> *>(data);
-		if (idx < (int)values.size()) {
-			*out_text = values[idx].first;
-			return true;
-		}
-		return false;
-	},
-		&values, (int)values.size());
-	*outValue = values[curIdx].second;
+                  span<const std::pair<const char *, int>> values) {
+  auto enumToIndex = [&](GLenum e) {
+    int i = 0;
+    for (auto &p : values) {
+      if (p.second == e)
+        return i;
+      ++i;
+    }
+    return -1;
+  };
+  int curIdx = enumToIndex(*outValue);
+  ImGui::Combo(label, &curIdx,
+               [](void *data, int idx, const char **out_text) {
+                 auto values = *static_cast<span<NameValuePair> *>(data);
+                 if (idx < (int)values.size()) {
+                   *out_text = values[idx].first;
+                   return true;
+                 }
+                 return false;
+               },
+               &values, (int)values.size());
+  *outValue = values[curIdx].second;
 }
 
 static const char *getFriendlyName(const meta::Field &f) {

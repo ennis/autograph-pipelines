@@ -99,7 +99,7 @@ Canvas::Canvas(int width_, int height_) : width{width_}, height{height_} {
 CanvasRenderer::CanvasRenderer() { reloadShaders(); }
 
 void CanvasRenderer::renderCanvas(Scene &scene, Canvas &canvas) {
-  auto &sampler = getRenderUtils().samplerNearest;
+  auto &sampler = RenderUtils::getNearestSampler();
 
   gl::drawQuad(
       canvas.finalColor.getFramebuffer(), evaluationPass,

@@ -6,78 +6,172 @@
 #include <glm/gtc/packing.hpp>
 
 namespace ag {
-RenderUtils::RenderUtils() {
-  reloadShaders();
-  gl::SamplerDesc desc;
-  desc.addrU = GL_CLAMP_TO_EDGE;
-  desc.addrV = GL_CLAMP_TO_EDGE;
-  desc.addrW = GL_CLAMP_TO_EDGE;
-  desc.minFilter = GL_NEAREST;
-  desc.magFilter = GL_NEAREST;
-  samplerNearest = gl::Sampler{desc};
-}
+namespace RenderUtils {
+struct RenderUtilsState {
+  RenderUtilsState() {
+    reloadShaders();
+    gl::SamplerDesc desc;
+    desc.addrU = GL_CLAMP_TO_EDGE;
+    desc.addrV = GL_CLAMP_TO_EDGE;
+    desc.addrW = GL_CLAMP_TO_EDGE;
+    desc.minFilter = GL_NEAREST;
+    desc.magFilter = GL_NEAREST;
+    samplerNearest = gl::Sampler{desc};
+  }
 
-void RenderUtils::reloadShaders() {
-  drawSpriteShader = Shader{"shaders/default:drawSprite"};
-  drawMeshShader = Shader{"shaders/default:drawMeshDefault"};
-  drawWireMeshShader = Shader{"shaders/default:drawWireMesh"};
-  drawWireMeshNoDepthShader = Shader{"shaders/default:drawWireMeshNoDepth"};
-  drawWireMesh2DColorShader = Shader{"shaders/default:drawWireMesh2DColor"};
+  void reloadShaders() {
+    drawSpriteShader = Shader{"shaders/default:drawSprite"};
+    drawMeshShader = Shader{"shaders/default:drawMeshDefault"};
+    drawWireMeshShader = Shader{"shaders/default:drawWireMesh"};
+    drawWireMeshNoDepthShader = Shader{"shaders/default:drawWireMeshNoDepth"};
+    drawWireMesh2DColorShader = Shader{"shaders/default:drawWireMesh2DColor"};
+  }
+
+  gl::Sampler samplerNearest;
+  gl::Sampler samplerLinear;
+  Shader drawSpriteShader;
+  Shader drawMeshShader;
+  Shader drawWireMeshShader;
+  Shader drawWireMeshNoDepthShader;
+  Shader drawWireMesh2DColorShader;
+};
+
+static RenderUtilsState &getRenderUtilsState() {
+  static RenderUtilsState state;
+  return state;
 }
 
 // Draw mesh with default view-dependent shading
-void RenderUtils::drawMesh(gl::Framebuffer &target, const Camera &cam,
-                           Mesh3D &mesh, vec3 pos, float scale, vec4 color) {
+void drawMesh(gl::Framebuffer &target, const Camera &cam, Mesh3D &mesh,
+              vec3 pos, float scale, vec4 color) {
   auto m = glm::translate(glm::scale(glm::mat4{1.0f}, vec3{scale}), pos);
   drawMesh(target, cam, mesh, m, color);
 }
 
-void RenderUtils::drawMesh(gl::Framebuffer &target, const Camera &cam,
-                           Mesh3D &mesh, mat4 modelTransform, vec4 color) {
+void drawMesh(gl::Framebuffer &target, const Camera &cam, Mesh3D &mesh,
+              mat4 modelTransform, vec4 color) {
   CameraUniforms camUniforms{cam};
   using namespace gl;
   using namespace gl::bind;
-  draw(target, mesh, drawMeshShader, uniformFrameData(0, &camUniforms),
+  auto &state = getRenderUtilsState();
+  draw(target, mesh, state.drawMeshShader, uniformFrameData(0, &camUniforms),
        uniform_mat4("uModelMatrix", modelTransform),
        uniform_vec4("uColor", color));
 }
 
 // Draw mesh in wireframe
-void RenderUtils::drawWireMesh(gl::Framebuffer &target, const Camera &cam,
-                               Mesh3D &mesh, vec3 pos, float scale,
-                               vec4 wireColor) {
+void drawWireMesh(gl::Framebuffer &target, const Camera &cam, Mesh3D &mesh,
+                  vec3 pos, float scale, vec4 wireColor) {
   auto m = glm::translate(glm::scale(glm::mat4{1.0f}, vec3{scale}), pos);
   drawMesh(target, cam, mesh, m, wireColor);
 }
 
-void RenderUtils::drawWireMesh(gl::Framebuffer &target, const Camera &cam,
-                               Mesh3D &mesh, mat4 modelTransform,
-                               vec4 wireColor) {
+void drawWireMesh(gl::Framebuffer &target, const Camera &cam, Mesh3D &mesh,
+                  mat4 modelTransform, vec4 wireColor) {
   CameraUniforms camUniforms{cam};
   using namespace gl;
   using namespace gl::bind;
-  draw(target, mesh, drawWireMeshNoDepthShader,
+  auto &state = getRenderUtilsState();
+  draw(target, mesh, state.drawWireMeshNoDepthShader,
        uniformFrameData(0, &camUniforms),
        uniform_mat4("uModelMatrix", modelTransform),
        uniform_vec4("uWireColor", wireColor));
 }
 
-// Draw a bounding box
-void RenderUtils::drawBoundingBox(gl::Framebuffer &target, const Camera &cam,
-                                  const AABB &aabb, vec4 wireColor) {}
+AG_API void drawLines(gl::Framebuffer &target, const Camera &cam,
+                      span<const Vertex3D> lines, mat4 modelTransform,
+                      float lineWidth, vec4 wireColor) {
+  CameraUniforms camUniforms{cam};
+  using namespace gl;
+  using namespace gl::bind;
+  auto vbuf = uploadFrameArray(lines.data(), lines.size());
+  auto &state = getRenderUtilsState();
+  // glLineWidth(lineWidth);
+  draw(target, drawArrays(GL_LINES, 0, lines.size()),
+       state.drawWireMeshNoDepthShader, 
+	   uniformFrameData(0, &camUniforms),
+       uniform_mat4("uModelMatrix", modelTransform),
+       uniform_vec4("uWireColor", wireColor),
+	   gl::bind::vertexBuffer(0, vbuf, sizeof(Vertex3D)));
+}
 
-void RenderUtils::drawSprite(gl::Framebuffer &target, float targetX0,
-                             float targetY0, float targetX1, float targetY1,
-                             gl::Texture &src, float srcX0, float srcY0,
-                             float srcX1, float srcY1) {
+// Draw a bounding box
+void drawBoundingBox(gl::Framebuffer &target, const Camera &cam,
+                     const AABB &aabb, vec4 wireColor) {
+  Vertex3D lines[24] = {
+      {vec3{aabb.xmin, aabb.ymin, aabb.zmin}, vec3{0.0f}, vec3{0.0f},
+       vec2{0.0f}},
+      {vec3{aabb.xmin, aabb.ymin, aabb.zmax}, vec3{0.0f}, vec3{0.0f},
+       vec2{0.0f}},
+
+      {vec3{aabb.xmin, aabb.ymin, aabb.zmin}, vec3{0.0f}, vec3{0.0f},
+       vec2{0.0f}},
+      {vec3{aabb.xmin, aabb.ymax, aabb.zmin}, vec3{0.0f}, vec3{0.0f},
+       vec2{0.0f}},
+
+      {vec3{aabb.xmin, aabb.ymin, aabb.zmin}, vec3{0.0f}, vec3{0.0f},
+       vec2{0.0f}},
+      {vec3{aabb.xmax, aabb.ymin, aabb.zmin}, vec3{0.0f}, vec3{0.0f},
+       vec2{0.0f}},
+
+      {vec3{aabb.xmax, aabb.ymax, aabb.zmin}, vec3{0.0f}, vec3{0.0f},
+       vec2{0.0f}},
+      {vec3{aabb.xmax, aabb.ymax, aabb.zmax}, vec3{0.0f}, vec3{0.0f},
+       vec2{0.0f}},
+
+      {vec3{aabb.xmax, aabb.ymin, aabb.zmax}, vec3{0.0f}, vec3{0.0f},
+       vec2{0.0f}},
+      {vec3{aabb.xmax, aabb.ymax, aabb.zmax}, vec3{0.0f}, vec3{0.0f},
+       vec2{0.0f}},
+
+      {vec3{aabb.xmin, aabb.ymax, aabb.zmax}, vec3{0.0f}, vec3{0.0f},
+       vec2{0.0f}},
+      {vec3{aabb.xmax, aabb.ymax, aabb.zmax}, vec3{0.0f}, vec3{0.0f},
+       vec2{0.0f}},
+
+	   { vec3{ aabb.xmin, aabb.ymax, aabb.zmin }, vec3{ 0.0f }, vec3{ 0.0f },
+	   vec2{ 0.0f } },
+	   { vec3{ aabb.xmin, aabb.ymax, aabb.zmax }, vec3{ 0.0f }, vec3{ 0.0f },
+	   vec2{ 0.0f } },
+
+	   { vec3{ aabb.xmin, aabb.ymin, aabb.zmax }, vec3{ 0.0f }, vec3{ 0.0f },
+	   vec2{ 0.0f } },
+	   { vec3{ aabb.xmin, aabb.ymax, aabb.zmax }, vec3{ 0.0f }, vec3{ 0.0f },
+	   vec2{ 0.0f } },
+
+	   { vec3{ aabb.xmin, aabb.ymax, aabb.zmin }, vec3{ 0.0f }, vec3{ 0.0f },
+	   vec2{ 0.0f } },
+	   { vec3{ aabb.xmax, aabb.ymax, aabb.zmin }, vec3{ 0.0f }, vec3{ 0.0f },
+	   vec2{ 0.0f } },
+
+	   { vec3{ aabb.xmax, aabb.ymin, aabb.zmin }, vec3{ 0.0f }, vec3{ 0.0f },
+	   vec2{ 0.0f } },
+	   { vec3{ aabb.xmax, aabb.ymin, aabb.zmax }, vec3{ 0.0f }, vec3{ 0.0f },
+	   vec2{ 0.0f } },
+
+	   { vec3{ aabb.xmax, aabb.ymin, aabb.zmin }, vec3{ 0.0f }, vec3{ 0.0f },
+	   vec2{ 0.0f } },
+	   { vec3{ aabb.xmax, aabb.ymax, aabb.zmin }, vec3{ 0.0f }, vec3{ 0.0f },
+	   vec2{ 0.0f } },
+
+	   { vec3{ aabb.xmin, aabb.ymin, aabb.zmax }, vec3{ 0.0f }, vec3{ 0.0f },
+	   vec2{ 0.0f } },
+	   { vec3{ aabb.xmax, aabb.ymin, aabb.zmax }, vec3{ 0.0f }, vec3{ 0.0f },
+	   vec2{ 0.0f } },
+  };
+  drawLines(target, cam, lines, mat4{1.0f}, 1.0f, wireColor);
+}
+
+void drawSprite(gl::Framebuffer &target, float targetX0, float targetY0,
+                float targetX1, float targetY1, gl::Texture &src, float srcX0,
+                float srcY0, float srcX1, float srcY1) {
   drawSprite(target, targetX0, targetY0, targetX1, targetY1, src.object(),
              srcX0, srcY0, srcX1, srcY1);
 }
 
-void RenderUtils::drawSprite(gl::Framebuffer &target, float targetX0,
-                             float targetY0, float targetX1, float targetY1,
-                             GLuint tex, float srcX0, float srcY0, float srcX1,
-                             float srcY1) {
+void drawSprite(gl::Framebuffer &target, float targetX0, float targetY0,
+                float targetX1, float targetY1, GLuint tex, float srcX0,
+                float srcY0, float srcX1, float srcY1) {
   float w = (float)target.width();
   float h = (float)target.height();
 
@@ -99,18 +193,17 @@ void RenderUtils::drawSprite(gl::Framebuffer &target, float targetX0,
 
   using namespace gl;
   using namespace gl::bind;
-
-  draw(target, drawArrays(GL_TRIANGLES, 0, 6), drawSpriteShader,
-       texture(0, tex, samplerNearest.object()),
+  auto &state = getRenderUtilsState();
+  draw(target, drawArrays(GL_TRIANGLES, 0, 6), state.drawSpriteShader,
+       texture(0, tex, state.samplerNearest.object()),
        vertexBuffer(0, vbuf, sizeof(Vertex2D)));
 }
 
-void RenderUtils::drawGrid2D(gl::Framebuffer &target,
-                             vec2 center,  // screen coords
-                             vec2 spacing, // screen coords
-                             int primaryLinesEveryN, vec4 axisColorX,
-                             vec4 axisColorY, vec4 primaryLinesColor,
-                             vec4 secondaryLinesColor) {
+void drawGrid2D(gl::Framebuffer &target,
+                vec2 center,  // screen coords
+                vec2 spacing, // screen coords
+                int primaryLinesEveryN, vec4 axisColorX, vec4 axisColorY,
+                vec4 primaryLinesColor, vec4 secondaryLinesColor) {
   struct Vertex2DColor {
     vec2 pos;
     uint32_t color;
@@ -169,14 +262,22 @@ void RenderUtils::drawGrid2D(gl::Framebuffer &target,
   lines[idx + 3].pos = ndc(center.x, h);
   lines[idx + 3].color = axisColorYPacked;
 
+  auto &state = getRenderUtilsState();
   auto vbuf = gl::uploadFrameArray(lines.data(), lines.size());
   draw(target, gl::drawArrays(GL_LINES, 0, numVertices),
-       drawWireMesh2DColorShader,
+       state.drawWireMesh2DColorShader,
        gl::bind::vertexBuffer(0, vbuf, sizeof(Vertex2DColor)));
 }
 
-AG_API RenderUtils &getRenderUtils() {
-  static RenderUtils instance;
-  return instance;
+AG_API gl::Sampler& getLinearSampler()
+{
+	return getRenderUtilsState().samplerLinear;
+}
+
+AG_API gl::Sampler& getNearestSampler()
+{
+	return getRenderUtilsState().samplerNearest;
+}
+
 }
 }
