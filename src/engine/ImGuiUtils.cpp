@@ -204,7 +204,8 @@ void enumComboBox(const char *label, int *outValue,
                  return false;
                },
                &values, (int)values.size());
-  *outValue = values[curIdx].second;
+  if (curIdx != -1)
+	*outValue = values[curIdx].second;
 }
 
 static const char *getFriendlyName(const meta::Field &f) {
@@ -265,7 +266,7 @@ void genericValue(std::type_index ti, void *data) {
         return true;
       };
       ImGui::Combo("", &i, items_getter, const_cast<meta::Enum *>(mo),
-                   mo->enumerators.size());
+                   (int)mo->enumerators.size());
       mo->setValue(data, mo->enumerators[i].value);
     }
   } else {

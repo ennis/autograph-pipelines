@@ -2216,3 +2216,29 @@ Common API for Vulkan/OpenGL
 - ???
 - Profit
 
+_______________________________________________
+
+GBuffers:
+
+- albedo (SRGB): RGBA8
+	- alpha for emissive
+
+- normals: RG16F
+
+- misc: RG16UI packed
+	16-bit object ID
+	16-bit somehting else
+
+- depth D32F
+
+
+_______________________________________________
+
+Post-proc filters:
+
+- 3D model position diffusion
+
+- smudge filter (depth-aware)
+- LIC filter (depth-aware)
+- Sparse convolution filter (depth-aware)
+- Glow/Contour mask (object-aware)  

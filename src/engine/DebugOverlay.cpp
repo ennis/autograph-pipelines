@@ -691,6 +691,9 @@ static void pipelineStateGUI(PipelineState *ps) {
 static void pipelineStatesGUI() {
   ImGui::Begin("Shaders");
   auto &pipelineStateCache = getPipelineStateCache();
+  if (ImGui::Button("Reload all (Ctrl+F5)")) {
+	  pipelineStateCache.reloadAll();
+  }
   int numPS = pipelineStateCache.getCachedPipelineStateCount();
   for (int i = 0; i < numPS; ++i) {
     ImGui::PushID(i);

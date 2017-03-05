@@ -36,6 +36,8 @@ std::array<ImageFormatInfo, static_cast<std::size_t>(ImageFormat::Max)>
 { "R8G8B8_SRGB", 3, 3 },
 { "R8G8B8A8_SRGB", 4, 4 },
 { "R32G32B32A32_UINT", 16, 4 },
+{ "R16G16_SFLOAT", 4, 2 },
+{ "R16G16_SINT", 4, 2 },
     }};
 
 AG_API const ImageFormatInfo &getImageFormatInfo(ImageFormat fmt) {

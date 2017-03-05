@@ -1,22 +1,22 @@
-#include <experimental/filesystem>
-#include <fmt/format.h>
-#include <iostream>
-#include <memory>
-#include <string>
-#include <unordered_map>
-#include <glm/gtc/packing.hpp>
 #include <autograph/engine/All.h>
 #include <autograph/gl/All.h>
 #include <autograph/support/Debug.h>
 #include <autograph/support/FileDialog.h>
 #include <autograph/support/ProjectRoot.h>
+#include <experimental/filesystem>
+#include <fmt/format.h>
+#include <glm/gtc/packing.hpp>
+#include <iostream>
+#include <memory>
+#include <string>
+#include <unordered_map>
 
 #include "Canvas.h"
 #include "Scene2D.h"
 #include "SceneRenderer.h"
+#include <imgui.h>
 
 using namespace ag;
-
 
 ///////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////
@@ -37,13 +37,12 @@ int main(int argc, char *argv[]) {
   LightScene lightScene;
   RenderableScene renderableScene;
   ResourcePool pool;
-  DeferredSceneRenderer::GBuffer deferredGBuffers{640, 480};
-  DeferredSceneRenderer deferredSceneRenderer;
+  DeferredSceneRenderer deferredSceneRenderer{640, 480};
 
   ////////////////////////////////////////////////////
   // Scene
-  ID rootEntity = loadScene("mesh/interiorroom/interior.obj", entityManager, scene,
-                            renderableScene, lightScene, pool);
+  ID rootEntity = loadScene("mesh/sponza/sponza.obj", entityManager,
+                            scene, renderableScene, lightScene, pool);
   SceneObject *rootSceneObj = scene.get(rootEntity);
   if (rootSceneObj) {
     rootSceneObj->localTransform.scaling = vec3{1.0f};
@@ -60,6 +59,7 @@ int main(int argc, char *argv[]) {
     auto screenSize = vec2{(float)screenSizeI.x, (float)screenSizeI.y};
     camCtl.setAspectRatio(screenSize.x / screenSize.y);
     Camera cam = camCtl.getCamera();
+    auto &fbo = gl::getDefaultFramebuffer();
     ////////////////////////////////////////////////////
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glEnable(GL_FRAMEBUFFER_SRGB);
@@ -70,12 +70,11 @@ int main(int argc, char *argv[]) {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
     {
       AG_GPU_PROFILE_SCOPE("Draw grid")
-      RenderUtils::drawGrid2D(gl::getDefaultFramebuffer(), screenSize / 2.0f,
-                             vec2{25.0f}, 10);
+      RenderUtils::drawGrid2D(fbo, screenSize / 2.0f, vec2{25.0f}, 10);
     }
     // show scene editor
-    gui::sceneEditor(cam, entityManager, scene, renderableScene, lightScene, pool,
-                     rootEntity);
+    gui::sceneEditor(cam, entityManager, scene, renderableScene, lightScene,
+                     pool, rootEntity);
     {
       AG_PROFILE_SCOPE("Scene graph update")
       rootSceneObj->calculateWorldTransform();
@@ -88,29 +87,38 @@ int main(int argc, char *argv[]) {
     }
 
     {
-      AG_GPU_PROFILE_SCOPE("Rendering/Deferred")
-      deferredSceneRenderer.renderScene(deferredGBuffers, scene,
-                                        renderableScene, cam);
+      AG_GPU_PROFILE_SCOPE("Rendering/Deferred") 
+	  static std::pair<const char *, int> names[] = {
+		  { "None", (int)DeferredSceneRenderer::DebugRenderMode::None },
+		  { "Normals", (int)DeferredSceneRenderer::DebugRenderMode::Normals },
+		  { "ObjectID", (int)DeferredSceneRenderer::DebugRenderMode::ObjectID },
+		  { "Depth", (int)DeferredSceneRenderer::DebugRenderMode::Depth },
+		  { "Positions", (int)DeferredSceneRenderer::DebugRenderMode::Positions },
+		  { "Albedo", (int)DeferredSceneRenderer::DebugRenderMode::Albedo },
+		  { "Velocity", (int)DeferredSceneRenderer::DebugRenderMode::Velocity },
+	  };
+	  static DeferredSceneRenderer::DebugRenderMode mode = DeferredSceneRenderer::DebugRenderMode::None;
+	  gui::enumComboBoxT<DeferredSceneRenderer::DebugRenderMode>("debug deferred", &mode, names);
+      deferredSceneRenderer.renderScene(fbo, scene, renderableScene, cam, mode);
     }
 
-    {
+    /*{
       AG_GPU_PROFILE_SCOPE("Rendering/Debug")
       for (auto &idSceneObj : scene.getObjects()) {
         auto &sceneObj = idSceneObj.second;
         if (sceneObj.mesh) {
-			RenderUtils::drawMesh(gl::getDefaultFramebuffer(), cam, *sceneObj.mesh,
-                               sceneObj.worldTransform);
+                        RenderUtils::drawMesh(gl::getDefaultFramebuffer(), cam,
+    *sceneObj.mesh, sceneObj.worldTransform);
         }
       }
-    }
+    }*/
   });
 
   ////////////////////////////////////////////////////
   // window events
   w.onEvent([&](ag::Window &win, const ag::Event &ev) {
     if (ev.type == EventType::WindowResize) {
-      deferredGBuffers =
-          DeferredSceneRenderer::GBuffer{ev.resize.width, ev.resize.height};
+      deferredSceneRenderer.resize(ev.resize.width, ev.resize.height);
     }
   });
 

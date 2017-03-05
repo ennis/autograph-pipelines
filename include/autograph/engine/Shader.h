@@ -40,6 +40,7 @@ struct PipelineState {
   int groupSizeY{0};
   int groupSizeZ{0};
 
+  void loadFromShaderFile(const char *shaderId, sol::table table);
   void loadFromTable(sol::table config);
   void compile();
 };
@@ -57,6 +58,7 @@ public:
   // get number of cached states
   int getCachedPipelineStateCount();
   PipelineState *getCachedPipelineState(int index);
+  void reloadAll();
 
 private:
   // should be hash -> CachedPipelineState

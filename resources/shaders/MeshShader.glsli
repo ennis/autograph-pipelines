@@ -1,9 +1,10 @@
 
 ## if _VERTEX_ then 
-layout(std140, binding = 0) uniform U0 {
+layout(std140, binding = 0) uniform CameraParameters {
   mat4 uViewMatrix;
   mat4 uProjMatrix;
   mat4 uViewProjMatrix;
+  mat4 uInvProjMatrix;
 };
 
 uniform mat4 uModelMatrix;

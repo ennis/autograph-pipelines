@@ -22,11 +22,14 @@ struct CameraPerObjectUniforms {
 struct CameraUniforms {
   CameraUniforms() = default;
   CameraUniforms(const Camera &cam)
-      : viewMatrix{cam.viewMat}, projMatrix{cam.projMat} {
+      : viewMatrix{cam.viewMat}, projMatrix{cam.projMat} 
+  {
     viewProjMatrix = projMatrix * viewMatrix;
+	invProjMatrix = glm::inverse(cam.projMat);
   }
   mat4 viewMatrix;
   mat4 projMatrix;
   mat4 viewProjMatrix;
+  mat4 invProjMatrix;
 };
 }

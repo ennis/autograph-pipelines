@@ -94,7 +94,7 @@ function shader_utils.createShaderFromTemplate(shaderId, defines)
   if shader.isCompute then
     defines._COMPUTE_ = true
     local cs = preprocess(shaderFile, defines, {})
-    pass.vertexShader = cs
+    pass.computeShader = cs
   else
     defines._VERTEX_ = true
     local vs = preprocess(shaderFile, defines, {})

@@ -111,6 +111,8 @@ void PipelineState::loadFromTable(sol::table config) {
       fragmentShaderSource = config["fragmentShader"];
     }
   }
+
+  shouldRecompile = true;
 }
 
 void PipelineState::compile() {
@@ -161,14 +163,22 @@ int PipelineStateCache::getCachedPipelineStateCount() {
   return (int)states.size();
 }
 
-PipelineState*
-PipelineStateCache::getCachedPipelineState(int index) {
+PipelineState *PipelineStateCache::getCachedPipelineState(int index) {
   return states[index].get();
 }
 
-PipelineStateCache& getPipelineStateCache() {
-	static PipelineStateCache psc;
-	return psc;
+void PipelineStateCache::reloadAll() {
+	AG_DEBUG("Reloading all shaders");
+	auto& L = detail::ensureShaderLuaStateInitialized();
+  for (auto &p : states) {
+    if (!p->origShaderID.empty())
+      p->loadFromShaderFile(p->origShaderID.c_str(), L.create_table());
+  }
+}
+
+PipelineStateCache &getPipelineStateCache() {
+  static PipelineStateCache psc;
+  return psc;
 }
 
 //////////////////////////////////////////////
@@ -251,11 +261,10 @@ static void loadShaderFile(const char *shaderId) {
 }
 
 /////////////////////////////////////////////////
-void Shader::initialize(const char *shaderId, sol::table table) {
+void PipelineState::loadFromShaderFile(const char *shaderId, sol::table table) {
   auto &L = detail::ensureShaderLuaStateInitialized();
   // TODO load from cache and reuse instead of creating a new one each time
-  cached = std::make_shared<PipelineState>();
-  cached->origShaderID = shaderId;
+  origShaderID = shaderId;
   // Decompose shaderId into shader file + pass name
   std::string shaderIdStr{shaderId};
   auto p = shaderIdStr.find_last_of(':');
@@ -269,11 +278,16 @@ void Shader::initialize(const char *shaderId, sol::table table) {
   try {
     loadShaderFile(shaderFileId.c_str());
     auto config = L["shader_utils"]["createShaderFromTemplate"](passId, table);
-    cached->loadFromTable(config);
+    loadFromTable(config);
   } catch (sol::error &e) {
     errorMessage("Error loading shader {}:\n\t{}", shaderId, e.what());
     throw;
   }
+}
+
+void Shader::initialize(const char *shaderId, sol::table table) {
+  cached = std::make_shared<PipelineState>();
+  cached->loadFromShaderFile(shaderId, table);
   cached = getPipelineStateCache().cachePipelineState(cached);
 }
 

@@ -32,6 +32,11 @@ enum class AG_REFLECT StateGroupMask {
 
 ENUM_BIT_FLAGS_OPERATORS(StateGroupMask)
 
+static constexpr StateGroupMask StateGroupMask_AllCompute =
+    StateGroupMask::Images | StateGroupMask::Textures |
+    StateGroupMask::Samplers | StateGroupMask::Program |
+    StateGroupMask::UniformBuffers | StateGroupMask::ShaderStorageBuffers;
+
 //////////////////////////////////////////////////
 struct AG_API BlendState {
   constexpr BlendState() = default;

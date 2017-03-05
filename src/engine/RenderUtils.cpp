@@ -87,12 +87,11 @@ AG_API void drawLines(gl::Framebuffer &target, const Camera &cam,
   auto vbuf = uploadFrameArray(lines.data(), lines.size());
   auto &state = getRenderUtilsState();
   // glLineWidth(lineWidth);
-  draw(target, drawArrays(GL_LINES, 0, lines.size()),
-       state.drawWireMeshNoDepthShader, 
-	   uniformFrameData(0, &camUniforms),
+  draw(target, drawArrays(GL_LINES, 0, (uint32_t)lines.size()),
+       state.drawWireMeshNoDepthShader, uniformFrameData(0, &camUniforms),
        uniform_mat4("uModelMatrix", modelTransform),
        uniform_vec4("uWireColor", wireColor),
-	   gl::bind::vertexBuffer(0, vbuf, sizeof(Vertex3D)));
+       gl::bind::vertexBuffer(0, vbuf, sizeof(Vertex3D)));
 }
 
 // Draw a bounding box
@@ -129,35 +128,35 @@ void drawBoundingBox(gl::Framebuffer &target, const Camera &cam,
       {vec3{aabb.xmax, aabb.ymax, aabb.zmax}, vec3{0.0f}, vec3{0.0f},
        vec2{0.0f}},
 
-	   { vec3{ aabb.xmin, aabb.ymax, aabb.zmin }, vec3{ 0.0f }, vec3{ 0.0f },
-	   vec2{ 0.0f } },
-	   { vec3{ aabb.xmin, aabb.ymax, aabb.zmax }, vec3{ 0.0f }, vec3{ 0.0f },
-	   vec2{ 0.0f } },
+      {vec3{aabb.xmin, aabb.ymax, aabb.zmin}, vec3{0.0f}, vec3{0.0f},
+       vec2{0.0f}},
+      {vec3{aabb.xmin, aabb.ymax, aabb.zmax}, vec3{0.0f}, vec3{0.0f},
+       vec2{0.0f}},
 
-	   { vec3{ aabb.xmin, aabb.ymin, aabb.zmax }, vec3{ 0.0f }, vec3{ 0.0f },
-	   vec2{ 0.0f } },
-	   { vec3{ aabb.xmin, aabb.ymax, aabb.zmax }, vec3{ 0.0f }, vec3{ 0.0f },
-	   vec2{ 0.0f } },
+      {vec3{aabb.xmin, aabb.ymin, aabb.zmax}, vec3{0.0f}, vec3{0.0f},
+       vec2{0.0f}},
+      {vec3{aabb.xmin, aabb.ymax, aabb.zmax}, vec3{0.0f}, vec3{0.0f},
+       vec2{0.0f}},
 
-	   { vec3{ aabb.xmin, aabb.ymax, aabb.zmin }, vec3{ 0.0f }, vec3{ 0.0f },
-	   vec2{ 0.0f } },
-	   { vec3{ aabb.xmax, aabb.ymax, aabb.zmin }, vec3{ 0.0f }, vec3{ 0.0f },
-	   vec2{ 0.0f } },
+      {vec3{aabb.xmin, aabb.ymax, aabb.zmin}, vec3{0.0f}, vec3{0.0f},
+       vec2{0.0f}},
+      {vec3{aabb.xmax, aabb.ymax, aabb.zmin}, vec3{0.0f}, vec3{0.0f},
+       vec2{0.0f}},
 
-	   { vec3{ aabb.xmax, aabb.ymin, aabb.zmin }, vec3{ 0.0f }, vec3{ 0.0f },
-	   vec2{ 0.0f } },
-	   { vec3{ aabb.xmax, aabb.ymin, aabb.zmax }, vec3{ 0.0f }, vec3{ 0.0f },
-	   vec2{ 0.0f } },
+      {vec3{aabb.xmax, aabb.ymin, aabb.zmin}, vec3{0.0f}, vec3{0.0f},
+       vec2{0.0f}},
+      {vec3{aabb.xmax, aabb.ymin, aabb.zmax}, vec3{0.0f}, vec3{0.0f},
+       vec2{0.0f}},
 
-	   { vec3{ aabb.xmax, aabb.ymin, aabb.zmin }, vec3{ 0.0f }, vec3{ 0.0f },
-	   vec2{ 0.0f } },
-	   { vec3{ aabb.xmax, aabb.ymax, aabb.zmin }, vec3{ 0.0f }, vec3{ 0.0f },
-	   vec2{ 0.0f } },
+      {vec3{aabb.xmax, aabb.ymin, aabb.zmin}, vec3{0.0f}, vec3{0.0f},
+       vec2{0.0f}},
+      {vec3{aabb.xmax, aabb.ymax, aabb.zmin}, vec3{0.0f}, vec3{0.0f},
+       vec2{0.0f}},
 
-	   { vec3{ aabb.xmin, aabb.ymin, aabb.zmax }, vec3{ 0.0f }, vec3{ 0.0f },
-	   vec2{ 0.0f } },
-	   { vec3{ aabb.xmax, aabb.ymin, aabb.zmax }, vec3{ 0.0f }, vec3{ 0.0f },
-	   vec2{ 0.0f } },
+      {vec3{aabb.xmin, aabb.ymin, aabb.zmax}, vec3{0.0f}, vec3{0.0f},
+       vec2{0.0f}},
+      {vec3{aabb.xmax, aabb.ymin, aabb.zmax}, vec3{0.0f}, vec3{0.0f},
+       vec2{0.0f}},
   };
   drawLines(target, cam, lines, mat4{1.0f}, 1.0f, wireColor);
 }
@@ -196,7 +195,12 @@ void drawSprite(gl::Framebuffer &target, float targetX0, float targetY0,
   auto &state = getRenderUtilsState();
   draw(target, drawArrays(GL_TRIANGLES, 0, 6), state.drawSpriteShader,
        texture(0, tex, state.samplerNearest.object()),
-       vertexBuffer(0, vbuf, sizeof(Vertex2D)));
+       vertexBuffer(0, vbuf, sizeof(Vertex2DTex)));
+}
+
+void drawTexturedQuad(gl::Framebuffer &target, gl::Texture &src) {
+  drawSprite(target, 0.0f, 0.0f, (float)target.width(), (float)target.height(),
+             src.object());
 }
 
 void drawGrid2D(gl::Framebuffer &target,
@@ -269,15 +273,12 @@ void drawGrid2D(gl::Framebuffer &target,
        gl::bind::vertexBuffer(0, vbuf, sizeof(Vertex2DColor)));
 }
 
-AG_API gl::Sampler& getLinearSampler()
-{
-	return getRenderUtilsState().samplerLinear;
+AG_API gl::Sampler &getLinearSampler() {
+  return getRenderUtilsState().samplerLinear;
 }
 
-AG_API gl::Sampler& getNearestSampler()
-{
-	return getRenderUtilsState().samplerNearest;
+AG_API gl::Sampler &getNearestSampler() {
+  return getRenderUtilsState().samplerNearest;
 }
-
 }
 }

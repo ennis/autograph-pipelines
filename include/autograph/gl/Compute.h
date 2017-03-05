@@ -10,7 +10,7 @@ template <typename Shader, typename... Arguments>
 void dispatchCompute(Shader &&shader, int numGroupsX, int numGroupsY, int numGroupsZ,
           Arguments &&... args) {
   StateGroup sg;
-  sg.mask = StateGroupMask::All;
+  sg.mask = StateGroupMask_AllCompute;
   // 1. bind program & draw states (~= pipeline state)
   shader(sg);
   // 2. bind args
@@ -30,7 +30,7 @@ void dispatchComputeOnImage2D(int width, int height, int groupSizeX, int groupSi
   };
 
   StateGroup sg;
-  sg.mask = StateGroupMask::All;
+  sg.mask = StateGroupMask_AllCompute;
   // 1. bind program & draw states (~= pipeline state)
   shader(sg);
   // 2. bind args

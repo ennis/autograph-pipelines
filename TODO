@@ -273,8 +273,10 @@ Error, first noticed where (intellisense, compile-time, runtime crash, runtime s
      ???
  ☐ [runtime silent] Camera not centered on object
      Robust camera auto-center 
- ☐ [runtime silent] gl::bind::vertexBuffer: incorrect stride parameter
-     Use meshes 
+ ☐ [runtime silent] gl::bind::vertexBuffer: incorrect stride parameter (x2)
+     Use meshes
+     Use type-safe bind::vertexBuffer
+     Use typed BufferSlices
  ☐ [runtime silent] gl::bind::vertexBuffer: incorrect stride parameter b/c of C++ alignment
      ??? 
  ☐ [runtime silent] Lua/ShaderDef: no error when 'layout' in shader def was set to an undefined table  

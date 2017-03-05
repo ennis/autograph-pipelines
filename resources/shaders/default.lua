@@ -1,8 +1,25 @@
 require 'shaders/utils'
 
-deferred = GeometryPass
+geometryPass = GeometryPass
 {
 	shaderFile = 'Deferred.glsl'
+}
+
+deferredPass = ScreenPass
+{
+	shaderFile = 'DeferredDebug.glsl',
+	blendState = {
+		[0] = { enabled = false },
+		[1] = { enabled = false },
+		[2] = { enabled = false },
+		[3] = { enabled = false },
+		[4] = { enabled = false }}
+}
+
+TAAAverage = ComputeShader 
+{
+	shaderFile = 'TemporalAA.glsl',
+	barrierBits = bit.bor(gl.GL_TEXTURE_FETCH_BARRIER_BIT, gl.GL_SHADER_IMAGE_ACCESS_BARRIER_BIT)
 }
 
 drawSprite = Geometry2DPass

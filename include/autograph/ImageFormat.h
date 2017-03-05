@@ -21,6 +21,8 @@ enum class AG_REFLECT ImageFormat {
   R8G8B8_SRGB,
   R8G8B8A8_SRGB,
   R32G32B32A32_UINT,
+  R16G16_SFLOAT,
+  R16G16_SINT,
   Max
 };
 

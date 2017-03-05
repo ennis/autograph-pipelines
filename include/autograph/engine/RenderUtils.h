@@ -12,6 +12,7 @@ namespace RenderUtils {
 AG_API void reloadShaders();
 
 // 0,0 is top left
+// TODO rename to drawTexturedQuad?
 AG_API void drawSprite(gl::Framebuffer &target, float targetX, float targetY,
                        float targetWidth, float targetHeight, gl::Texture &src,
                        float srcX = 0.0f, float srcY = 0.0f,
@@ -20,6 +21,7 @@ AG_API void drawSprite(gl::Framebuffer &target, float targetX, float targetY,
                        float targetWidth, float targetHeight, GLuint tex,
                        float srcX = 0.0f, float srcY = 0.0f,
                        float srcWidth = 1.0f, float srcHeight = 1.0f);
+AG_API void drawTexturedQuad(gl::Framebuffer &target, gl::Texture &src);
 
 // Draw mesh with default view-dependent shading
 AG_API void drawMesh(gl::Framebuffer &target, const Camera &cam, Mesh3D &mesh,

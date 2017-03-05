@@ -43,6 +43,7 @@ Camera CameraControl::getCamera() const {
   cam.projMat =
       glm::scale(vec3{zoomLevel_, zoomLevel_, 1.0f}) *
       glm::perspective(glm::radians(fov_), aspectRatio_, nearPlane_, farPlane_);
+	  //glm::orthoRH(-1000.0f, 1000.0f, -1000.0f, 1000.0f, nearPlane_, farPlane_);
   cam.wEye = vec3(glm::inverse(cam.viewMat) * vec4{0.0f, 0.0f, 0.0f, 1.0f});
   // AG_DEBUG("modelMat {},{},{},{}", cam.modelMatrix[0],
   // objectUniforms.modelMatrix[1], objectUniforms.modelMatrix[2],

@@ -4,6 +4,7 @@
 #include <autograph/engine/ImGuiUtils.h>
 #include <autograph/engine/Profiler.h>
 #include <autograph/engine/Window.h>
+#include <autograph/engine/Shader.h>
 #include <autograph/gl/Capture.h>
 #include <autograph/gl/Device.h>
 #include <autograph/support/Debug.h>
@@ -406,6 +407,11 @@ void Window::keyHandler(int key, int scancode, int action, int mods) {
     // toggle profiler
     profiler_ = !profiler_;
 	AG_DEBUG("Profiler {}", profiler_ ? "ON" : "OFF");
+  } 
+  if (mods == (GLFW_MOD_CONTROL) && key == GLFW_KEY_F5 &&
+	  action == GLFW_PRESS) {
+	  // reload all shaders
+	  getPipelineStateCache().reloadAll();
   }
 }
 

@@ -20,6 +20,8 @@ static GLFormatInfo glfmt_argb_10_10_10_2_unorm{GL_RGB10_A2, GL_DEPTH_COMPONENT,
                                                 GL_FLOAT, 1, 4};
 static GLFormatInfo glfmt_rgba8_unorm_srgb{GL_SRGB8_ALPHA8, GL_RGBA,
                                            GL_UNSIGNED_BYTE, 4, 4};
+static GLFormatInfo glfmt_rg16_float{ GL_RG16F, GL_RG, GL_FLOAT, 2, 4 };
+static GLFormatInfo glfmt_rg16_sint{ GL_RG16I, GL_RG, GL_INT, 2, 4 };
 
 void TextureDeleter::operator()(GLuint tex_obj) {
   glDeleteTextures(1, &tex_obj);
@@ -30,7 +32,7 @@ const GLFormatInfo &getGLImageFormatInfo(ImageFormat fmt) {
   case ImageFormat::R32G32B32A32_UINT:
     return glfmt_rgba32_uint;
   case ImageFormat::R16G16B16A16_SFLOAT:
-    return glfmt_rgba32_float;
+    return glfmt_rgba16_float;
   case ImageFormat::R8G8B8A8_UNORM:
     return glfmt_rgba8_unorm;
   case ImageFormat::R8G8B8A8_SNORM:
@@ -47,6 +49,10 @@ const GLFormatInfo &getGLImageFormatInfo(ImageFormat fmt) {
     return glfmt_argb_10_10_10_2_unorm;
   case ImageFormat::R8G8B8A8_SRGB:
     return glfmt_rgba8_unorm_srgb;
+  case ImageFormat::R16G16_SFLOAT:
+	  return glfmt_rg16_float;
+  case ImageFormat::R16G16_SINT:
+	  return glfmt_rg16_sint;
   case ImageFormat::A2R10G10B10_SNORM_PACK32:
   // return glfmt_argb_10_10_10_2_snorm;   // there is no signed version of this
   // format in OpenGL
