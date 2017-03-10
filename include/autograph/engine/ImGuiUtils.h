@@ -24,14 +24,14 @@ void inputTextMultilineString(const char *label, std::string &str,
 
 using NameValuePair = std::pair<const char *, int>;
 
+void enumComboBox(const char *label, int *outValue,
+                  span<const std::pair<const char *, int>> values);
+
 template <typename T>
 void enumComboBoxT(const char *label, T *outValue,
                    span<const std::pair<const char *, int>> values) {
   return enumComboBox(label, reinterpret_cast<int *>(outValue), values);
 }
-
-void enumComboBox(const char *label, int *outValue,
-                  span<const std::pair<const char *, int>> values);
 
 template <typename T> void genericValue(T &value) {
   genericValue(typeid(T), &value);
