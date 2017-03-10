@@ -31,7 +31,7 @@ AG_API std::string getSubpathPart(const char *id) {
   if (p == std::string::npos) {
     return {};
   } else {
-    return idstr.substr(p + 1);
+    return idstr.substr(p + 1).to_string();
   }
 }
 

@@ -254,7 +254,7 @@ void genericValue(std::type_index ti, void *data) {
     ImGui::SliderInt4("", reinterpret_cast<int *>(data), 0, 100);
   }
   // GUIs for reflected enum types
-  else if (auto mo0 = meta::typeOf(ti)) {
+  /*else if (auto mo0 = meta::typeOf(ti)) {
     if (auto mo = mo0->as<meta::Enum>()) {
       int i = mo->findEnumeratorIndex(data);
       auto items_getter = [](void *data, int idx,
@@ -269,7 +269,7 @@ void genericValue(std::type_index ti, void *data) {
                    (int)mo->enumerators.size());
       mo->setValue(data, mo->enumerators[i].value);
     }
-  } else {
+  }*/ else {
     ImGui::TextDisabled("No metaobject");
   }
   ImGui::PopID();
