@@ -46,6 +46,7 @@ private:
   gl::Texture deferredTarget;	// R16G16B16A16_SFLOAT
   gl::Texture TAATarget0;
   gl::Texture TAATarget1;
+  gl::Texture TAADebug;
 
   Camera prevCamera;
   int TAACurrentSample = 0;

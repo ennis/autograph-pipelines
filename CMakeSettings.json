@@ -3,14 +3,14 @@
         {
         "name": "Visual Studio 15 x86",
         "generator": "Visual Studio 15 2017",
-        "buildRoot":  "${projectDir}\\build\\${workspaceHash}",
+        "buildRoot":  "${projectDir}\\build7\\${workspaceHash}",
         "cmakeCommandArgs":  " -DBoost_INCLUDE_DIR:PATH=C:\\Boost\\include\\boost-1_62 -DLLVM_DIR:PATH=C:\\Users\\Alexandre\\Developpement\\llvm3.9\\lib\\cmake\\llvm -DClang_DIR:PATH=C:\\Users\\Alexandre\\Developpement\\llvm3.9\\lib\\cmake\\clang",
         "buildCommandArgs": "-m -v:minimal"
         },
         {
         "name": "Visual Studio 15 x64",
         "generator": "Visual Studio 15 2017 Win64",
-        "buildRoot":  "${projectDir}\\build\\${workspaceHash}",
+        "buildRoot":  "${projectDir}\\build7\\${workspaceHash}",
         "cmakeCommandArgs":  " -D Boost_INCLUDE_DIR:PATH=C:\\Boost\\include\\boost-1_62 -DLLVM_DIR:PATH=C:\\Users\\Alexandre\\Developpement\\llvm3.9\\lib\\cmake\\llvm -DClang_DIR:PATH=C:\\Users\\Alexandre\\Developpement\\llvm3.9\\lib\\cmake\\clang",
         "buildCommandArgs": "-m -v:minimal"
         }

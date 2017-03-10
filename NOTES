@@ -2206,6 +2206,46 @@ API cleanup / simplification
 		prefer Count/Index function pairs 
 
 
+
+_______________________________________________
+
+Interface between scene geometry and global scene renderers:
+
+- static geometry (StaticMeshComponent)
+- dynamic geometry (DynamicMeshComponent)
+- instanced geometry (InstancedMeshComponent)
+- GPU skinned geometry (SkinnedMeshComponent)
+- Billboards (Billboard)
+- Procedural geometry => Terrain
+	=> must provide a vertex source, a draw command, or even vertex source + shader
+	=> shader must be compatible with the renderer (deferred or forward)
+	=> use materials?
+	=> be opinionated here
+
+** Dynamic geometry with custom material?
+	=> must blend vertex shader + part of fragment shader
+	=> maybe in the future
+
+- Remove Mesh* from sceneobject?
+-> move into separate component 
+
+Use per-object renderer objects:
+class GeometryRenderer
+	- bucket (Deferred, Forward, HUD, custom)
+	- supported global renderers (Deferred, Forward)
+	- operator()(StateGroup&) 
+
+class StaticMeshRenderer : public GeometryRenderer
+	- material (set of textures)
+
+class Terrain : public SceneObject
+{
+}
+
+Transform + Mesh + Material => SceneObject?
+
+Transform + Bounds => SceneObject
+Mesh + Material => Renderer
 _______________________________________________
 
 Long-term low-level rendering API:

@@ -13,6 +13,7 @@ struct Frustum {
   // far clip plane position
   float farPlane;
 };
+
 //////////////////////////////////////////////
 // camera data returned by a camera controller
 struct Camera {
@@ -30,16 +31,6 @@ struct Camera {
   mat4 projMat;
   // Eye position in world space (camera center)
   vec3 wEye;
-};
-
-//////////////////////////////////////////////
-struct CameraSettings {
-  vec3 eye{0.0f, 0.0f, 0.0f};
-  float fieldOfView{70.0f};
-  float nearPlane{0.05f};
-  float farPlane{4.0f};
-  float sensitivity{0.1f};
-  ivec2 screenSize;
 };
 
 }

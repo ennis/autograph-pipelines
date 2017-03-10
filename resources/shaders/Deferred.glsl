@@ -37,6 +37,7 @@ uniform int uObjectID;
 	  Tv0 = (uViewModel * vec4(iTangent, 0.0)).xyz;
 	  //Pv = (uViewModel * vec4(iPosition, 1.0)).xyz;
 	  uv = vec2(iTexcoords.x, 1-iTexcoords.y);
+	  //uv = iTexcoords;
 	  // positions for velocity calculation
 	  prevPos = uPrevViewProjMatrixVelocity * uPrevModelMatrix * vec4(iPosition, 1.0f);
 	  curPos = uViewProjMatrixVelocity * uModelMatrix * vec4(iPosition, 1.0f);
@@ -71,7 +72,7 @@ uniform int uObjectID;
       vec2 a = curPos.xy / curPos.w;
       vec2 b = prevPos.xy / prevPos.w;
       vec2 vel = a-b;	// velocity in clip space
-      rtVelocity = vec4(vel,0,1);
+      rtVelocity = vec4(0.5*vel,0,1);
 	}
 
 ## end

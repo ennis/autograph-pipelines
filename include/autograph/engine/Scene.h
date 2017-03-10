@@ -46,4 +46,5 @@ public:
   // set a parent-child relationship between two entities
   void parent(ID parent, ID child);
 };
+
 }

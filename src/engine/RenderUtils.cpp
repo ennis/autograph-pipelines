@@ -11,12 +11,15 @@ struct RenderUtilsState {
   RenderUtilsState() {
     reloadShaders();
     gl::SamplerDesc desc;
-    desc.addrU = GL_CLAMP_TO_EDGE;
-    desc.addrV = GL_CLAMP_TO_EDGE;
-    desc.addrW = GL_CLAMP_TO_EDGE;
+    desc.addrU = GL_REPEAT;
+    desc.addrV = GL_REPEAT;
+    desc.addrW = GL_REPEAT;
     desc.minFilter = GL_NEAREST;
     desc.magFilter = GL_NEAREST;
     samplerNearest = gl::Sampler{desc};
+	desc.minFilter = GL_LINEAR;
+	desc.magFilter = GL_LINEAR;
+	samplerLinear = gl::Sampler{ desc };
   }
 
   void reloadShaders() {
