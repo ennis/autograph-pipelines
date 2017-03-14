@@ -30,8 +30,10 @@ struct StdMaterial
   gl::Texture *lightmap = nullptr;
 };
 
-class RenderableScene : public ComponentManager<StdMaterial> 
+class AG_ENGINE_API RenderableComponents : public ComponentManager<StdMaterial>
 {
+public:
+	void showGUI(ID id) override;
 };
 
 }

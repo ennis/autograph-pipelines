@@ -1,5 +1,6 @@
 #include <autograph/engine/RenderUtils.h>
 #include <autograph/engine/ShaderUtils.h>
+#include <autograph/engine/Shader.h>
 #include <autograph/gl/Device.h>
 #include <autograph/gl/Draw.h>
 #include <glm/gtc/matrix_transform.hpp>
@@ -81,7 +82,7 @@ void drawWireMesh(gl::Framebuffer &target, const Camera &cam, Mesh3D &mesh,
        uniform_vec4("uWireColor", wireColor));
 }
 
-AG_API void drawLines(gl::Framebuffer &target, const Camera &cam,
+void drawLines(gl::Framebuffer &target, const Camera &cam,
                       span<const Vertex3D> lines, mat4 modelTransform,
                       float lineWidth, vec4 wireColor) {
   CameraUniforms camUniforms{cam};
@@ -276,11 +277,11 @@ void drawGrid2D(gl::Framebuffer &target,
        gl::bind::vertexBuffer(0, vbuf, sizeof(Vertex2DColor)));
 }
 
-AG_API gl::Sampler &getLinearSampler() {
+gl::Sampler &getLinearSampler() {
   return getRenderUtilsState().samplerLinear;
 }
 
-AG_API gl::Sampler &getNearestSampler() {
+gl::Sampler &getNearestSampler() {
   return getRenderUtilsState().samplerNearest;
 }
 }

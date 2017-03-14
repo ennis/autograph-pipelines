@@ -2,10 +2,10 @@
 #include <array>
 #include <autograph/Config.h>
 #include <autograph/gl/Buffer.h>
-#include <autograph/support/Optional.h>
-#include <autograph/support/SmallVector.h>
+//#include <autograph/support/Optional.h>
+//#include <autograph/support/SmallVector.h>
 #include <autograph/support/Utils.h>
-#include <gl_core_4_5.h>
+#include <autograph/gl/gl_core_4_5.h>
 
 namespace ag {
 namespace gl {
@@ -38,7 +38,7 @@ static constexpr StateGroupMask StateGroupMask_AllCompute =
     StateGroupMask::UniformBuffers | StateGroupMask::ShaderStorageBuffers;
 
 //////////////////////////////////////////////////
-struct AG_API BlendState {
+struct AG_GL_API BlendState {
   constexpr BlendState() = default;
   /*constexpr BlendState(bool enabled_, GLenum modeRGB_, GLenum modeAlpha_,
           GLenum funcSrcRGB_, GLenum funcDstRGB_,
@@ -61,7 +61,7 @@ struct AG_API BlendState {
   }
 };
 
-struct AG_API DepthStencilState {
+struct AG_GL_API DepthStencilState {
   constexpr DepthStencilState() = default;
   /*constexpr DepthStencilState(bool depthTestEnable_, bool depthWriteEnable_,
           bool stencilEnable_, GLenum stencilFace_,
@@ -89,7 +89,7 @@ struct AG_API DepthStencilState {
   GLenum stencilOpDPPass = 0;
 };
 
-struct AG_API RasterizerState {
+struct AG_GL_API RasterizerState {
   constexpr RasterizerState() = default;
   constexpr RasterizerState(GLenum fillMode_) : fillMode{fillMode_} {}
   GLenum fillMode = GL_FILL;
@@ -101,14 +101,14 @@ struct AG_API RasterizerState {
   bool scissorEnable = false;
 };
 
-struct AG_API ScissorRect {
+struct AG_GL_API ScissorRect {
   int x;
   int y;
   int w;
   int h;
 };
 
-struct AG_API Viewport {
+struct AG_GL_API Viewport {
   float x;
   float y;
   float w;
@@ -121,7 +121,7 @@ static constexpr int kMaxVertexBufferSlots = 8;
 static constexpr int kMaxUniformBufferSlots = 8;
 static constexpr int kMaxShaderStorageBufferSlots = 8;
 
-struct AG_API Uniforms {
+struct AG_GL_API Uniforms {
   std::array<GLuint, kMaxTextureUnits> textures{{0}};
   std::array<GLuint, kMaxTextureUnits> samplers{{0}};
   std::array<GLuint, kMaxImageUnits> images{{0}};
@@ -140,7 +140,7 @@ struct AG_API Uniforms {
   GLenum indexBufferType{0};
 };
 
-struct AG_API DrawStates {
+struct AG_GL_API DrawStates {
   DepthStencilState depthStencilState;
   RasterizerState rasterizerState;
   std::array<ScissorRect, 8> scissorRects{{0}};
@@ -150,7 +150,7 @@ struct AG_API DrawStates {
   GLuint program;
 };
 
-struct AG_API StateGroup {
+struct AG_GL_API StateGroup {
   StateGroupMask mask;
   DrawStates drawStates;
   Uniforms uniforms;
@@ -158,7 +158,7 @@ struct AG_API StateGroup {
 };
 
 // bind a uniform state group to the opengl pipeline
-AG_API void bindStateGroup(const StateGroup &sg);
+AG_GL_API void bindStateGroup(const StateGroup &sg);
 
 // binding strategy:
 // accumulate all states into a temp buffer

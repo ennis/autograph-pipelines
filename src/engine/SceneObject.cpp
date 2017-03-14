@@ -1,4 +1,5 @@
-#include <autograph/engine/Scene.h>
+#include <autograph/engine/SceneObject.h>
+#include <autograph/engine/imgui.h>
 
 namespace ag {
 
@@ -64,9 +65,31 @@ void SceneObject::calculateWorldTransform(const mat4 &parentTransform) {
 }
 
 // set a parent-child relationship between two entities
-void Scene::parent(ID parent, ID child) {
+void SceneObjectComponents::parent(ID parent, ID child) {
   auto pparent = get(parent);
   auto pchild = get(child);
   pparent->addChild(pchild);
 }
+
+// calculate world transforms
+void SceneObjectComponents::update(const mat4& baseTransform)
+{
+	for (auto& obj : getObjects()) {
+		if (!obj.second.parent) {
+			obj.second.calculateWorldTransform(baseTransform);
+			obj.second.calculateWorldBounds();
+		}
+	}
+}
+
+void SceneObjectComponents::showGUI(ID id)
+{
+	if (auto p = get(id)) {
+		if (ImGui::CollapsingHeader("SceneObject")) {
+			ImGui::TextDisabled("TODO...");
+		}
+	}
+}
+
+
 }

@@ -1,7 +1,6 @@
 #include <autograph/engine/ImGuiUtils.h>
 #include <autograph/engine/Profiler.h>
-#include <imgui.h>
-#include <imgui_internal.h>
+#include <autograph/engine/imgui.h>
 
 namespace ag {
 namespace Profiler {
@@ -49,7 +48,7 @@ void enterScope(const char *scopeName, bool gpu) {
   else if (prevScope != -1)
 	  scopes[prevScope].next = si;
   curScope = si;
-  scopes.push_back(std::move(s));
+  scopes.emplace_back(std::move(s));
 }
 
 void exitScope() {

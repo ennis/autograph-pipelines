@@ -1,4 +1,5 @@
 #pragma once
+#include <autograph/engine/Config.h>
 #include <cstdint>
 #include <array>
 #define GLFW_INCLUDE_NONE
@@ -44,7 +45,7 @@ struct GamepadState {
 };
 
 //////////////////////////////////////////////
-class AG_API Action : public Observable<> {
+class AG_ENGINE_API Action : public Observable<> {
 public:
   Action() {}
   virtual ~Action() {}
@@ -53,7 +54,7 @@ protected:
 };
 
 //////////////////////////////////////////////
-class AG_API KeyAction : public Action {
+class AG_ENGINE_API KeyAction : public Action {
 public:
   KeyAction(int key);
   ~KeyAction();
@@ -64,7 +65,7 @@ private:
 };
 
 //////////////////////////////////////////////
-class AG_API GamepadButtonAction : public Action {
+class AG_ENGINE_API GamepadButtonAction : public Action {
 public:
   GamepadButtonAction(uint16_t button, bool autofire = false,
                         float fire_rate = 0.0f);

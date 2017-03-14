@@ -1,11 +1,13 @@
 #pragma once
+#include <autograph/engine/Config.h>
 #include <autograph/support/IDTable.h>
 #include <unordered_map>
+#include <set>
 
 namespace ag {
 
 //////////////////////////////////////////////
-class EntityManager {
+class AG_ENGINE_API EntityManager {
 public:
   ////////////////////////////////////
   ID createEntity() { return ids_.createID(); }
@@ -15,8 +17,17 @@ private:
   IDTable ids_;
 };
 
+class AG_ENGINE_API ComponentManagerBase
+{
+public:
+	virtual void serialize(ID id) {}
+	virtual void deserialize(ID id) {}
+	virtual void showGUI(ID id) {}
+private:
+};
+
 //////////////////////////////////////////////
-template <typename T> class ComponentManager {
+template <typename T> class ComponentManager : public ComponentManagerBase {
 public:
   ////////////////////////////////////
   virtual T *add(ID id) { return add(id, T{}); }
@@ -58,6 +69,19 @@ public:
 
 private:
   std::unordered_map<ID, T> objects_;
+};
+
+class AG_ENGINE_API Scene
+{
+public:
+	Scene(EntityManager& entityManager);
+	void registerComponentManager(ComponentManagerBase& componentManager);
+	void showGUI(ID id);
+	// serialize / deserialize
+
+private:
+	EntityManager& entityManager_;
+	std::set<ComponentManagerBase*> componentManagers_;
 };
 
 

@@ -46,7 +46,7 @@ struct PipelineState {
 };
 
 ////////////////////////////////////////////////////////
-class PipelineStateCache {
+class AG_ENGINE_API PipelineStateCache {
 public:
   // Look in the cache for a compiled pipeline state matching the one given as
   // input
@@ -65,18 +65,18 @@ private:
   std::vector<std::shared_ptr<PipelineState>> states;
 };
 
-PipelineStateCache& getPipelineStateCache();
+AG_ENGINE_API PipelineStateCache& getPipelineStateCache();
 
 //////////////////////////////////////////////
 // Helpers
 namespace detail {
-ScriptContext &ensureShaderLuaStateInitialized();
+	AG_ENGINE_API ScriptContext &ensureShaderLuaStateInitialized();
 // std::unique_ptr<DrawPass> createDrawPassInternal(const char *shaderId,
 // sol::table table);
 }
 
 ////////////////////////////////////////////////////////
-class Shader {
+class AG_ENGINE_API Shader {
 public:
   // construct an empty draw pass
   Shader() {}

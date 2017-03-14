@@ -7,12 +7,12 @@
 namespace ag {
 namespace gl {
 
-struct TextureDeleter {
+struct AG_GL_API TextureDeleter {
 	static constexpr GLenum objectType = GL_TEXTURE;
 	void operator()(GLuint tex_obj);
 };
 
-class AG_API Texture {
+class AG_GL_API Texture {
 public:
   Texture() = default;
 

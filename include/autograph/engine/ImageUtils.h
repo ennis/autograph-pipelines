@@ -13,12 +13,12 @@ struct Image {
 
 //
 // Save a texture
-// AG_API void saveImageByPath(const char *path, const Image& img);
+//  void saveImageByPath(const char *path, const Image& img);
 
 // Note: ideally, should take two formats:
 // - one for the format of the input pixel data
 // - one for the storage format
-AG_API void saveImageByPath(const char *path, const void *pixelData, int width,
+AG_ENGINE_API void saveImageByPath(const char *path, const void *pixelData, int width,
                             int height, ImageFormat format);
 
 //
@@ -26,12 +26,12 @@ AG_API void saveImageByPath(const char *path, const void *pixelData, int width,
 // Will fail if the target format doesn't have
 //		-  8-bit unorm/snorm/int/srgb components
 //		OR 32-bit float components
-AG_API Image loadImage(const char *id,
+AG_ENGINE_API Image loadImage(const char *id,
                        ImageFormat targetFormat = ImageFormat::R8G8B8A8_SRGB);
 
 //
 // Loads a texture
-AG_API gl::Texture
+AG_ENGINE_API gl::Texture
 loadTexture(const char *id,
             ImageFormat targetFormat = ImageFormat::R8G8B8A8_SRGB);
 

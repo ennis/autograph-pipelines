@@ -3,7 +3,7 @@
 #include <autograph/engine/Meta.h>
 
 namespace ag {
-class CVarBase {
+class AG_ENGINE_API CVarBase {
 public:
   CVarBase(const char *id_);
   CVarBase(const CVarBase &) = delete;

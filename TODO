@@ -59,7 +59,11 @@ Minimal system:
  ✔ Issue: engine profiler needs GPU profiler, which should be in the GL (graphics) module @done (17-02-26 11:47)
    ✔ Resolution: timers only in GL module @done (17-02-26 11:47)
  ☐ Move arcball to core-math module
- ☐ RenderUtils => move to namespace
+ ✔ RenderUtils => move to namespace @done (17-03-10 19:10)
+ ☐ Move scene editor into separate file
+ ☐ Coherence: rename Scene => TransformComponents
+   RenderableScene => RenderableComponents
+   LightScene => LightComponents
 
 General:
  ✔ Implement cameras @high @minimal_subset @done (16-12-24 14:12)

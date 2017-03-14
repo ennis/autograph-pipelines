@@ -9,7 +9,7 @@
 #include <autograph/gl/Texture.h>
 #include <autograph/gl/VertexArray.h>
 #include <autograph/gl/Device.h>
-#include <gl_core_4_5.h>
+#include <autograph/gl/gl_core_4_5.h>
 
 namespace ag {
 namespace gl {

@@ -9,14 +9,14 @@ namespace ag {
 namespace gl {
 
 //////////////////////////////////////////////
-AG_API const char *getShaderStageName(GLenum stage);
+AG_GL_API const char *getShaderStageName(GLenum stage);
 
-struct ProgramDeleter {
+struct AG_GL_API ProgramDeleter {
 	static constexpr GLenum objectType = GL_PROGRAM;
   void operator()(GLuint obj) { glDeleteProgram(obj); }
 };
 
-struct ShaderDeleter {
+struct AG_GL_API ShaderDeleter {
 	static constexpr GLenum objectType = GL_SHADER;
   void operator()(GLuint obj) { glDeleteShader(obj); }
 };
@@ -25,7 +25,7 @@ struct ShaderDeleter {
 //
 //
 //
-class AG_API Shader {
+class AG_GL_API Shader {
 public:
   GLuint object() const { return obj_.get(); }
   static Shader compile(GLenum stage, const char *source);
@@ -54,7 +54,7 @@ struct ShaderPPDefine {
  * @details [long description]
  * @return [description]
  */
-class AG_API Program {
+class AG_GL_API Program {
 public:
   Program() = default;
   Program(GLuint obj) : obj_{obj} {}

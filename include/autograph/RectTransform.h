@@ -7,7 +7,7 @@ namespace ag {
 // Rect transform
 // 2D transform + depth-order
 // reduces to a 2D transformation matrix (w/o scaling) + z-order + size + scale
-struct AG_API RectTransform {
+struct AG_CORE_API RectTransform {
   // rect corners relative to anchors
   vec2 offsetA{0.0f, 0.0f};
   vec2 offsetB{0.0f, 0.0f};

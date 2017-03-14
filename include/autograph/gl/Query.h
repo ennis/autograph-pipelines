@@ -5,12 +5,12 @@
 namespace ag {
 namespace gl {
 
-struct QueryDeleter {
+struct AG_GL_API QueryDeleter {
   static constexpr GLenum objectType = GL_QUERY;
   void operator()(GLuint obj) { glDeleteQueries(1, &obj); }
 };
 
-class TimestampQuery
+class AG_GL_API TimestampQuery
 {
 public:
   TimestampQuery() {

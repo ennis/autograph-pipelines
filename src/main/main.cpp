@@ -14,9 +14,32 @@
 #include "Canvas.h"
 #include "Scene2D.h"
 #include "SceneRenderer.h"
-#include <imgui.h>
+#include <autograph/engine/imgui.h>
 
 using namespace ag;
+
+
+class ISceneRenderer
+{
+public:
+	enum class DebugRenderMode {
+		None = 0,
+		Normals = 1,
+		ObjectID = 2,
+		Depth = 3,
+		Positions = 4,
+		Albedo = 5,
+		Velocity = 6,
+	};
+
+	virtual void resize(int width, int height) = 0;
+	virtual void renderScene(gl::Framebuffer &target, SceneObjectComponents &sceneObjects,
+		RenderableComponents &renderables,
+		LightComponents& lights,
+		const Camera &camera, DebugRenderMode debugRenderMode = DebugRenderMode::None) = 0;
+
+private:
+};
 
 ///////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////
@@ -33,17 +56,23 @@ int main(int argc, char *argv[]) {
   CanvasRenderer canvasRenderer;
   CameraControl camCtl;
   EntityManager entityManager;
-  Scene scene;
-  LightScene lightScene;
-  RenderableScene renderableScene;
+  SceneObjectComponents sceneObjects;
+  LightComponents lights;
+  RenderableComponents renderables;
   ResourcePool pool;
   DeferredSceneRenderer deferredSceneRenderer{640, 480};
+  Scene scene{ entityManager };
+  scene.registerComponentManager(sceneObjects);
+  scene.registerComponentManager(lights);
+  scene.registerComponentManager(renderables);
+  scene.registerComponentManager(deferredSceneRenderer.getRenderData());
+  loadDynamicModule("DeferredSceneRenderer");
 
   ////////////////////////////////////////////////////
   // Scene
   ID rootEntity = loadScene("mesh/sponza/sponza.obj", entityManager,
-                            scene, renderableScene, lightScene, pool);
-  SceneObject *rootSceneObj = scene.get(rootEntity);
+	  sceneObjects, renderables, lights, pool);
+  SceneObject *rootSceneObj = sceneObjects.get(rootEntity);
   if (rootSceneObj) {
     rootSceneObj->localTransform.scaling = vec3{1.0f};
     rootSceneObj->calculateWorldTransform();
@@ -68,22 +97,26 @@ int main(int argc, char *argv[]) {
     glClearDepth(1.0);
     glDepthMask(GL_TRUE);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+
     {
       AG_GPU_PROFILE_SCOPE("Draw grid")
       RenderUtils::drawGrid2D(fbo, screenSize / 2.0f, vec2{25.0f}, 10);
     }
-    // show scene editor
-    gui::sceneEditor(cam, entityManager, scene, renderableScene, lightScene,
-                     pool, rootEntity);
+
+	{
+		// show scene editor
+		AG_PROFILE_SCOPE("Scene editor")
+		SceneEditor::show(cam, entityManager, sceneObjects, scene, renderables, lights, pool);
+	}
+
     {
-      AG_PROFILE_SCOPE("Scene graph update")
-      rootSceneObj->calculateWorldTransform();
-      rootSceneObj->calculateWorldBounds();
+		AG_PROFILE_SCOPE("Scene graph update")
+		sceneObjects.update();
     }
 
     {
       AG_GPU_PROFILE_SCOPE("Rendering/Canvas")
-      canvasRenderer.renderCanvas(scene, canvas);
+      canvasRenderer.renderCanvas(sceneObjects, canvas);
     }
 
     {
@@ -99,7 +132,7 @@ int main(int argc, char *argv[]) {
 	  };
 	  static DeferredSceneRenderer::DebugRenderMode mode = DeferredSceneRenderer::DebugRenderMode::None;
 	  gui::enumComboBoxT<DeferredSceneRenderer::DebugRenderMode>("debug deferred", &mode, names);
-      deferredSceneRenderer.renderScene(fbo, scene, renderableScene, cam, mode);
+      deferredSceneRenderer.renderScene(fbo, sceneObjects, renderables, lights, cam, mode);
     }
 
     /*{

@@ -5,13 +5,14 @@
 //-----------------------------------------------------------------------------
 
 #pragma once
+#include <autograph/engine/Config.h>
 
 //---- Define assertion handler. Defaults to calling assert().
 #ifdef _WIN32
     #define IM_ASSERT(_EXPR)  do { if(!(_EXPR)) __debugbreak(); } while(false)
 #endif
 
-#define IMGUI_API
+#define IMGUI_API AG_ENGINE_API
 
 //---- Include imgui_user.inl at the end of imgui.cpp so you can include code that extends ImGui using its private data/functions.
 #define IMGUI_INCLUDE_IMGUI_USER_INL

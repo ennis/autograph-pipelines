@@ -1,5 +1,5 @@
 #pragma once
-#include <autograph/Config.h>
+#include <autograph/gl/Config.h>
 #include <autograph/Types.h>
 #include <autograph/gl/GLHandle.h>
 #include <autograph/gl/Texture.h>
@@ -7,12 +7,12 @@
 namespace ag {
 namespace gl {
 //////////////////////////////////////////////
-struct RenderbufferDeleter {
+struct AG_GL_API RenderbufferDeleter {
 	static constexpr GLenum objectType = GL_RENDERBUFFER;
   void operator()(GLuint rb) { glDeleteRenderbuffers(1, &rb); }
 };
 
-class AG_API Renderbuffer {
+class AG_GL_API Renderbuffer {
 public:
 	struct Samples { int count; };
   Renderbuffer() = default;
@@ -31,7 +31,7 @@ private:
 };
 
 //////////////////////////////////////////////
-struct FramebufferDeleter {
+struct AG_GL_API FramebufferDeleter {
 	static constexpr GLenum objectType = GL_FRAMEBUFFER;
   void operator()(GLuint fbo) { glDeleteFramebuffers(1, &fbo); }
 };
@@ -41,7 +41,7 @@ struct FramebufferDeleter {
  * @brief Framebuffer
  * @details Framebuffer
  */
-class AG_API Framebuffer {
+class AG_GL_API Framebuffer {
 public:
   Framebuffer() {}
   Framebuffer(std::initializer_list<Texture *> colorTargets_,

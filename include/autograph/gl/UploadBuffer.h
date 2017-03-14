@@ -1,5 +1,5 @@
 #pragma once
-#include <autograph/Config.h>
+#include <autograph/gl/Config.h>
 #include <autograph/gl/Buffer.h>
 #include <cassert>
 #include <mutex>
@@ -9,7 +9,7 @@
 namespace ag {
 namespace gl {
 
-class AG_API UploadBuffer {
+class AG_GL_API UploadBuffer {
 public:
   UploadBuffer(size_t size);
   ~UploadBuffer();

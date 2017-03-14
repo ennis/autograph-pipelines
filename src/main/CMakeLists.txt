@@ -2,8 +2,7 @@
 set(SRC main.cpp 
     SceneRenderer.cpp
 	Scene2D.cpp
-	Canvas.cpp
-	Widget.cpp)
+	Canvas.cpp)
 
 set(HEADERS 
 	SceneRenderer.h)
@@ -14,13 +13,9 @@ add_executable(autograph_main
 
 target_link_libraries(
 	autograph_main 
-	autograph_core 
-	autograph_gl 
-	autograph_support 
 	autograph_engine 
 	assimp 
 	luajit_bin
 	sol2 
 	fmt 
-	glm 
-	imgui)
+	glm)

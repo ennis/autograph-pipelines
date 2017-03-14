@@ -82,7 +82,7 @@ static void rawRepeatLast(int timesRepeated, const char *message) {
   std::cerr << "\r    (Repeated " << timesRepeated << " times)";
 }
 
-AG_API void rawLogMessage(LogLevel c, const char *message) {
+void rawLogMessage(LogLevel c, const char *message) {
   static std::size_t lastHash = 0;
   static int timesRepeated = 0;
   std::size_t curHash =

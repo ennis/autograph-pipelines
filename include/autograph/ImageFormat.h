@@ -26,11 +26,11 @@ enum class AG_REFLECT ImageFormat {
   Max
 };
 
-struct AG_API ImageFormatInfo {
+struct ImageFormatInfo {
   const char* name;
   uint32_t size;
   uint32_t numChannels;
 };
 
-AG_API const ImageFormatInfo &getImageFormatInfo(ImageFormat fmt);
+AG_CORE_API const ImageFormatInfo &getImageFormatInfo(ImageFormat fmt);
 }

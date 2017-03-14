@@ -9,7 +9,7 @@
 
 namespace ag
 {
-struct SceneObject {
+struct AG_ENGINE_API SceneObject {
   //========================
   // DATA
   ID entityID;	// owning entity ID
@@ -41,10 +41,13 @@ struct SceneObject {
   AABB getApproximateWorldBounds() const;
 };
 
-class Scene : public ComponentManager<SceneObject> {
+class AG_ENGINE_API SceneObjectComponents : public ComponentManager<SceneObject> {
 public:
-  // set a parent-child relationship between two entities
-  void parent(ID parent, ID child);
+	// set a parent-child relationship between two entities
+	void parent(ID parent, ID child);
+	// calculate world transforms
+	void update(const mat4& baseTransform = mat4{ 1.0f });
+	void showGUI(ID id) override;
 };
 
 }

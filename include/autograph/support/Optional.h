@@ -1,5 +1,5 @@
 #pragma once
-#include <autograph/Config.h>
+#include <autograph/support/Config.h>
 #include <string>
 #include <optional.hpp>
 

@@ -1,6 +1,6 @@
 #pragma once
+#include <autograph/support/Config.h>
 #include <autograph/Types.h>
-#include <autograph/Config.h>
 #include <fmt/format.h>
 #include <ostream>
 
@@ -43,7 +43,7 @@ namespace ag {
 
 enum class LogLevel { Debug, Warning, Error, Fatal };
 
-AG_API void rawLogMessage(LogLevel c, const char *message);
+AG_SUPPORT_API void rawLogMessage(LogLevel c, const char *message);
 
 template <typename... Args>
 void logMessage(LogLevel c, const char *message, Args &&... args) {
@@ -69,8 +69,8 @@ void errorMessage(const char *message, Args &&... args)
 }
 
 // Fail with a message and call std::terminate
-[[noreturn]] AG_API void failWith(const char *message);
-[[noreturn]] AG_API void failWith(const std::string &message);
+[[noreturn]]  void failWith(const char *message);
+[[noreturn]]  void failWith(const std::string &message);
 
 #ifdef AG_DEBUG_OUTPUT
 #define AG_DEBUG(...) ::ag::debugMessage(__VA_ARGS__)

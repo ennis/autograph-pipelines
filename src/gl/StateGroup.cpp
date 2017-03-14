@@ -1,6 +1,6 @@
 #include <autograph/gl/StateGroup.h>
 #include <autograph/gl/Capture.h>
-#include <gl_core_4_5.h>
+#include <autograph/gl/gl_core_4_5.h>
 
 namespace ag {
 namespace gl {

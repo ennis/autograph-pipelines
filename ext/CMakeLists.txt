@@ -96,7 +96,7 @@ target_link_libraries(imgui PRIVATE glloadgen glfw glm stb)
 # glm
 add_library(glm INTERFACE)
 target_include_directories(glm INTERFACE glm)
-target_link_libraries(glm INTERFACE glloadgen)
+#target_link_libraries(glm INTERFACE glloadgen)
 
 # glloadgen
 add_subdirectory(glloadgen EXCLUDE_FROM_ALL)

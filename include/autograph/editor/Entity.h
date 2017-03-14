@@ -3,7 +3,7 @@
 #include <cstdint>
 
 namespace ag {
-struct AG_API Entity {
+struct  Entity {
   uint64_t id;
 
   operator uint64_t() { return id; }

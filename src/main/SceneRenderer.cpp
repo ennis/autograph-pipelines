@@ -1,4 +1,8 @@
 #include "SceneRenderer.h"
+#include <autograph/Camera.h>
+#include <autograph/engine/Light.h>
+#include <autograph/engine/Renderable.h>
+#include <autograph/engine/SceneObject.h>
 #include <autograph/engine/Profiler.h>
 #include <autograph/engine/RenderUtils.h>
 #include <autograph/engine/Shader.h>
@@ -70,51 +74,55 @@ void DeferredSceneRenderer::resize(int width, int height) {
   TAATarget1 =
       gl::Texture::create2D(ImageFormat::R16G16B16A16_SFLOAT, width, height);
   TAADebug =
-	  gl::Texture::create2D(ImageFormat::R16G16B16A16_SFLOAT, width, height);
+      gl::Texture::create2D(ImageFormat::R16G16B16A16_SFLOAT, width, height);
 
   TAACurrentSample = 0;
 }
 
 /*static mat4 getJitteredProjectionMatrix(const Camera& cam)
 {
-	float vertical = Mathf.Tan(0.5f * Mathf.Deg2Rad * cam.fieldOfView);
-	float horizontal = vertical * camera.aspect;
+        float vertical = Mathf.Tan(0.5f * Mathf.Deg2Rad * cam.fieldOfView);
+        float horizontal = vertical * camera.aspect;
 
-	offset.x *= horizontal / (0.5f * camera.pixelWidth);
-	offset.y *= vertical / (0.5f * camera.pixelHeight);
+        offset.x *= horizontal / (0.5f * camera.pixelWidth);
+        offset.y *= vertical / (0.5f * camera.pixelHeight);
 
-	float left = (offset.x - horizontal) * camera.nearClipPlane;
-	float right = (offset.x + horizontal) * camera.nearClipPlane;
-	float top = (offset.y + vertical) * camera.nearClipPlane;
-	float bottom = (offset.y - vertical) * camera.nearClipPlane;
+        float left = (offset.x - horizontal) * camera.nearClipPlane;
+        float right = (offset.x + horizontal) * camera.nearClipPlane;
+        float top = (offset.y + vertical) * camera.nearClipPlane;
+        float bottom = (offset.y - vertical) * camera.nearClipPlane;
 
-	mat4 matrix;
+        mat4 matrix;
 
-	matrix[0, 0] = (2.0f * camera.nearClipPlane) / (right - left);
-	matrix[0, 1] = 0.0f;
-	matrix[0, 2] = (right + left) / (right - left);
-	matrix[0, 3] = 0.0f;
+        matrix[0, 0] = (2.0f * camera.nearClipPlane) / (right - left);
+        matrix[0, 1] = 0.0f;
+        matrix[0, 2] = (right + left) / (right - left);
+        matrix[0, 3] = 0.0f;
 
-	matrix[1, 0] = 0.0f;
-	matrix[1, 1] = (2.0f * camera.nearClipPlane) / (top - bottom);
-	matrix[1, 2] = (top + bottom) / (top - bottom);
-	matrix[1, 3] = 0.0f;
+        matrix[1, 0] = 0.0f;
+        matrix[1, 1] = (2.0f * camera.nearClipPlane) / (top - bottom);
+        matrix[1, 2] = (top + bottom) / (top - bottom);
+        matrix[1, 3] = 0.0f;
 
-	matrix[2, 0] = 0.0f;
-	matrix[2, 1] = 0.0f;
-	matrix[2, 2] = -(camera.farClipPlane + camera.nearClipPlane) / (camera.farClipPlane - camera.nearClipPlane);
-	matrix[2, 3] = -(2.0f * camera.farClipPlane * camera.nearClipPlane) / (camera.farClipPlane - camera.nearClipPlane);
+        matrix[2, 0] = 0.0f;
+        matrix[2, 1] = 0.0f;
+        matrix[2, 2] = -(camera.farClipPlane + camera.nearClipPlane) /
+(camera.farClipPlane - camera.nearClipPlane);
+        matrix[2, 3] = -(2.0f * camera.farClipPlane * camera.nearClipPlane) /
+(camera.farClipPlane - camera.nearClipPlane);
 
-	matrix[3, 0] = 0.0f;
-	matrix[3, 1] = 0.0f;
-	matrix[3, 2] = -1.0f;
-	matrix[3, 3] = 0.0f;
+        matrix[3, 0] = 0.0f;
+        matrix[3, 1] = 0.0f;
+        matrix[3, 2] = -1.0f;
+        matrix[3, 3] = 0.0f;
 
-	return matrix;
+        return matrix;
 }*/
 
-void DeferredSceneRenderer::renderScene(gl::Framebuffer &target, Scene &scene,
-                                        RenderableScene &renderableScene,
+void DeferredSceneRenderer::renderScene(gl::Framebuffer &target,
+                                        SceneObjectComponents &sceneObjects,
+                                        RenderableComponents &renderables,
+                                        LightComponents &lights,
                                         const Camera &camera,
                                         DebugRenderMode debugRenderMode) {
   using namespace gl;
@@ -128,9 +136,9 @@ void DeferredSceneRenderer::renderScene(gl::Framebuffer &target, Scene &scene,
   }
   float fWidth = (float)diffuse.width();
   float fHeight = (float)diffuse.height();
-  vec2 TAAOffset = TAASampleScale *
-                   TAASampleOffsets[TAACurrentSample % TAASampleCount];
- // vec2 TAAOffset{ 0.0f };
+  vec2 TAAOffset =
+      TAASampleScale * TAASampleOffsets[TAACurrentSample % TAASampleCount];
+  // vec2 TAAOffset{ 0.0f };
   struct CameraMatrices {
     mat4 viewMatrix;
     mat4 projMatrix;
@@ -140,8 +148,10 @@ void DeferredSceneRenderer::renderScene(gl::Framebuffer &target, Scene &scene,
     mat4 viewProjMatrixVelocity;
   };
   CameraMatrices cam;
-  cam.projMatrix = glm::translate(mat4{ 1.0f }, vec3{ 2.0f * TAAOffset.x / fWidth,
-                                                   2.0f * TAAOffset.y / fHeight, 0.0f}) * camera.projMat;
+  cam.projMatrix =
+      glm::translate(mat4{1.0f}, vec3{2.0f * TAAOffset.x / fWidth,
+                                      2.0f * TAAOffset.y / fHeight, 0.0f}) *
+      camera.projMat;
   cam.viewMatrix = camera.viewMat;
   cam.viewProjMatrix = cam.projMatrix * cam.viewMatrix;
   cam.invProjMatrix = glm::inverse(cam.projMatrix);
@@ -159,7 +169,7 @@ void DeferredSceneRenderer::renderScene(gl::Framebuffer &target, Scene &scene,
   clearTexture(velocity, vec4{0.0f, 0.0f, 0.0f, 1.0f});
   clearDepthTexture(depth, 1.0f);
 
-  auto &objects = scene.getObjects();
+  auto &objects = sceneObjects.getObjects();
 
   int objectID = 0;
 
@@ -169,7 +179,7 @@ void DeferredSceneRenderer::renderScene(gl::Framebuffer &target, Scene &scene,
 
       auto id = kv.first;
       auto &sceneObj = kv.second;
-      auto material = renderableScene.get(id);
+      auto material = renderables.get(id);
       auto pMesh = sceneObj.mesh;
       if (!pMesh)
         continue;
@@ -215,11 +225,9 @@ void DeferredSceneRenderer::renderScene(gl::Framebuffer &target, Scene &scene,
         TAATarget0.width(), TAATarget0.height(), 8, 8, TAAAverageShader,
         texture(0, TAATarget0, linearSampler),
         texture(1, deferredTarget, nearestSampler),
-		texture(2, velocity, nearestSampler),
-		texture(3, depth, linearSampler),
-		image(0, TAATarget1),
-		image(1, TAADebug),
-        uniformBuffer(0, uCamera), uniform_float("uWeight", TAAWeight),
+        texture(2, velocity, nearestSampler), texture(3, depth, linearSampler),
+        image(0, TAATarget1), image(1, TAADebug), uniformBuffer(0, uCamera),
+        uniform_float("uWeight", TAAWeight),
         uniform_vec2("uSampleOffset", TAAOffset));
     ++TAACurrentSample;
   }
@@ -242,7 +250,7 @@ void WireframeOverlayRenderer::reloadShaders() {
 
 // render one scene object and its children
 void WireframeOverlayRenderer::renderSceneObject(gl::Framebuffer &target,
-                                                 Scene &scene,
+                                                 SceneObjectComponents &scene,
                                                  SceneObject &object,
                                                  const Camera &camera,
                                                  bool depthTest) {

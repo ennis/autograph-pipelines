@@ -1,4 +1,5 @@
 #pragma once
+#include <autograph/engine/Config.h>
 #include <autograph/Camera.h>
 #include <autograph/AABB.h>
 #include <glm/gtx/rotate_vector.hpp>
@@ -10,7 +11,7 @@ static const vec3 CamRight{1.0f, 0.0f, 0.0f};
 static const vec3 CamUp{0.0f, 1.0f, 0.0f};
 
 /////////////////////////////////////////////////////
-class CameraControl {
+class AG_ENGINE_API CameraControl {
 public:
   void zoomIn(float dzoom);
   void setZoom(float zoom);

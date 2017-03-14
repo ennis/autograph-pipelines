@@ -7,7 +7,7 @@ struct GLFWpointerevent;
 
 namespace ag {
 //////////////////////////////////////////////
-enum class AG_REFLECT EventType {
+enum class EventType {
   MouseButton = 0,
   MouseMove,
   Cursor,
@@ -27,23 +27,23 @@ enum class AG_REFLECT EventType {
 };
 
 //////////////////////////////////////////////
-struct AG_API CursorEnterEvent {};
-struct AG_API CursorExitEvent {};
+struct  CursorEnterEvent {};
+struct  CursorExitEvent {};
 
 //////////////////////////////////////////////
-struct AG_API WindowResizeEvent {
+struct  WindowResizeEvent {
   int width;
   int height;
 };
 
 //////////////////////////////////////////////
-struct AG_API MouseButtonEvent {
+struct  MouseButtonEvent {
   int button;
   ButtonState action;
 };
 
 //////////////////////////////////////////////
-struct AG_API CursorEvent {
+struct  CursorEvent {
   // in client units (pixels)
   int x;
   int y;
@@ -52,36 +52,36 @@ struct AG_API CursorEvent {
 };
 
 //////////////////////////////////////////////
-struct AG_API MouseMoveEvent {
+struct  MouseMoveEvent {
   double dx;
   double dy;
 };
 
 //////////////////////////////////////////////
-struct AG_API MouseScrollEvent {
+struct  MouseScrollEvent {
   double dx;
   double dy;
 };
 
 //////////////////////////////////////////////
-struct AG_API KeyEvent {
+struct  KeyEvent {
   int key;
   int scancode;
   KeyState action;
 };
 
 //////////////////////////////////////////////
-struct AG_API TextEvent {
+struct  TextEvent {
   char32_t codepoint;
 };
 
 //////////////////////////////////////////////
-struct AG_API StylusProximityEvent {
+struct  StylusProximityEvent {
   // TODO
 };
 
 //////////////////////////////////////////////
-struct AG_API StylusPropertiesEvent {
+struct  StylusPropertiesEvent {
   double x;
   double y;
   double pressure;
@@ -89,7 +89,7 @@ struct AG_API StylusPropertiesEvent {
 };
 
 //////////////////////////////////////////////
-struct AG_API PointerInfo {
+struct  PointerInfo {
   int id;
   int type;
   int button;
@@ -102,7 +102,7 @@ struct AG_API PointerInfo {
   double tiltY;
 };
 
-struct AG_API PointerEvent {
+struct  PointerEvent {
   PointerInfo info;
 };
 
@@ -129,7 +129,7 @@ struct Event {
 };
 
 // A rendering window
-class AG_API Window {
+class AG_ENGINE_API Window {
 public:
   Window(int w, int h, const char *title);
   ~Window();

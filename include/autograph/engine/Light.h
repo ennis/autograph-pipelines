@@ -1,14 +1,12 @@
 #pragma once
 #include <autograph/engine/EntityManager.h>
 
-namespace ag 
-{
-	struct Light 
-	{
-		
-	};
+namespace ag {
+struct AG_ENGINE_API Light {};
 
-	class LightScene : public ComponentManager<Light>
-	{
-	};
+class AG_ENGINE_API LightComponents : public ComponentManager<Light> {
+public:
+	void showGUI(ID id) override;
+};
+
 }

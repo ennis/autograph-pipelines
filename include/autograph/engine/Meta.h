@@ -1,4 +1,5 @@
 #pragma once
+#include <autograph/engine/Config.h>
 #include <autograph/support/Span.h>
 #include <cstddef> // somehow needed for size_t
 #include <type_traits>
@@ -119,7 +120,7 @@ struct Enum : public Type {
 };
 
 template <typename T> const Type *typeOf();
-const Type *typeOf(std::type_index ti);
+AG_ENGINE_API const Type *typeOf(std::type_index ti);
 
 template <typename T> void serialize(packer &p, const T &data) {
   serialize(p, typeOf<T>(), &data);

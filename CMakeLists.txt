@@ -11,6 +11,8 @@ set(AG_VERSION_MAJOR   0   CACHE STRING "Project major version number.")
 set(AG_VERSION_MINOR   0   CACHE STRING "Project minor version number.")
 set(AG_VERSION_PATCH   1   CACHE STRING "Project patch version number.")
 mark_as_advanced(VERSION_MAJOR VERSION_MINOR VERSION_PATCH)
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 
 
 include("cmake/ReflectionGen.cmake")
@@ -46,6 +48,7 @@ endif()
 ############## Force clang modules ##############
 #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fmodules -fmodules-cache-path=${CMAKE_SOURCE_DIR}/cache")
 
+
 find_package(OpenGL REQUIRED)
 #find_package(Mono REQUIRED)
 link_directories(${MONO_LIBRARY_DIRS})
@@ -61,3 +64,4 @@ add_subdirectory(src/engine)
 add_subdirectory(src/editor)
 add_subdirectory(src/cxx-reflect)
 add_subdirectory(src/main)
+add_subdirectory(src/deferredRenderer)

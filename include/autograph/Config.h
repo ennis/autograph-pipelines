@@ -6,11 +6,6 @@
 #define AG_FRAME_TRACE_OUTPUT
 
 //////////////////////////////////////////////
-#if !defined(AG_IMPLEMENTATION)
-#define AG_IMPLEMENTATION 1
-#endif
-
-//////////////////////////////////////////////
 #ifdef __REFLECTION_PARSER__
 #define AG_REFLECT [[cxxr::reflect]]
 #else
@@ -25,23 +20,20 @@
 #endif
 
 //////////////////////////////////////////////
-// AG_API
-#if defined(AG_DLL)
+// 
+#if defined(AG_CORE_DLL)
 #if defined(_MSC_VER)
-#if AG_IMPLEMENTATION
-#define AG_API2 __declspec(dllexport)
+#if defined(AG_BUILD_CORE_DLL)
+#define AG_CORE_API __declspec(dllexport)
 #else
-#define AG_API2 __declspec(dllimport)
+#define AG_CORE_API __declspec(dllimport)
 #endif
 #else
-#define AG_API2 __attribute__((visibility("default")))
+#define AG_CORE_API __attribute__((visibility("default")))
 #endif
 #else
-#define AG_API2
+#define AG_CORE_API
 #endif
-
-#define AG_API AG_API2 AG_REFLECT
-#define AG_NATIVE_API AG_API2
 
 //////////////////////////////////////////////
 #if defined(_MSC_VER)

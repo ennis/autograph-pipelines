@@ -1,5 +1,5 @@
 #pragma once
-#include <autograph/Config.h>
+#include <autograph/engine/Config.h>
 #include <chrono>
 #include <memory>
 #include <unordered_map>
@@ -35,7 +35,7 @@ template <typename T> struct ResourceWrapper : public Resource {
   }
 };*/
 
-class AG_API ResourcePool {
+class AG_ENGINE_API ResourcePool {
 public:
   Resource *getResource(const char *id);
 
@@ -67,7 +67,7 @@ public:
   }
 
 private:
-  std::unordered_map<std::string, std::unique_ptr<Resource>> resourceMap_;
+  std::unordered_map<std::string, std::shared_ptr<Resource>> resourceMap_;
 };
 
 //

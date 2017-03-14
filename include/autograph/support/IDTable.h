@@ -1,6 +1,6 @@
 #pragma once
+#include <autograph/support/Config.h>
 #include <array>
-#include <autograph/Config.h>
 #include <cstdint>
 #include <vector>
 
@@ -10,7 +10,7 @@ using ID = uint64_t;
 inline int IDIndex(ID id) { return static_cast<int>(id & 0xFFFFFFFF); }
 inline int IDGeneration(ID id) { return static_cast<int>(id >> 32); }
 
-class AG_API IDTable {
+class AG_SUPPORT_API IDTable {
 public:
   ID createID();
   void deleteID(ID eid);

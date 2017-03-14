@@ -20,12 +20,12 @@
 #include <autograph/engine/Mesh.h>
 #include <autograph/engine/RenderTarget.h>
 #include <autograph/engine/RenderUtils.h>
-#include <autograph/engine/Scene.h>
+#include <autograph/engine/SceneObject.h>
 #include <autograph/engine/Shader.h>
 #include <autograph/engine/Window.h>
 #include <autograph/engine/MathUtils.h>
 // imgui
-#include "imgui.h"
+//#include "imgui.h"
 
 namespace ag {
 namespace detail {

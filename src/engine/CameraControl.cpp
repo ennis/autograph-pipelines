@@ -35,6 +35,7 @@ void CameraControl::setNearFarPlanes(float nearPlane, float farPlane) {
   nearPlane_ = nearPlane;
   farPlane_ = farPlane;
 }
+
 //
 Camera CameraControl::getCamera() const {
   Camera cam;

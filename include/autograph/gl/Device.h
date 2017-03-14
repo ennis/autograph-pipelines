@@ -35,16 +35,13 @@ struct GLImplementationLimits {
   int default_compute_local_size_z;
 };
 
-extern GLImplementationLimits gGLImplementationLimits;
-AG_API inline const GLImplementationLimits &getGLImplementationLimits() {
-  return gGLImplementationLimits;
-}
+AG_GL_API const GLImplementationLimits &getGLImplementationLimits();
 
-AG_API Framebuffer &getDefaultFramebuffer();
-AG_API void initialize(const DeviceConfig &cfg);
+AG_GL_API Framebuffer &getDefaultFramebuffer();
+AG_GL_API void initialize(const DeviceConfig &cfg);
 // resize the framebuffer 0 of the current context
-AG_API void resizeDefaultFramebuffer(int w, int h);
-AG_API BufferSlice uploadFrameData(const void *data, size_t size,
+AG_GL_API void resizeDefaultFramebuffer(int w, int h);
+AG_GL_API BufferSlice uploadFrameData(const void *data, size_t size,
                                    size_t alignment = -1);
 
 template <typename T>
@@ -64,7 +61,7 @@ inline BufferSlice uploadFrameArray(T (&data)[N], size_t alignment = -1) {
   return uploadFrameData(&data[0], N * sizeof(T), alignment);
 }
 
-AG_API uint64_t getFrameCount();
-AG_API void endFrame();
+AG_GL_API uint64_t getFrameCount();
+AG_GL_API void endFrame();
 }
 }

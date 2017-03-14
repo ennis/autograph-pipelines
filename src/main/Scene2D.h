@@ -6,7 +6,7 @@
 #include <autograph/gl/Framebuffer.h>
 
 namespace ag {
-class AG_API Scene2D {
+class Scene2D {
 public:
   struct Tileset {
     gl::Texture *tex;

@@ -1,7 +1,7 @@
 #pragma once
-#include <autograph/Config.h>
+#include <autograph/engine/Config.h>
 
 namespace ag {
 // renders a debug GUI on the currently active ImGui context
-void drawDebugOverlay(double dt);
+AG_ENGINE_API void drawDebugOverlay(double dt);
 }

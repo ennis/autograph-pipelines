@@ -4,7 +4,7 @@
 
 namespace ag {
 namespace gl {
-struct SamplerDesc {
+struct AG_GL_API SamplerDesc {
   GLenum addrU{ GL_REPEAT };
   GLenum addrV{ GL_REPEAT };
   GLenum addrW{ GL_REPEAT };
@@ -12,13 +12,13 @@ struct SamplerDesc {
   GLenum magFilter{ GL_NEAREST };
 };
 
-struct SamplerDeleter {
+struct AG_GL_API SamplerDeleter {
 	static constexpr GLenum objectType = GL_SAMPLER;
   void operator()(GLuint sam_obj) { glDeleteSamplers(1, &sam_obj); }
 };
 
 // Delayed initialization
-class AG_API Sampler {
+class AG_GL_API Sampler {
 public:
   Sampler() {}
   Sampler(const SamplerDesc &desc) : desc_{desc} {}

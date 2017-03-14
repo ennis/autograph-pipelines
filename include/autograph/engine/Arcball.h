@@ -1,9 +1,10 @@
 #pragma once
+#include <autograph/engine/Config.h>
 #include <autograph/Camera.h>
 #include <autograph/Transform.h>
 
 namespace ag {
-	class Arcball {
+	class AG_ENGINE_API Arcball {
 	public:
 		// Apply an arcball rotation to an object
 		void onMouseDown(int mouseX, int mouseY);

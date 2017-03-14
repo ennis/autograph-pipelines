@@ -1,4 +1,5 @@
 #pragma once
+#include <autograph/engine/Config.h>
 #include <autograph/Types.h>
 #include <autograph/gl/Query.h>
 #include <chrono>
@@ -10,7 +11,14 @@ namespace Profiler {
 using TimePoint = std::chrono::time_point<std::chrono::high_resolution_clock, std::chrono::nanoseconds>;
 using Duration = std::chrono::nanoseconds;
 
-struct Scope {
+struct AG_ENGINE_API Scope
+{
+	Scope() = default;
+	Scope(const Scope&) = delete;
+	Scope& operator=(const Scope&) = delete;
+	Scope(Scope&&) = default;
+	Scope& operator=(Scope&&) = default;
+
 	// duration of the scope in CPU time
   auto duration() const {
 	  return end - start;
@@ -40,8 +48,14 @@ struct Scope {
   int firstChild = -1;
 };
 
-class ProfileData {
+class AG_ENGINE_API ProfileData {
 public:
+	ProfileData() = default;
+	ProfileData(const ProfileData&) = delete;
+	ProfileData& operator=(const ProfileData&) = delete;
+	ProfileData(ProfileData&&) = default;
+	ProfileData& operator=(ProfileData&&) = default;
+
   uint64_t frameId;
   TimePoint frameStartTime;
   TimePoint frameEndTime;
@@ -51,22 +65,22 @@ public:
   const Scope* parent(const Scope* s) const { return s->parent != -1 ? &scopes_[s->parent] : nullptr; }
   const Scope* firstChild(const Scope* s) const { return s->firstChild != -1 ? &scopes_[s->firstChild] : nullptr; }
 
-  friend void endFrame();
+  AG_ENGINE_API friend void endFrame();
   ProfileData clone();
 
 private:
   std::vector<Scope> scopes_;
 };
 
-void beginFrame();
+AG_ENGINE_API void beginFrame();
 // does nothing if not profiling
-void endFrame();
-void enterScope(const char *scopeName, bool gpu = false);
-void event(const char *id);
-void exitScope();
-void showGui();
+AG_ENGINE_API void endFrame();
+AG_ENGINE_API void enterScope(const char *scopeName, bool gpu = false);
+AG_ENGINE_API void event(const char *id);
+AG_ENGINE_API void exitScope();
+AG_ENGINE_API void showGui();
 // nullptr if no frame has been profiled
-const ProfileData *getData();
+ const ProfileData *getData();
 
 struct ProfileGuard {
   ProfileGuard(const char *name, bool gpu) { enterScope(name, gpu); }

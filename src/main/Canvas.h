@@ -1,7 +1,6 @@
 #pragma once
-#include <autograph/Config.h>
 #include <autograph/engine/RenderTarget.h>
-#include <autograph/engine/Scene.h>
+#include <autograph/engine/SceneObject.h>
 #include <autograph/engine/Shader.h>
 #include <functional>
 #include <vector>
@@ -12,7 +11,7 @@ namespace ag {
 // Converts a sequence of mouse position samples to
 // a sequence of splat positions
 // Also handles smoothing
-class AG_API BrushPathBuilder {
+class BrushPathBuilder {
 public:
   struct Params {
     float spacing;
@@ -54,7 +53,7 @@ struct Canvas {
 class CanvasRenderer {
 public:
   CanvasRenderer();
-  void renderCanvas(Scene &scene, Canvas &canvas);
+  void renderCanvas(SceneObjectComponents &scene, Canvas &canvas);
   void reloadShaders();
 
 private:

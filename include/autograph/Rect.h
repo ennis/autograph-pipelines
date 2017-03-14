@@ -4,7 +4,7 @@
 namespace ag
 {
 //////////////////////////////////////////////
-struct AG_API Rect2D 
+struct Rect2D 
 {
   vec2 position;
   vec2 size;

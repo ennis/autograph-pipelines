@@ -1,11 +1,12 @@
 #pragma once
+#include <autograph/engine/Config.h>
 #include <autograph/gl/Framebuffer.h>
 #include <autograph/gl/Texture.h>
 #include <autograph/support/SmallVector.h>
 #include <autograph/support/Variant.h>
 
 namespace ag {
-class AG_API RenderTarget {
+class AG_ENGINE_API RenderTarget {
 public:
   struct DepthRenderbuffer {
     ImageFormat fmt;

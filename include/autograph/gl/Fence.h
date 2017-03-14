@@ -2,7 +2,7 @@
 #include <autograph/Config.h>
 #include <cstdint>
 #include <deque>
-#include <gl_core_4_5.h>
+#include <autograph/gl/gl_core_4_5.h>
 #include <stdexcept>
 
 namespace ag {
@@ -14,7 +14,7 @@ constexpr unsigned kFenceWaitTimeout = 2000000000; // in nanoseconds
  * @brief [brief description]
  * @details [long description]
  */
-class AG_API Fence {
+class AG_GL_API Fence {
 public:
   /**
    * @brief [brief description]

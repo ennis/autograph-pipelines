@@ -1,4 +1,5 @@
 #pragma once
+#include <autograph/engine/Config.h>
 #include <autograph/support/Span.h>
 #include <experimental/filesystem>
 
@@ -6,7 +7,7 @@ namespace ag {
 
 // Uniquely identifies a resource on the filesystem, on the network, in an
 // archive file, or in memory
-/*class AG_API ResourceID {
+/*class  ResourceID {
 public:
   // empty resource ID
   ResourceID() {}
@@ -51,33 +52,33 @@ namespace ResourceManager {
 // if the ID identifies a file on the filesystem
 // returns the empty string if the ID does not represent a file on the disk
 // or if the resource does not exist
-AG_API std::string getFilesystemPath(const char *id);
-AG_API std::string getFilesystemPath(const std::string& id);
+AG_ENGINE_API std::string getFilesystemPath(const char *id);
+AG_ENGINE_API std::string getFilesystemPath(const std::string& id);
 
 // Same as above, but try the specified prefixes before
-AG_API std::string getFilesystemPath(const char *id, span<const char * const> prefixes);
-AG_API std::string getFilesystemPath(const std::string& id, span<const char * const> prefixes);
+AG_ENGINE_API std::string getFilesystemPath(const char *id, span<const char * const> prefixes);
+AG_ENGINE_API std::string getFilesystemPath(const std::string& id, span<const char * const> prefixes);
 
 // returns the main path part of the ID, or the empty string if it has none
-AG_API std::string getPathPart(const char* id);
-AG_API std::string getPathPart(const std::string& id);
+AG_ENGINE_API std::string getPathPart(const char* id);
+AG_ENGINE_API std::string getPathPart(const std::string& id);
 
 // returns the parent directory of the given id
-AG_API std::string getParentPath(const char *id);
-AG_API std::string getParentPath(const std::string &id);
+AG_ENGINE_API std::string getParentPath(const char *id);
+AG_ENGINE_API std::string getParentPath(const std::string &id);
 
 // returns the subpath part of the ID, or the empty string if it has none
-AG_API std::string getSubpathPart(const char* id);
-AG_API std::string getSubpathPart(const std::string& id);
+AG_ENGINE_API std::string getSubpathPart(const char* id);
+AG_ENGINE_API std::string getSubpathPart(const std::string& id);
 
 // Add a resource directory to look up into when using relative paths
-AG_API void addResourceDirectory(const char* fullPath);
-AG_API void addResourceDirectory(const std::string& fullPath);
+AG_ENGINE_API void addResourceDirectory(const char* fullPath);
+AG_ENGINE_API void addResourceDirectory(const std::string& fullPath);
 
 // TODO: getUrl, isUrl, getArchivePath, resolve
 
 // enumerate resource directories
-AG_API int getResourceDirectoriesCount();
-AG_API std::string getResourceDirectory(int index);
+AG_ENGINE_API int getResourceDirectoriesCount();
+AG_ENGINE_API std::string getResourceDirectory(int index);
 }
 }

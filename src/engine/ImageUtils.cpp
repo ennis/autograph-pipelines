@@ -34,7 +34,7 @@ static std::unique_ptr<uint8_t[]> loadImageByPathRaw(const char *path,
   return std::unique_ptr<uint8_t[]>{raw_data};
 }
 
-AG_API Image loadImage(const char *id, ImageFormat targetFormat) {
+Image loadImage(const char *id, ImageFormat targetFormat) {
   // TODO DDS loader
   // TODO mip maps, subresources
   // TODO faces
@@ -56,7 +56,7 @@ AG_API Image loadImage(const char *id, ImageFormat targetFormat) {
   return img;
 }
 
-AG_API gl::Texture loadTexture(const char *id, ImageFormat targetFormat) {
+gl::Texture loadTexture(const char *id, ImageFormat targetFormat) {
   auto path = ResourceManager::getFilesystemPath(id);
   if (path.empty()) {
     throw std::runtime_error{"loadTexture: file not found"};
@@ -70,7 +70,7 @@ AG_API gl::Texture loadTexture(const char *id, ImageFormat targetFormat) {
   return tex;
 }
 
-AG_API void saveImageByPath(const char *path, const void *pixelData, int width,
+void saveImageByPath(const char *path, const void *pixelData, int width,
                             int height, ImageFormat format) {
   if (format != ImageFormat::R8G8B8A8_SNORM &&
       format != ImageFormat::R8G8B8A8_UNORM &&

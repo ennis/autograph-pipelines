@@ -5,9 +5,6 @@
 #include <autograph/support/Debug.h>
 #include <autograph/support/ProjectRoot.h>
 
-#include <GrContext.h>
-#include <SkCanvas.h>
-#include <SkSurface.h>
 #include <stdexcept>
 
 #include "Bindings.h"

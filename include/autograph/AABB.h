@@ -1,11 +1,11 @@
 #pragma once
-
+#include <autograph/Config.h>
 #include <autograph/Types.h>
 
 namespace ag 
 {
 
-struct AABB {
+struct AG_CORE_API AABB {
   float xmin;
   float ymin;
   float zmin;

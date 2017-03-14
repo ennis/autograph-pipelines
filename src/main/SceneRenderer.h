@@ -1,14 +1,18 @@
 #pragma once
 #include <autograph/Camera.h>
-#include <autograph/engine/RenderableScene.h>
-#include <autograph/engine/Scene.h>
+#include <autograph/engine/EntityManager.h>
 #include <autograph/engine/Shader.h>
 #include <autograph/gl/Framebuffer.h>
 #include <autograph/gl/Program.h>
 #include <autograph/gl/Texture.h>
-#include <autograph/gl/UploadBuffer.h>
 
 namespace ag {
+
+	struct SceneObject;
+	class SceneObjects;
+	class LightComponents;
+	class RenderableComponents;
+	class SceneObjectComponents;
 
 // scene renderer
 // Renders G-buffers
@@ -34,8 +38,14 @@ public:
   gl::Framebuffer &getFramebuffer() { return fbo; }
 
   void reloadShaders();
-  void renderScene(gl::Framebuffer& target, Scene &scene, RenderableScene &renderableScene,
+  void renderScene(gl::Framebuffer &target, SceneObjectComponents &sceneObjects,
+	  RenderableComponents &renderables,
+	  LightComponents& lights,
 	  const Camera &camera, DebugRenderMode debugRenderMode = DebugRenderMode::None);
+
+  auto& getRenderData() {
+	  return objectsRenderData;
+  }
 
 private:
   gl::Texture depth; // D32_SFLOAT
@@ -69,7 +79,7 @@ public:
   ~WireframeOverlayRenderer();
 
   void reloadShaders();
-  void renderSceneObject(gl::Framebuffer &target, Scene &scene,
+  void renderSceneObject(gl::Framebuffer &target, SceneObjectComponents &scene,
                          SceneObject &object, const Camera &camera,
                          bool depthTest = true);
 

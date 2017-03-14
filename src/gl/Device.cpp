@@ -11,7 +11,11 @@
 
 namespace ag {
 namespace gl {
-GLImplementationLimits gGLImplementationLimits;
+	static GLImplementationLimits gGLImplementationLimits;
+
+	AG_GL_API const GLImplementationLimits &getGLImplementationLimits() {
+		return gGLImplementationLimits;
+	}
 
 namespace {
 void APIENTRY debugCallback(GLenum source, GLenum type, GLuint id,
@@ -46,14 +50,14 @@ std::unique_ptr<UploadBuffer> g_default_upload_buffer;
 
 static bool isInitialized() { return g_device_config.max_frames_in_flight != 0; }
 
-AG_API void pushDebugGroup(const char *message) {
+void pushDebugGroup(const char *message) {
   glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 0,
                    static_cast<GLsizei>(std::strlen(message)), message);
 }
 
-AG_API void popDebugGroup() { glPopDebugGroup(); }
+void popDebugGroup() { glPopDebugGroup(); }
 
-AG_API BufferSlice uploadFrameData(const void *data, size_t size, size_t alignment) {
+BufferSlice uploadFrameData(const void *data, size_t size, size_t alignment) {
   assert(isInitialized()); 
   AG_FRAME_TRACE("data={}, size={}, alignment={}", data, size, alignment);
   BufferSlice out_slice;
@@ -68,12 +72,12 @@ AG_API BufferSlice uploadFrameData(const void *data, size_t size, size_t alignme
   return out_slice;
 }
 
-AG_API Framebuffer &getDefaultFramebuffer() {
+Framebuffer &getDefaultFramebuffer() {
   assert(isInitialized());
   return g_screen_fbo;
 }
 
-AG_API void endFrame() {
+void endFrame() {
   assert(isInitialized());
   // sync on frame N-(max-in-flight)
   g_frame_id++;
@@ -87,7 +91,7 @@ AG_API void endFrame() {
   }
 }
 
-AG_API void initialize(const DeviceConfig &config) {
+void initialize(const DeviceConfig &config) {
   // glloadgen: load function pointers
   ogl_LoadFunctions();
   g_device_config = config;
@@ -100,12 +104,12 @@ AG_API void initialize(const DeviceConfig &config) {
   g_default_upload_buffer = std::make_unique<UploadBuffer>(upload_buf_size);
 }
 
-AG_API void resizeDefaultFramebuffer(int w, int h) {
+void resizeDefaultFramebuffer(int w, int h) {
   assert(isInitialized());
   AG_FRAME_TRACE("g_frame_id={}", g_frame_id);
   g_screen_fbo = Framebuffer::createDefault(w, h);
 }
 
-AG_API uint64_t getFrameCount() { return g_frame_id; }
+uint64_t getFrameCount() { return g_frame_id; }
 }
 }

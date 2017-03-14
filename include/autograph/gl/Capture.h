@@ -1,15 +1,15 @@
 #pragma once
-#include <autograph/Config.h>
+#include <autograph/gl/Config.h>
 #include <autograph/support/Debug.h>
 
 namespace ag {
 namespace gl {
 // indicate that the given frame should be captured
-AG_API void setFrameCapture(uint64_t frameID);
+AG_GL_API void setFrameCapture(uint64_t frameID);
 // indicate that the next frame should be captured
-AG_API void setNextFrameCapture();
+AG_GL_API void setNextFrameCapture();
 // is the current frame being captured
-AG_API bool isFrameCaptureRequested();
+AG_GL_API bool isFrameCaptureRequested();
 
 template <typename... Args>
 void frameTrace(const char *function, const char *message, Args &&... args) {

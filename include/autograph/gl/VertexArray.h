@@ -18,7 +18,7 @@ struct AG_REFLECT VertexAttribute {
   bool normalized;
 };
 
-class AG_API VertexArray {
+class AG_GL_API VertexArray {
 public:
   VertexArray() = default;
   VertexArray(span<VertexAttribute> attribs);

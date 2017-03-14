@@ -40,7 +40,7 @@ std::array<ImageFormatInfo, static_cast<std::size_t>(ImageFormat::Max)>
 { "R16G16_SINT", 4, 2 },
     }};
 
-AG_API const ImageFormatInfo &getImageFormatInfo(ImageFormat fmt) {
+const ImageFormatInfo &getImageFormatInfo(ImageFormat fmt) {
   return format_infos[static_cast<std::size_t>(fmt)];
 }
 }

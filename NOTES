@@ -2282,3 +2282,67 @@ Post-proc filters:
 - LIC filter (depth-aware)
 - Sparse convolution filter (depth-aware)
 - Glow/Contour mask (object-aware)  
+
+
+_______________________________________________
+
+Hot-reloadable C++ modules:
+
+class IExtension
+class ISceneRenderer : public IExtension
+	- renderScene(target, etc.)
+class IGuiElement : public IExtension 
+	- onGUI()
+
+Module::load()
+
+Modularisation:
+- Scene editor GUI
+- Deferred renderer
+- Image loader plugins
+- Scene loader plugins
+- Scene editor tools
+
+Entry points:
+- main GUI
+- scene editor
+- 
+
+Interface pointer:
+- module name 
+
+Plugin usage:
+- query interfaces by name
+- query interfaces by base type
+- registration on the plugin side
+	-> need to maintain one interface list per subsystem
+		i.e. vector<ISceneRenderer>, vector<IMenu>
+		unregistration? hot-reload?
+- must support hot-reload
+- instances vs types?
+- meta-data about interfaces (version, description)
+
+* Ideally: a plugin defines multiple types that implements interfaces
+and those become accessible by name in the main application
+* Idea: the state that we want to keep is stored in the scene, as components
+Extensions contain a minimal amount of state
+* All extensions can have a GUI (standalone dock window or main menu item)
+* One extension object for all opened scene
+* Filter plugin interfaces by type
+	i.e. all ISceneRenderer, all IEditorExtension...
+
+IExtension
+ - onGUI()
+ - onMainMenuGUI()
+
+// Render a scene
+ISceneRenderer : IExtension
+ - onRender(Scene&, gl::Framebuffer&)
+
+IEditorExtension : IExtension
+ - onRender(Scene&, gl::Framebuffer&)
+ - onGUI()
+
+IComponentExtension : IExtension, ComponentManager<...>
+ - onGUI(ID)
+ - update(Scene)

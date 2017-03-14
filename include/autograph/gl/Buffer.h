@@ -21,12 +21,12 @@ enum class BufferUsage {
 };
 
 //////////////////////////////////////////////
-struct BufferDeleter {
+struct AG_GL_API BufferDeleter {
 	static constexpr GLenum objectType = GL_BUFFER;
   void operator()(GLuint obj) { glDeleteBuffers(1, &obj); }
 };
 
-class AG_API Buffer {
+class AG_GL_API Buffer {
 public:
   Buffer() = default;
   Buffer(size_t byteSize, BufferUsage usage, const void *initial_data = nullptr);

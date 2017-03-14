@@ -6,7 +6,7 @@
 #include <string>
 
 namespace ag {
-AG_API const std::string &getProjectRootDirectory() {
+const std::string &getProjectRootDirectory() {
   namespace fs = std::experimental::filesystem;
   static bool found = false;
   static std::string pathstr;
@@ -41,7 +41,7 @@ AG_API const std::string &getProjectRootDirectory() {
   return pathstr;
 }
 
-AG_API std::string getActualPath(const char* pathRelativeToProjectRoot) 
+std::string getActualPath(const char* pathRelativeToProjectRoot) 
 {
   namespace fs = std::experimental::filesystem;
   fs::path path {getProjectRootDirectory()};

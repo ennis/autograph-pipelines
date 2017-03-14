@@ -1,7 +1,7 @@
 #include <GLFW/glfw3.h>
 #include <autograph/engine/Input.h>
-#include <imgui.h>
-#include <imgui_impl_glfw_gl3.h>
+#include <autograph/engine/imgui.h>
+//#include <imgui_impl_glfw_gl3.h>
 #ifdef WIN32
 #include <Windows.h>
 #include <Xinput.h>

@@ -5,7 +5,7 @@
 #include <autograph/engine/Application.h>
 #include <autograph/engine/ImageUtils.h>
 #include <autograph/engine/ResourcePool.h>
-#include <autograph/engine/Scene.h>
+#include <autograph/engine/SceneObject.h>
 #include <autograph/engine/SceneLoader.h>
 #include <experimental/filesystem>
 
@@ -14,8 +14,8 @@ namespace ag {
 //////////////////////////////////////////////////
 class AssimpSceneImporter {
 public:
-  AssimpSceneImporter(EntityManager &entities, Scene &scene,
-                      RenderableScene &renderableScene, LightScene &lights,
+  AssimpSceneImporter(EntityManager &entities, SceneObjectComponents &scene,
+                      RenderableComponents &renderableScene, LightComponents &lights,
                       ResourcePool &resourcePool)
       : entities_{entities}, scene_{scene}, renderableScene_{renderableScene},
         lights_{lights}, resourcePool_{resourcePool} {}
@@ -229,26 +229,23 @@ public:
 private:
   const char *sceneFileId_{nullptr};
   EntityManager &entities_;
-  Scene &scene_;
-  RenderableScene &renderableScene_;
-  LightScene &lights_;
+  SceneObjectComponents &scene_;
+  RenderableComponents &renderableScene_;
+  LightComponents &lights_;
   ResourcePool &resourcePool_;
 };
 
 //////////////////////////////////////////////////
 
-ID loadScene(const char *id, EntityManager &entities, Scene &scene,
-             RenderableScene &renderableScene, LightScene &lights,
-             ResourcePool &resourcePool) {
+ID loadScene(const char *id, EntityManager &entities, SceneObjectComponents &scene,
+             RenderableComponents &renderableScene, LightComponents &lights,
+             ResourcePool &resourcePool,
+			 SceneObject* parentObject)
+{
   AssimpSceneImporter asi{entities, scene, renderableScene, lights,
                           resourcePool};
-  auto root = asi.load(id, nullptr);
-  return root->entityID;
+  auto loadedRoot = asi.load(id, parentObject);
+  return loadedRoot->entityID;
 }
 
-/*void updateScene() {
-  updateWorldTransformsRecursive(mat4{1.0f}, *rootObj_);
-  updateObjectBoundsRecursive(*rootObj_);
-}
-*/
 }

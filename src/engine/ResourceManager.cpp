@@ -15,17 +15,17 @@ namespace ResourceManager {
 static std::vector<std::string> resourceDirectories_;
 
 // returns the main path part of the ID, or the empty string if it has none
-AG_API std::string getPathPart(const char *id) {
+std::string getPathPart(const char *id) {
   ag::string_view idstr{id};
   return idstr.substr(0, idstr.find_last_of('$')).to_string();
 }
 
-AG_API std::string getPathPart(const std::string &id) {
+std::string getPathPart(const std::string &id) {
   return getPathPart(id.c_str());
 }
 
 // returns the subpath part of the ID, or the empty string if it has none
-AG_API std::string getSubpathPart(const char *id) {
+std::string getSubpathPart(const char *id) {
   ag::string_view idstr{id};
   auto p = idstr.find_last_of('$');
   if (p == std::string::npos) {
@@ -35,44 +35,44 @@ AG_API std::string getSubpathPart(const char *id) {
   }
 }
 
-AG_API std::string getSubpathPart(const std::string &id) {
+std::string getSubpathPart(const std::string &id) {
   return getSubpathPart(id.c_str());
 }
 
-AG_API std::string getParentPath(const char *id) {
+std::string getParentPath(const char *id) {
   fs::path path = getPathPart(id);
   return path.parent_path().generic_string();
 }
 
-AG_API std::string getParentPath(const std::string &id) {
+std::string getParentPath(const std::string &id) {
   return getParentPath(id.c_str());
 }
 
-AG_API void addResourceDirectory(const std::string &fullPath) {
+void addResourceDirectory(const std::string &fullPath) {
   addResourceDirectory(fullPath.c_str());
 }
 
-AG_API void addResourceDirectory(const char *fullPath) {
+void addResourceDirectory(const char *fullPath) {
   resourceDirectories_.emplace_back(fullPath);
 }
 
-AG_API int getResourceDirectoriesCount() {
+int getResourceDirectoriesCount() {
   return (int)resourceDirectories_.size();
 }
 
-AG_API std::string getResourceDirectory(int index) {
+std::string getResourceDirectory(int index) {
   return resourceDirectories_[index];
 }
 
-AG_API std::string getFilesystemPath(const char *id) {
+std::string getFilesystemPath(const char *id) {
   return getFilesystemPath(id, {});
 }
 
-AG_API std::string getFilesystemPath(const std::string &id) {
+std::string getFilesystemPath(const std::string &id) {
   return getFilesystemPath(id.c_str());
 }
 
-AG_API std::string getFilesystemPath(const char *id,
+std::string getFilesystemPath(const char *id,
                                      ag::span<const char *const> prefixes) {
   namespace fs = std::experimental::filesystem;
 

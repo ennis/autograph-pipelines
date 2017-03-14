@@ -12,8 +12,7 @@
 #include <autograph/support/FileDialog.h>
 #include <autograph/support/ProjectRoot.h>
 #include <cinttypes>
-#include <imgui.h>
-#include <imgui_internal.h>
+#include <autograph/engine/imgui.h>
 
 namespace ag {
 

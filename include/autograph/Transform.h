@@ -3,7 +3,7 @@
 
 namespace ag {
 
-struct Transform {
+struct AG_CORE_API Transform {
   vec3 scaling {1.0f, 1.0f, 1.0f};
   vec3 position {0.0f, 0.0f, 0.0f};
   quat rotation;

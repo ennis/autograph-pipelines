@@ -1,6 +1,5 @@
 #include <autograph/engine/CVar.h>
-#include <imgui.h>
-#include <imgui_internal.h>
+#include <autograph/engine/imgui.h>
 #include <map>
 #include <string>
 
