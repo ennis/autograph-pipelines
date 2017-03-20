@@ -3,7 +3,7 @@
 # Reflection parser rules
 #====================================================================
 #====================================================================
-set(CXX_REFLECT_TOOL "${CMAKE_SOURCE_DIR}/tools/cxx-reflect.exe" CACHE FILEPATH "Path to the cxx-reflect executable")
+set(CXX_REFLECT_TOOL "${CMAKE_SOURCE_DIR}/build/RelWithDebInfo/cxx-reflect.exe" CACHE FILEPATH "Path to the cxx-reflect executable")
 set(TEMPLATE_TOOL "${CMAKE_SOURCE_DIR}/tools/tpl_compile.lua" CACHE FILEPATH "Path to the template renderer script")
 set(TOOLS_DIR "${CMAKE_SOURCE_DIR}/tools/" CACHE FILEPATH "Path to the tools directory")
 
@@ -19,7 +19,7 @@ function(reflection_generate_database TARGET SOURCE)
   set(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/${SRCNAMEHASH}.json)
   set(SCRIPT ${CMAKE_CURRENT_BINARY_DIR}/cxx_reflection_$<CONFIG>_${SRCNAMEHASH}.cmake)
   file(GENERATE OUTPUT ${SCRIPT} CONTENT "execute_process(COMMAND ${CXX_REFLECT_TOOL}\
-    ${SOURCE} -o ${OUTPUT} -- -D__REFLECTION_PARSER__ -D__REFLECTION_${TARGET}__ -v -c -std=c++1z -x c++ ${INCDIRS2} OUTPUT_STRIP_TRAILING_WHITESPACE ERROR_STRIP_TRAILING_WHITESPACE ERROR_FILE blabla.txt) ")
+    ${SOURCE} -o ${OUTPUT} -- -D__REFLECTION_PARSER__ -D__REFLECTION_${TARGET}__ -D_CRT_USE_BUILTIN_OFFSETOF -v -c -std=c++1z -x c++ ${INCDIRS2} OUTPUT_STRIP_TRAILING_WHITESPACE ERROR_STRIP_TRAILING_WHITESPACE ERROR_FILE blabla.txt) ")
   add_custom_command(
 	OUTPUT ${OUTPUT}
     DEPENDS ${CXX_REFLECTION_TOOL} ${SOURCE}
@@ -45,7 +45,7 @@ ENDFUNCTION(PREP_GENERATED_SOURCE_FILES)
 function(reflection_render_template TARGET REFLECTION_TARGET SOURCE_TEMPLATES)
 get_target_property(REFLECTION_DB ${REFLECTION_TARGET} REFLECTION_DATABASE_PATH)
 PREP_GENERATED_SOURCE_FILES(OUTPUTS ${CMAKE_CURRENT_BINARY_DIR} ${SOURCE_TEMPLATES})
-message(Setting ${OUTPUTS} for ${TARGET})
+#message(Setting ${OUTPUTS} for ${TARGET})
 target_sources(${TARGET} PRIVATE ${OUTPUTS})
 add_custom_command(
     OUTPUT ${OUTPUTS}

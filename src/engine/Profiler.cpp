@@ -27,7 +27,7 @@ void endFrame() {
   lastData.frameId = 0;
   lastData.frameStartTime = scopes[0].start;
   lastData.frameEndTime = std::chrono::high_resolution_clock::now();
-  lastData.scopes_ = std::move(scopes);
+  lastData.scopes = std::move(scopes);
 }
 
 void enterScope(const char *scopeName, bool gpu) {

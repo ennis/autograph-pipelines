@@ -1,19 +1,16 @@
 #pragma once
 #include <autograph/engine/Config.h>
+#include <autograph/engine/Plugin.h>
+#include <autograph/engine/EntityManager.h>
 
 namespace ag {
-struct Camera;
-class SceneObjectComponents;
-class Scene;
-class RenderableComponents;
-class LightComponents;
-class ResourcePool;
-class EntityManager;
+	class Scene;
+	struct Camera;
+	class ResourcePool;
 
-namespace SceneEditor {
-AG_ENGINE_API void show(const Camera &cam, EntityManager &entityManager, SceneObjectComponents &scene, 
-		  Scene& genericScene,
-          RenderableComponents &renderableScene, LightComponents &lights,
-          ResourcePool &resourcePool);
-}
+	class AG_ENGINE_API ISceneEditor : public Extension
+	{
+	public:
+		virtual void onSceneEditorGUI(Scene& s, ID& lastSelected, const Camera& camera, ResourcePool& resourcePool) = 0;
+	};
 }

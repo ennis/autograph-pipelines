@@ -5,7 +5,7 @@ set(SRC
 	EntityManager.cpp
 	Input.cpp
 	ImageUtils.cpp
-	DynamicModule.cpp
+	Plugin.cpp
 	ResourceManager.cpp
 	Shader.cpp
 	Bindings.cpp
@@ -15,7 +15,6 @@ set(SRC
 	RenderUtils.cpp
 	SceneObject.cpp
 	SceneLoader.cpp
-	SceneEditor.cpp
 	Mesh.cpp
 	ScriptContext.cpp
 	RenderTarget.cpp
@@ -41,7 +40,7 @@ target_compile_definitions(autograph_engine PRIVATE -DAG_ENGINE_DLL -DAG_BUILD_E
 target_compile_definitions(autograph_engine INTERFACE -DAG_ENGINE_DLL)
 
 if (WIN32)
-target_compile_options(autograph_engine PUBLIC /wd4251)
+target_compile_options(autograph_engine PUBLIC /wd4251 /wd4275)
 endif()
 
 target_link_libraries(
@@ -71,11 +70,3 @@ if(UNIX)
 endif()
 
 
-############## Hot-reloadable modules ##############
-function(add_autograph_module NAME SOURCES)
-    add_library(${NAME} SHARED ${SOURCES})
-	target_compile_definitions(${NAME} PRIVATE -DAG_ENGINE_DLL -DAG_GL_DLL -DAG_MODULE)
-	target_link_libraries(${NAME} PUBLIC autograph_engine)
-	target_include_directories(${NAME} PUBLIC ${AG_PUBLIC_INCLUDE_DIR})
-	target_include_directories(${NAME} PUBLIC $<TARGET_PROPERTY:autograph_engine,INCLUDE_DIRECTORIES>)
-endfunction()

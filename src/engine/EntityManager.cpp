@@ -20,4 +20,14 @@ void Scene::showGUI(ID id)
 	}
 }
 
+ComponentManagerBase* Scene::getComponentManager(std::type_index ti)
+{
+	for (auto man : componentManagers_) {
+		if (ti == typeid(*man)) {
+			return man;
+		}
+	}
+	return nullptr;
+}
+
 }

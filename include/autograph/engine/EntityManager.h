@@ -3,6 +3,7 @@
 #include <autograph/support/IDTable.h>
 #include <unordered_map>
 #include <set>
+#include <typeindex>
 
 namespace ag {
 
@@ -76,7 +77,13 @@ class AG_ENGINE_API Scene
 public:
 	Scene(EntityManager& entityManager);
 	void registerComponentManager(ComponentManagerBase& componentManager);
+	ComponentManagerBase* getComponentManager(std::type_index ti);
+	template <typename T> T* getComponentManager() {
+		return static_cast<T*>(getComponentManager(typeid(T)));
+	}
 	void showGUI(ID id);
+	EntityManager& getEntityManager() { return entityManager_; }
+	const EntityManager& getEntityManager() const { return entityManager_; }
 	// serialize / deserialize
 
 private:

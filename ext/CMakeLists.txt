@@ -225,3 +225,5 @@ target_include_directories(nativefiledialog PUBLIC ${GTK3_INCLUDE_DIRS})
 #target_compile_definitions(nativefiledialog PUBLIC ${GTK3_CFLAGS_OTHER})
 target_link_libraries(nativefiledialog PUBLIC ${GTK3_LIBRARIES})
 endif()
+set_property(TARGET nativefiledialog PROPERTY FOLDER "External")
+

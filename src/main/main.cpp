@@ -66,11 +66,17 @@ int main(int argc, char *argv[]) {
   scene.registerComponentManager(lights);
   scene.registerComponentManager(renderables);
   scene.registerComponentManager(deferredSceneRenderer.getRenderData());
-  loadDynamicModule("DeferredSceneRenderer");
+  
+  loadPluginModule("DeferredSceneRenderer");
+  auto sceneRenderer = createClassInstance<Extension>("DeferredSceneRenderer");
+  assert(!sceneRenderer);
+  loadPluginModule("SceneEditor");
+  auto sceneEditor = createClassInstance<ISceneEditor>("SceneEditor");
+  assert(!sceneEditor);
 
   ////////////////////////////////////////////////////
   // Scene
-  ID rootEntity = loadScene("mesh/sponza/sponza.obj", entityManager,
+  ID rootEntity = loadScene("mesh/blender_chan/Sketchfab_2017_02_12_14_36_10.fbx", entityManager,
 	  sceneObjects, renderables, lights, pool);
   SceneObject *rootSceneObj = sceneObjects.get(rootEntity);
   if (rootSceneObj) {
@@ -79,6 +85,7 @@ int main(int argc, char *argv[]) {
     rootSceneObj->calculateWorldBounds();
     camCtl.centerOnObject(rootSceneObj->getApproximateWorldBounds());
   }
+  ID selectedItemID = 0;
 
   ////////////////////////////////////////////////////
   // Render
@@ -106,7 +113,8 @@ int main(int argc, char *argv[]) {
 	{
 		// show scene editor
 		AG_PROFILE_SCOPE("Scene editor")
-		SceneEditor::show(cam, entityManager, sceneObjects, scene, renderables, lights, pool);
+		if (sceneEditor)
+			sceneEditor->onSceneEditorGUI(scene, selectedItemID, cam, pool);
 	}
 
     {

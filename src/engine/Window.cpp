@@ -1,5 +1,6 @@
 #include <autograph/gl/gl_core_4_5.h>
 #include <GLFW/glfw3.h>
+#include <autograph/engine/Plugin.h>
 #include <autograph/engine/DebugOverlay.h>
 #include <autograph/engine/ImGuiUtils.h>
 #include <autograph/engine/Profiler.h>
@@ -583,6 +584,7 @@ void Window::show() {
       glfwSwapBuffers(window_);
     }
     glfwPollEvents();
+	watchForPluginModuleChanges();
     Profiler::endFrame();
   }
 }

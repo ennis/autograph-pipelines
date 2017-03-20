@@ -49,8 +49,10 @@
 //////////////////////////////////////////////
 namespace ag {
 static constexpr const char projectName[] = "autograph-pipelines";
+static constexpr const char projectVersion[] = "@GIT_VERSION@";
 }
 
 //////////////////////////////////////////////
 // Track GL objects for the devtools
 #define AG_TRACK_GL_OBJECTS 1
+

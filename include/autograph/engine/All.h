@@ -6,7 +6,7 @@
 #include "DebugOverlay.h"
 #include "ImageUtils.h"
 #include "ImGuiUtils.h"
-#include "DynamicModule.h"
+#include "Plugin.h"
 #include "Input.h"
 #include "MathUtils.h"
 #include "Mesh.h"
@@ -25,3 +25,6 @@
 #include "Shader.h"
 #include "ShaderUtils.h"
 #include "Window.h"
+#include "imgui.h"
+#include "ImGuizmo.h"
+

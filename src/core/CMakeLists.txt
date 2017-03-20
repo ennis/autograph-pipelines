@@ -1,4 +1,6 @@
 file(GLOB SRC *.cpp)
+
+############## Config.h ##############
 add_library(autograph_core SHARED ${SRC})
 target_include_directories(autograph_core PUBLIC ${AG_PUBLIC_INCLUDE_DIR})
 target_link_libraries(autograph_core PUBLIC fmt glm)

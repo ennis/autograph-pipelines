@@ -11,7 +11,7 @@ namespace ag {
 namespace gl {
 
 //////////////////////////////////////////////////
-enum class AG_REFLECT StateGroupMask {
+enum class AG_GL_API StateGroupMask {
   Viewports = (1 << 0),   // DONE
   Framebuffer = (1 << 1), // DONE
   ScissorRect = (1 << 2),

@@ -1,0 +1,10 @@
+// TODO: meta-things go here
+{{=<% %>=}}
+/////////////////////////////////////////////////////////////////////
+// Automatically generated file: DO NOT EDIT
+<%#metaHeaders%>
+#include "<%.%>"
+<%/metaHeaders%>
+#include <autograph/engine/Meta.h>
+
+

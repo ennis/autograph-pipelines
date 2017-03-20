@@ -4,7 +4,7 @@
 #include <cstdlib>
 
 namespace ag {
-enum class AG_REFLECT ImageFormat {
+enum class AG_CORE_API ImageFormat {
   R32G32B32A32_SFLOAT = 0,
   R16G16B16A16_SFLOAT,
   R32G32_SFLOAT,

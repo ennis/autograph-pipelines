@@ -59,7 +59,7 @@ public:
     if (DLoc.isInvalid() || SM.isInSystemHeader(DLoc))
       return false;
 	// Filter private decls
-	if (D->getAccess() != AS_public)
+	if (D->getAccess() != AS_public && D->getAccess() != AS_none)
 		return false;
     // A decl is included in the reflection database if:
     // 1. The decl has the cxxr::reflect attribute
@@ -90,6 +90,7 @@ public:
                  declName);
       return;
     }
+	
     auto &SM = Context_->getSourceManager();
     auto DLoc = D->getLocation();
     // Include the file containing the declaration. It is the responsibility
@@ -134,7 +135,7 @@ public:
     if (!RD->isCompleteDefinition())
       return true;
     recordDecls.push_back(RD);
-    //RD->print(llvm::errs(), 2, false);
+    RD->print(llvm::errs(), 2, false);
     return true;
   }
 

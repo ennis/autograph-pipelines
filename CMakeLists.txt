@@ -14,7 +14,6 @@ mark_as_advanced(VERSION_MAJOR VERSION_MINOR VERSION_PATCH)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 
-
 include("cmake/ReflectionGen.cmake")
 
 ############## Doxygen ##############
@@ -48,10 +47,22 @@ endif()
 ############## Force clang modules ##############
 #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fmodules -fmodules-cache-path=${CMAKE_SOURCE_DIR}/cache")
 
+############## Config header ##############
+execute_process(
+     COMMAND git rev-parse head
+     OUTPUT_VARIABLE GIT_VERSION
+     OUTPUT_STRIP_TRAILING_WHITESPACE
+ )
+
+configure_file(
+    "${PROJECT_SOURCE_DIR}/include/autograph/Config.h.in"
+    "${PROJECT_BINARY_DIR}/include/autograph/Config.h")
+
+include_directories("${PROJECT_BINARY_DIR}/include")
 
 find_package(OpenGL REQUIRED)
 #find_package(Mono REQUIRED)
-link_directories(${MONO_LIBRARY_DIRS})
+#link_directories(${MONO_LIBRARY_DIRS})
 
 set(Boost_USE_STATIC_LIBS ON)
 find_package(Boost COMPONENTS thread filesystem system context REQUIRED)
@@ -64,4 +75,24 @@ add_subdirectory(src/engine)
 add_subdirectory(src/editor)
 add_subdirectory(src/cxx-reflect)
 add_subdirectory(src/main)
+
+############## Hot-reloadable modules ##############
+function(add_autograph_module NAME SOURCES)
+    add_library(${NAME} SHARED ${SOURCES})
+    target_compile_definitions(${NAME} PRIVATE -DAG_MODULE -D${NAME}_DLL -DBUILD_${NAME}_DLL)
+    target_link_libraries(${NAME} PUBLIC autograph_engine)
+    target_include_directories(${NAME} PUBLIC ${AG_PUBLIC_INCLUDE_DIR})
+    target_include_directories(${NAME} PUBLIC $<TARGET_PROPERTY:autograph_engine,INCLUDE_DIRECTORIES>)
+    set(PROJECT_NAME ${NAME})
+    configure_file (
+        "${PROJECT_SOURCE_DIR}/src/ModuleConfig.h.in"
+        "${CMAKE_CURRENT_BINARY_DIR}/${NAME}_Config.h"
+    )
+    target_include_directories(${NAME} PUBLIC "${CMAKE_CURRENT_BINARY_DIR}/")
+    reflection_generate_database(${NAME} "${CMAKE_CURRENT_SOURCE_DIR}/Module.h")
+    reflection_render_template(${NAME} ${NAME} "${PROJECT_SOURCE_DIR}/src/ModuleMeta.cpp.in")
+    set_property(TARGET ${NAME} PROPERTY FOLDER "Plugins")
+endfunction()
+
+add_subdirectory(src/sceneEditor)
 add_subdirectory(src/deferredRenderer)

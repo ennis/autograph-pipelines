@@ -2330,10 +2330,12 @@ Extensions contain a minimal amount of state
 * One extension object for all opened scene
 * Filter plugin interfaces by type
 	i.e. all ISceneRenderer, all IEditorExtension...
+* Query all available interfaces in a plugin
 
 IExtension
  - onGUI()
  - onMainMenuGUI()
+ - description
 
 // Render a scene
 ISceneRenderer : IExtension
@@ -2346,3 +2348,18 @@ IEditorExtension : IExtension
 IComponentExtension : IExtension, ComponentManager<...>
  - onGUI(ID)
  - update(Scene)
+
+Use case: load the 'DeferredSceneRenderer plugin'
+
+	auto sceneRenderer = createClassInstance<IDeferredSceneRenderer>("DeferredSceneRenderer");
+	VS
+	auto mod = loadModule("DeferredSceneRenderer");
+	auto sceneRenderer = module.createClassInstance<IDeferredSceneRenderer>();
+
+issue:
+	one interface can have multiple providers in different modules
+	metadata for each class?
+		i.e. Information that should be available before creating/allocating the object
+		'metaobject' / 'metaclass' => static data
+
+Solution: automatic reflection generation + class metadata

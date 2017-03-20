@@ -59,17 +59,13 @@ public:
   uint64_t frameId;
   TimePoint frameStartTime;
   TimePoint frameEndTime;
+  std::vector<Scope> scopes;
 
-  const Scope* root() const { return &scopes_[0]; }
-  const Scope* next(const Scope* s) const { return s->next != -1 ? &scopes_[s->next] : nullptr; }
-  const Scope* parent(const Scope* s) const { return s->parent != -1 ? &scopes_[s->parent] : nullptr; }
-  const Scope* firstChild(const Scope* s) const { return s->firstChild != -1 ? &scopes_[s->firstChild] : nullptr; }
-
-  AG_ENGINE_API friend void endFrame();
+  const Scope* root() const { return &scopes[0]; }
+  const Scope* next(const Scope* s) const { return s->next != -1 ? &scopes[s->next] : nullptr; }
+  const Scope* parent(const Scope* s) const { return s->parent != -1 ? &scopes[s->parent] : nullptr; }
+  const Scope* firstChild(const Scope* s) const { return s->firstChild != -1 ? &scopes[s->firstChild] : nullptr; }
   ProfileData clone();
-
-private:
-  std::vector<Scope> scopes_;
 };
 
 AG_ENGINE_API void beginFrame();
@@ -80,7 +76,7 @@ AG_ENGINE_API void event(const char *id);
 AG_ENGINE_API void exitScope();
 AG_ENGINE_API void showGui();
 // nullptr if no frame has been profiled
- const ProfileData *getData();
+AG_ENGINE_API const ProfileData *getData();
 
 struct ProfileGuard {
   ProfileGuard(const char *name, bool gpu) { enterScope(name, gpu); }
