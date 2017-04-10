@@ -14,3 +14,5 @@
 #else
 #define @PROJECT_NAME@_API AG_REFLECT
 #endif
+
+#define PLUGIN_ENTRY extern "C" @PROJECT_NAME@_API void moduleInit()

@@ -1,5 +1,7 @@
 #pragma once
 #include <autograph/engine/Config.h>
+#include <autograph/engine/Plugin.h>
+#include <autograph/engine/SceneObject.h>
 #include <autograph/Camera.h>
 #include <autograph/AABB.h>
 #include <glm/gtx/rotate_vector.hpp>
@@ -11,7 +13,7 @@ static const vec3 CamRight{1.0f, 0.0f, 0.0f};
 static const vec3 CamUp{0.0f, 1.0f, 0.0f};
 
 /////////////////////////////////////////////////////
-class AG_ENGINE_API CameraControl {
+/*class AG_ENGINE_API CameraControl {
 public:
   void zoomIn(float dzoom);
   void setZoom(float zoom);
@@ -40,7 +42,14 @@ private:
   float theta_{0.0f};
   float phi_{kPiOverTwo<float>};
   vec3 target_{0.0f, 0.0f, 0.0f};
-};
+};*/
 
 /////////////////////////////////////////////////////
+class CameraController : public Extension
+{
+public:
+	virtual void focusOnObject(Scene& scene, const SceneObject& sceneObject) = 0;
+	virtual bool onCameraGUI(int mouseX, int mouseY, int screenW, int screenH, Camera& inOutCam, Scene& scene, ID selectedObject) = 0;
+};
+
 }

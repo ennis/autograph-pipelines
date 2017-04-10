@@ -31,14 +31,21 @@ public:
 };
 
 //////////////////////////////////////////////
+// Module: represents a shared library containing
+// plugin types
+struct Module;
+
+//////////////////////////////////////////////
 // Plugin class registration API
 struct ReloadablePluginProxy {
   std::string className;
   std::shared_ptr<Plugin> plugin;
+  Module* module;
 };
 
-struct Module;
-
+//////////////////////////////////////////////
+// A factory for creating plugin instances
+// These factories are registered by the plugin module
 struct PluginClassFactory {
   Module *module = nullptr;
   std::string className;
@@ -79,17 +86,19 @@ AG_ENGINE_API void
 registerPluginClassFactory(const char *name,
                            std::unique_ptr<PluginClassFactory> reg);
 AG_ENGINE_API PluginClassFactory *getPluginClassFactory(const char *name);
+
 AG_ENGINE_API ReloadablePluginProxy *
-createReloadablePluginProxy(PluginClassFactory &factory);
+createReloadablePluginProxy(const char* name, std::type_index interfaceTypeID);
+//AG_ENGINE_API ReloadablePluginProxy *
+//createReloadablePluginProxy(PluginClassFactory &factory);
 
 template <typename T> PluginPtr<T> createClassInstance(const char *className) {
-  auto factory = getPluginClassFactory(className);
-  if (!factory || !factory->implementsInterface(typeid(T))) {
-    return nullptr;
-  }
-  return PluginPtr<T>{createReloadablePluginProxy(*factory)};
+  return PluginPtr<T>{createReloadablePluginProxy(className, typeid(T))};
 }
 
+/////////////////////////////////////////////////////
+// Register a factory for creating the plugin type T,
+// that implements the specified Interfaces
 template <typename T, typename... Interfaces>
 void registerClass(const char *name) {
   struct Factory : public PluginClassFactory {
@@ -107,7 +116,7 @@ void registerClass(const char *name) {
     }
   };
   auto factory = std::make_unique<Factory>();
-  factory->module = nullptr; // TODO get current module?
+  factory->module = nullptr; // filled somewhere else
   factory->className = name;
   registerPluginClassFactory(name, std::move(factory));
 }

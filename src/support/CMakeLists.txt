@@ -17,6 +17,7 @@ target_link_libraries(autograph_support
 	glm)
 target_compile_definitions(autograph_support PRIVATE -DAG_SUPPORT_DLL -DAG_BUILD_SUPPORT_DLL)
 target_compile_definitions(autograph_support INTERFACE -DAG_SUPPORT_DLL)
+set_property(TARGET autograph_support PROPERTY FOLDER "Engine")
 
 if (WIN32)
 target_compile_definitions(autograph_support PUBLIC -DAG_WINDOWS)

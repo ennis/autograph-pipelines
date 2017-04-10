@@ -66,10 +66,10 @@ const GLFormatInfo &getGLImageFormatInfo(ImageFormat fmt) {
 }*/
 
 Texture::~Texture() {
-  /*if (obj_.get() != 0)
+  if (obj_.get() != 0)
     AG_DEBUG("Deleting texture {}, object={} ({},{}x{}x{})", (const void *)this,
              obj_.get(), getImageFormatInfo(format()).name, width(), height(),
-             depth());*/
+             depth());
 }
 
 void Texture::upload(void *src, int mipLevel) {
@@ -198,10 +198,10 @@ Texture Texture::create3D(ImageFormat fmt, int w, int h, int d,
 }
 
 void Texture::reset() {
- /* if (obj_.get() != 0)
+  if (obj_.get() != 0)
     AG_DEBUG("Deleting texture {}, object={} ({},{}x{}x{})", (const void *)this,
              obj_.get(), getImageFormatInfo(format()).name, width(), height(),
-             depth());*/
+             depth());
   obj_ = nullptr;
 }
 }

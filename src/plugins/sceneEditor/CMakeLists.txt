@@ -1,5 +1,3 @@
-set(SRC 
-	SceneEditor.cpp
-)
+set(SRC SceneEditor.cpp)
 
 add_autograph_module(SceneEditor ${SRC})

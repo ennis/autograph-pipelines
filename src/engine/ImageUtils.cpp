@@ -1,7 +1,12 @@
+#include <ImfImage.h>
+#include <ImfInputFile.h>
+#include <ImfRgbaFile.h>
 #include <autograph/engine/Application.h>
 #include <autograph/engine/ImageUtils.h>
 #include <autograph/support/Debug.h>
 #include <experimental/filesystem>
+
+namespace fs = std::experimental::filesystem;
 
 static void *stbi_realloc_sized(void *ptr, size_t oldsz, size_t newsz) {
   auto ptr2 = new uint8_t[newsz];
@@ -61,28 +66,95 @@ gl::Texture loadTexture(const char *id, ImageFormat targetFormat) {
   if (path.empty()) {
     throw std::runtime_error{"loadTexture: file not found"};
   }
-  int comp;
-  int w, h;
-  auto data = loadImageByPathRaw(path.c_str(), w, h, comp, 4);
-  auto tex = gl::Texture::create2D(targetFormat, w, h);
-  glTextureSubImage2D(tex.object(), 0, 0, 0, w, h, GL_RGBA,
-                      GL_UNSIGNED_INT_8_8_8_8_REV, data.get());
+
+  gl::Texture tex;
+
+  // inspect extension to see if we must load a EXR image
+  if (fs::path{path}.extension() == ".exr") {
+    // TODO support more target formats
+    if (targetFormat == ImageFormat::R16G16B16A16_SFLOAT) {
+      Imf::Array2D<Imf::Rgba> data;
+      Imf::RgbaInputFile inputFile{path.c_str()};
+      auto dw = inputFile.dataWindow();
+      int width = dw.max.x - dw.min.x + 1;
+      int height = dw.max.y - dw.min.y + 1;
+      data.resizeErase(height, width);
+      AG_DEBUG("Loading OpenEXR image {}x{}", width, height);
+      inputFile.setFrameBuffer(&data[0][0] - dw.min.x - dw.min.y * width, 1,
+                               width);
+      inputFile.readPixels(
+          dw.min.y, dw.max.y); // create target texture and upload our data
+      tex = gl::Texture::create2D(targetFormat, width, height);
+      glTextureSubImage2D(tex.object(), 0, 0, 0, width, height, GL_RGBA16F,
+                          GL_HALF_FLOAT, &data[0][0]);
+    } else {
+      errorMessage("Not implemented");
+    }
+    // TODO advanced loading
+    // load with OpenEXR
+    // Imf::Array2D<Imf::Rgba> data;
+    // Imf::InputFile inputFile{ path.c_str() };
+
+    // inputFile.
+    // const Imf::ChannelList& channels = inputFile.header().channels();
+    // for (Imf::ChannelList::ConstIterator i = channels.begin(); i !=
+    // channels.end(); ++i) {
+    //  const Imf::Channel& channel = i.channel();
+    //}
+
+    // Look for different channels depending on the target texture format
+  } else {
+    // load with stbimage
+    int comp;
+    int w, h;
+    auto data = loadImageByPathRaw(path.c_str(), w, h, comp, 4);
+    tex = gl::Texture::create2D(targetFormat, w, h);
+    glTextureSubImage2D(tex.object(), 0, 0, 0, w, h, GL_RGBA,
+                        GL_UNSIGNED_INT_8_8_8_8_REV, data.get());
+  }
   return tex;
 }
 
+void writeEXR(const char *path, const void *pixelData, int width, int height,
+              ImageFormat inputFormat, ImageFormat targetFormat) 
+{
+	AG_DEBUG("Writing OpenEXR image {}x{} {}", width, height, getImageFormatInfo(inputFormat).name);
+  if (inputFormat == ImageFormat::R16G16B16A16_SFLOAT) {
+    Imf::RgbaChannels rgbaChannels = Imf::WRITE_RGBA;
+    Imf::RgbaOutputFile outputFile{path, width, height, rgbaChannels};
+    outputFile.setFrameBuffer((const Imf::Rgba *)pixelData, 1, width);
+    outputFile.writePixels(height);
+  } else {
+    // TODO
+    errorMessage("Not implemented");
+  }
+}
+
 void saveImageByPath(const char *path, const void *pixelData, int width,
-                            int height, ImageFormat format) {
-  if (format != ImageFormat::R8G8B8A8_SNORM &&
-      format != ImageFormat::R8G8B8A8_UNORM &&
-      format != ImageFormat::R8G8B8A8_SRGB) {
-    throw std::runtime_error{"Unsupported pixel format"};
+                     int height, ImageFormat inputFormat,
+                     ImageFormat targetFormat) {
+  if (inputFormat != targetFormat) {
+    errorMessage("saveImageByPath: for now, inputFormat and targetFormat must "
+                 "be the same. Different target formats are ignored.");
+    targetFormat = inputFormat;
+  }
+
+  if (inputFormat != ImageFormat::R8G8B8A8_SNORM &&
+      inputFormat != ImageFormat::R8G8B8A8_UNORM &&
+      inputFormat != ImageFormat::R8G8B8A8_SRGB &&
+      inputFormat != ImageFormat::R16G16B16A16_SFLOAT &&
+      inputFormat != ImageFormat::R16G16_SFLOAT) {
+    errorMessage("saveImageByPath: unsupported input pixel format");
+    return;
   }
 
   int nbcomp = 4;
   std::experimental::filesystem::path p{path};
   auto ext = p.extension().string();
 
-  if (ext == ".png") {
+  if (ext == ".exr") {
+    writeEXR(path, pixelData, width, height, inputFormat, targetFormat);
+  } else if (ext == ".png") {
     // assume lines are contiguous
     stbi_write_png(path, width, height, nbcomp, pixelData, 0);
   } else if (ext == ".bmp") {
@@ -90,7 +162,56 @@ void saveImageByPath(const char *path, const void *pixelData, int width,
   } else if (ext == ".tga") {
     stbi_write_tga(path, width, height, nbcomp, pixelData);
   } else {
-    throw std::runtime_error{"Unsupported target file format"};
+    errorMessage("saveImageByPath: unsupported target file format");
   }
 }
+
+void saveTexture(const char *path, gl::Texture &texture,
+                 ImageFormat targetFormat) {
+  // Allocate buffer for readback
+  GLenum extFormat;
+  GLenum components;
+  int size;
+
+  switch (texture.format()) {
+  case ImageFormat::R16G16B16A16_SFLOAT:
+    extFormat = GL_HALF_FLOAT;
+    components = GL_RGBA;
+    size = 8;
+    break;
+  case ImageFormat::R16G16_SFLOAT:
+    extFormat = GL_HALF_FLOAT;
+    components = GL_RG;
+    size = 4;
+    break;
+  case ImageFormat::R8G8B8A8_SNORM:
+    extFormat = GL_UNSIGNED_INT_8_8_8_8_REV;
+    components = GL_RGBA;
+    size = 4;
+    break;
+  case ImageFormat::R8G8B8A8_UNORM:
+    extFormat = GL_UNSIGNED_INT_8_8_8_8_REV;
+    components = GL_RGBA;
+    size = 4;
+    break;
+  case ImageFormat::R8G8B8A8_SRGB:
+    extFormat = GL_UNSIGNED_INT_8_8_8_8_REV;
+    components = GL_RGBA;
+    size = 4;
+    break;
+  default:
+    errorMessage("saveTexture: texture format not supported ({})",
+                 getImageFormatInfo(texture.format()).name);
+    return;
+  }
+
+  std::vector<uint8_t> data;
+  auto bufSize = texture.width() * texture.height() * size;
+  data.resize(bufSize);
+  glGetTextureImage(texture.object(), 0, extFormat, components, bufSize,
+                    data.data());
+  saveImageByPath(path, data.data(), texture.width(), texture.height(),
+                  texture.format(), texture.format());
 }
+
+} // namespace ag

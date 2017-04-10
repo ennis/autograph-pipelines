@@ -88,10 +88,10 @@ add_subdirectory(glfw EXCLUDE_FROM_ALL)
 target_include_directories(glfw INTERFACE glfw/include)
 
 # imgui (with addons)
-file(GLOB IMGUI_SOURCES imgui/*.cpp imgui_glfw3/*.cpp)
-add_library(imgui STATIC ${IMGUI_SOURCES})
-target_include_directories(imgui PUBLIC imgui imgui_glfw3)
-target_link_libraries(imgui PRIVATE glloadgen glfw glm stb)
+#file(GLOB IMGUI_SOURCES imgui/*.cpp imgui_glfw3/*.cpp)
+#add_library(imgui STATIC ${IMGUI_SOURCES})
+#target_include_directories(imgui PUBLIC imgui imgui_glfw3)
+#target_link_libraries(imgui PRIVATE glloadgen glfw glm stb)
 
 # glm
 add_library(glm INTERFACE)
@@ -100,6 +100,32 @@ target_include_directories(glm INTERFACE glm)
 
 # glloadgen
 add_subdirectory(glloadgen EXCLUDE_FROM_ALL)
+
+# OpenEXR
+add_subdirectory(openexr/IlmBase EXCLUDE_FROM_ALL)
+#set(ILMBASE_INSTALL ${CMAKE_CURRENT_BINARY_DIR})/ilmbase-install)
+#execute_process(${CMAKE_COMMAND} -DCMAKE_INSTALL_PREFIX=${ILMBASE_INSTALL} -G "${CMAKE_GENERATOR}"
+	#WORKING_DIRECTORY )
+#set(ILMBASE_PACKAGE_PREFIX )
+# hack to find half.h and friends
+option(BUILD_SHARED_LIBS    "..." OFF)
+option(USE_ZLIB_WINAPI      "..." OFF)
+option(NAMESPACE_VERSIONING "..." OFF)
+get_property(ILMBASE_INCLUDE_DIRS DIRECTORY openexr/IlmBase PROPERTY INCLUDE_DIRECTORIES)
+include_directories(${ILMBASE_INCLUDE_DIRS})
+add_subdirectory(openexr/OpenEXR EXCLUDE_FROM_ALL)
+get_property(ILMIMF_INCLUDE_DIRS DIRECTORY openexr/OpenEXR PROPERTY INCLUDE_DIRECTORIES)
+target_include_directories(IlmImf INTERFACE ${ILMIMF_INCLUDE_DIRS})
+
+# OpenImageIO
+#[[option (EMBEDPLUGINS "Embed format plugins in libOpenImageIO" ON)
+option (OIIO_BUILD_TOOLS "Build the command-line tools" ON)
+option (OIIO_BUILD_TESTS "Build the unit tests" OFF)
+option (USE_OPENGL "Include OpenGL support" OFF)
+option (USE_QT "Include Qt support" OFF)
+option (USE_PYTHON "Build the Python bindings" OFF)
+set(BUILDSTATIC TRUE)
+add_subdirectory(oiio)]]
 
 # nanovg
 #file(GLOB NANOVG_SOURCES nanovg/src/*.c)

@@ -10,6 +10,7 @@ set(HEADERS
 add_executable(autograph_main 
     ${SRC} ${HEADERS})
 #reflection_gen(editor src/meta.hpp src/gen/meta.cpp.in)
+set_property(TARGET autograph_main PROPERTY FOLDER "Engine")
 
 target_link_libraries(
 	autograph_main 

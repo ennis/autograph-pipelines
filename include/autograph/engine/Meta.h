@@ -4,7 +4,6 @@
 #include <cstddef> // somehow needed for size_t
 #include <type_traits>
 #include <typeindex>
-#include <unordered_map>
 
 namespace ag {
 namespace meta {

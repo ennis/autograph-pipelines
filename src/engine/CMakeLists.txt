@@ -11,7 +11,6 @@ set(SRC
 	Bindings.cpp
 	Light.cpp
 	Arcball.cpp
-	CameraControl.cpp
 	RenderUtils.cpp
 	SceneObject.cpp
 	SceneLoader.cpp
@@ -38,6 +37,7 @@ target_include_directories(autograph_engine PUBLIC ${Boost_INCLUDE_DIRS})
 target_include_directories(autograph_engine PUBLIC ${AG_PUBLIC_INCLUDE_DIR})
 target_compile_definitions(autograph_engine PRIVATE -DAG_ENGINE_DLL -DAG_BUILD_ENGINE_DLL)
 target_compile_definitions(autograph_engine INTERFACE -DAG_ENGINE_DLL)
+set_property(TARGET autograph_engine PROPERTY FOLDER "Engine")
 
 if (WIN32)
 target_compile_options(autograph_engine PUBLIC /wd4251 /wd4275)
@@ -47,7 +47,6 @@ target_link_libraries(
 		autograph_engine 
 	PRIVATE
 		##### external
-		assimp
 		zlibstatic
 		luajit_bin
 		stb
@@ -63,6 +62,7 @@ target_link_libraries(
 		optional
 		gsl 
 		glm 
+		IlmImf
 	)
 
 if(UNIX)

@@ -4,6 +4,7 @@
 #include <autograph/gl/Query.h>
 #include <chrono>
 #include <string>
+#include <vector>
 
 namespace ag {
 namespace Profiler {

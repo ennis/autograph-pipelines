@@ -29,6 +29,7 @@ target_include_directories(autograph_gl INTERFACE ../)
 target_include_directories(autograph_gl PUBLIC ${AG_PUBLIC_INCLUDE_DIR})
 target_compile_definitions(autograph_gl PRIVATE -DAG_GL_DLL -DAG_BUILD_GL_DLL)
 target_compile_definitions(autograph_gl INTERFACE -DAG_GL_DLL)
+set_property(TARGET autograph_gl PROPERTY FOLDER "Engine")
 
 if (WIN32)
 target_compile_options(autograph_gl PUBLIC /wd4251)

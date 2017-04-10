@@ -1,9 +1,10 @@
 #include <autograph/engine/CVar.h>
 #include <autograph/engine/DebugOverlay.h>
-#include <autograph/engine/ImageUtils.h>
 #include <autograph/engine/ImGuiUtils.h>
+#include <autograph/engine/ImageUtils.h>
 #include <autograph/engine/RenderUtils.h>
 #include <autograph/engine/Shader.h>
+#include <autograph/engine/imgui.h>
 #include <autograph/gl/Device.h>
 #include <autograph/gl/Draw.h>
 #include <autograph/gl/GLHandle.h>
@@ -12,7 +13,6 @@
 #include <autograph/support/FileDialog.h>
 #include <autograph/support/ProjectRoot.h>
 #include <cinttypes>
-#include <autograph/engine/imgui.h>
 
 namespace ag {
 
@@ -224,6 +224,21 @@ static const char *getInternalFormatName(GLenum internalFormat) {
   }
 }
 
+static ImageFormat GLInternalFormatToImageFormat(GLenum glfmt) {
+  switch (glfmt) {
+  case GL_SRGB8:
+    return ImageFormat::R8G8B8_SRGB;
+  case GL_SRGB8_ALPHA8:
+    return ImageFormat::R8G8B8A8_SRGB;
+  case GL_RGBA16F:
+    return ImageFormat::R16G16B16A16_SFLOAT;
+  case GL_RG16F:
+    return ImageFormat::R16G16_SFLOAT;
+  default:
+    return ImageFormat::R8G8B8A8_SRGB;
+  }
+}
+
 struct OpenGLState {
   GLint last_program;
   GLint last_texture;
@@ -325,8 +340,9 @@ template <typename Callback> static void customRendering(Callback callback) {
 }
 
 static void texturePreview(GLuint textureObj, int w, int h, float lod,
-                           int xoffset, int yoffset, float zoomLevel, bool mirror = false,
-                           float range_min = 0.0f, float range_max = 1.0f) {
+                           int xoffset, int yoffset, float zoomLevel,
+                           bool mirror = false, float range_min = 0.0f,
+                           float range_max = 1.0f) {
   ImGui::Dummy(ImVec2{(float)w, (float)h});
   auto pos = ImGui::GetItemRectMin();
   auto size = ImGui::GetItemRectSize();
@@ -334,15 +350,15 @@ static void texturePreview(GLuint textureObj, int w, int h, float lod,
     auto &fb = gl::getDefaultFramebuffer();
     auto fb_width = fb.width();
     auto fb_height = fb.height();
-	float uv_l = (float)xoffset / (float)w;
-	float uv_t = 1.0f / zoomLevel;
-	float uv_r = 1.0f / zoomLevel;
-	float uv_b  = (float)yoffset / (float)h;
-	if (mirror) std::swap(uv_t, uv_b);
+    float uv_l = (float)xoffset / (float)w;
+    float uv_t = 1.0f / zoomLevel;
+    float uv_r = 1.0f / zoomLevel;
+    float uv_b = (float)yoffset / (float)h;
+    if (mirror)
+      std::swap(uv_t, uv_b);
     ag::gl::drawRect(
         gl::getDefaultFramebuffer(), pos.x, pos.y, pos.x + size.x,
-        pos.y + size.y, uv_l, uv_t,
-		uv_r, uv_b,
+        pos.y + size.y, uv_l, uv_t, uv_r, uv_b,
         getDebugGlobals().textureViewShader,
         gl::bind::scissor(0, (int)cmd->ClipRect.x,
                           (int)(fb_height - cmd->ClipRect.w),
@@ -371,12 +387,12 @@ static void GLTextureViewWindow(GLuint textureObj, int w, int h,
         ImGui::GetStateStorage()->GetFloat(ImGui::GetID("range_max"), 1.0f);
     float zoomLevel =
         ImGui::GetStateStorage()->GetFloat(ImGui::GetID("zoom_level"), 1.0f);
-	bool mirror =
-		ImGui::GetStateStorage()->GetBool(ImGui::GetID("mirror"), false);
+    bool mirror =
+        ImGui::GetStateStorage()->GetBool(ImGui::GetID("mirror"), false);
     int xoff = ImGui::GetStateStorage()->GetInt(ImGui::GetID("xoff"), 0);
     int yoff = ImGui::GetStateStorage()->GetInt(ImGui::GetID("yoff"), 0);
-    texturePreview(textureObj, w, h, 1.0f, xoff, yoff, zoomLevel, mirror, range_min,
-                   range_max);
+    texturePreview(textureObj, w, h, 1.0f, xoff, yoff, zoomLevel, mirror,
+                   range_min, range_max);
     vec4 pixel;
     int mx, my;
     bool hovered = false;
@@ -402,8 +418,8 @@ static void GLTextureViewWindow(GLuint textureObj, int w, int h,
       if (ImGui::Button(ICON_FA_ARROWS_ALT)) {
         zoomLevel = 1.0f;
       }
-	  ImGui::SameLine();
-	  ImGui::Checkbox("Mirror", &mirror);
+      ImGui::SameLine();
+      ImGui::Checkbox("Mirror", &mirror);
       ImGui::SameLine();
       ImGui::PushItemWidth(130.0f);
       float zoomLevelPercent = zoomLevel * 100.0f;
@@ -423,7 +439,7 @@ static void GLTextureViewWindow(GLuint textureObj, int w, int h,
       }
       ImGui::EndMenuBar();
     }
-	ImGui::GetStateStorage()->SetBool(ImGui::GetID("mirror"), mirror);
+    ImGui::GetStateStorage()->SetBool(ImGui::GetID("mirror"), mirror);
     ImGui::GetStateStorage()->SetFloat(ImGui::GetID("range_min"), range_min);
     ImGui::GetStateStorage()->SetFloat(ImGui::GetID("range_max"), range_max);
     ImGui::GetStateStorage()->SetFloat(ImGui::GetID("zoom_level"), zoomLevel);
@@ -431,6 +447,58 @@ static void GLTextureViewWindow(GLuint textureObj, int w, int h,
     ImGui::GetStateStorage()->SetInt(ImGui::GetID("yoff"), yoff);
   }
   ImGui::End();
+}
+
+static void saveGLTexture(const char *path, GLuint textureObj, int w, int h,
+                          GLenum internalFormat) {
+  ImageFormat fmt;
+  GLenum extFormat;
+  GLenum components;
+  int size;
+
+  switch (internalFormat) {
+  case GL_RGBA16F:
+    fmt = ImageFormat::R16G16B16A16_SFLOAT;
+    extFormat = GL_HALF_FLOAT;
+    components = GL_RGBA;
+    size = 8;
+    break;
+  case GL_RG16F:
+    fmt = ImageFormat::R16G16_SFLOAT;
+    extFormat = GL_HALF_FLOAT;
+    components = GL_RG;
+    size = 4;
+    break;
+  case GL_RGBA8_SNORM:
+    fmt = ImageFormat::R8G8B8A8_SNORM;
+    extFormat = GL_UNSIGNED_INT_8_8_8_8_REV;
+    components = GL_RGBA;
+    size = 4;
+    break;
+  case GL_RGBA8:
+    fmt = ImageFormat::R8G8B8A8_UNORM;
+    extFormat = GL_UNSIGNED_INT_8_8_8_8_REV;
+    components = GL_RGBA;
+    size = 4;
+    break;
+  case GL_SRGB8_ALPHA8:
+    fmt = ImageFormat::R8G8B8A8_SRGB;
+    extFormat = GL_UNSIGNED_INT_8_8_8_8_REV;
+    components = GL_RGBA;
+    size = 4;
+    break;
+  default:
+    errorMessage("saveGLTexture: texture format not supported ({})",
+                 getInternalFormatName(internalFormat));
+    return;
+  }
+
+  // allocate space for image
+  auto bufsize = w * h * size;
+  std::vector<char> pixels(bufsize);
+  glGetTextureSubImage(textureObj, 0, 0, 0, 0, w, h, 1, components, extFormat,
+                       bufsize, pixels.data());
+  saveImageByPath(path, pixels.data(), w, h, fmt, fmt);
 }
 
 static void GLTextureGUI(GLuint textureObj) {
@@ -478,14 +546,7 @@ static void GLTextureGUI(GLuint textureObj) {
     if (file) {
       try {
         // allocate space for image
-        auto bufsize = w * h * 4;
-        std::vector<char> pixels(bufsize);
-        glGetTextureSubImage(textureObj, 0, 0, 0, 0, w, h, 1, GL_RGBA,
-                             GL_UNSIGNED_INT_8_8_8_8, bufsize, pixels.data());
-        // Note: assume that the pixels are SRGB, which is usually totally wrong
-        // Should do a conversion before
-        saveImageByPath(file->c_str(), pixels.data(), w, h,
-                        ImageFormat::R8G8B8A8_UNORM);
+        saveGLTexture(file->c_str(), textureObj, w, h, internalFormat);
       } catch (std::exception &e) {
         errorMessage("Error saving image file: {}", e.what());
       }
@@ -691,7 +752,7 @@ static void pipelineStatesGUI() {
   ImGui::Begin("Shaders");
   auto &pipelineStateCache = getPipelineStateCache();
   if (ImGui::Button("Reload all (Ctrl+F5)")) {
-	  pipelineStateCache.reloadAll();
+    pipelineStateCache.reloadAll();
   }
   int numPS = pipelineStateCache.getCachedPipelineStateCount();
   for (int i = 0; i < numPS; ++i) {
@@ -717,4 +778,4 @@ void drawDebugOverlay(double dt) {
   GLObjectListGUI();
   showCVarGui();
 }
-}
+} // namespace ag

@@ -3,6 +3,7 @@
 #include <chrono>
 #include <memory>
 #include <unordered_map>
+#include <string>
 
 namespace ag {
 struct Resource {

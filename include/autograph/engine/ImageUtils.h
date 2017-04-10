@@ -19,7 +19,12 @@ struct Image {
 // - one for the format of the input pixel data
 // - one for the storage format
 AG_ENGINE_API void saveImageByPath(const char *path, const void *pixelData, int width,
-                            int height, ImageFormat format);
+                            int height, ImageFormat inputFormat, ImageFormat targetFormat);
+
+// Note: ideally, should take two formats:
+// - one for the format of the input pixel data
+// - one for the storage format
+AG_ENGINE_API void saveTexture(const char* path, gl::Texture& texture, ImageFormat targetFormat);
 
 //
 // Loads an image resource in main memory

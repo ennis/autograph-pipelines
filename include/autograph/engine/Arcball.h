@@ -1,9 +1,11 @@
 #pragma once
 #include <autograph/engine/Config.h>
-#include <autograph/Camera.h>
-#include <autograph/Transform.h>
+#include <autograph/Types.h>
 
 namespace ag {
+	struct Transform;
+	struct Camera;
+
 	class AG_ENGINE_API Arcball {
 	public:
 		// Apply an arcball rotation to an object

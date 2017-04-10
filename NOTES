@@ -2363,3 +2363,37 @@ issue:
 		'metaobject' / 'metaclass' => static data
 
 Solution: automatic reflection generation + class metadata
+
+_______________________________________________
+
+Creating a new module should be easy
+- one click / one command
+	'pm new module <module-name>' 
+- Currently:
+	+ Must copy Module.h
+	+ Must modify Module.h to include the generated config file
+	+ Must copy/create main source file
+	+ Main source file must include Module.h
+	+ Must modify CMakeLists.txt: change project name and source file names
+	+ Must modify root CMakeLists.txt to include the new directory
+- Ideally:
+	+ Only one source file needed OK
+	+ CMakeLists.txt automatically generated OK
+	+ Directory automatically detected by root CMakeLists.txt OK
+	+ Powershell to create plugin OK
+	
+- GUI application to manage plugins?
+
+_______________________________________________
+
+Camera controller extensions:
+
+inputs: Scene, ID of selected item
+
+
+_______________________________________________
+
+Image formats:
+
+For OpenGL: introduce the notion of a 'minimal external format' for each ImageFormat
+=> the smallest external format able to store data of some internal format without losing precision  

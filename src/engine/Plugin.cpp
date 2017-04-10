@@ -22,23 +22,18 @@ static constexpr const char kModuleExitFunctionName[] = "moduleExit";
 
 struct Module {
   fs::path path;
-  ModuleHandle moduleHandle;
+  ModuleHandle moduleHandle = nullptr;
   std::experimental::filesystem::file_time_type lastWriteTime;
-  // List of reload proxies for plugins provided by this module
-  std::vector<std::unique_ptr<ReloadablePluginProxy>> reloadablePluginProxies;
 
-  //
-  ReloadablePluginProxy *createClassInstance(PluginClassFactory &factory) {
-    auto proxy = std::make_unique<ReloadablePluginProxy>();
-    proxy->className = factory.className;
-    proxy->plugin = factory.createClassInstance();
-    auto ptr = proxy.get();
-    reloadablePluginProxies.push_back(std::move(proxy));
-    return ptr;
-  }
+  // Default ctor
+  Module() {}
+
+  // Constructor
+  Module(fs::path path_) : path{std::move(path_)} { reload(); }
 
   // Reload shared library and call entry point
   void reload() {
+	  std::error_code errc;
     AG_DEBUG("reload moduleHandle={}, path={}", (intptr_t)moduleHandle,
              path.string());
     // If there is a module loaded, unload it
@@ -49,12 +44,19 @@ struct Module {
     // to avoid locking the original file and allow someone to replace it
     auto tmp = fs::temp_directory_path();
     auto tmpPath = tmp / path.filename();
-    fs::copy_file(path, tmpPath, fs::copy_options::overwrite_existing);
+	fs::copy_file(path, tmpPath, fs::copy_options::overwrite_existing, errc);
+	if (errc) {
+		errorMessage("Error copying file (origPath={})", path.string());
+		errorMessage("\t{}", errc.message());
+		moduleHandle = nullptr;
+		return;
+	}
     // load the library
     HMODULE hmod = LoadLibraryA(tmpPath.string().c_str());
     if (!hmod) {
       errorMessage("Error loading dynamic module (tmpPath={}, origPath={})",
                    tmpPath.string(), path.string());
+	  moduleHandle = nullptr;
       return;
     }
     // Find entry point
@@ -62,14 +64,16 @@ struct Module {
     if (!proc) {
       errorMessage("Module entry point ({}) not found",
                    kModuleInitFunctionName);
+      FreeLibrary(hmod);
+	  // Module is in 'Unloaded' state
+      moduleHandle = nullptr;
       return;
     }
     //
     moduleHandle = hmod;
-    std::error_code errc;
     lastWriteTime = fs::last_write_time(path, errc);
-    if (errc)
-      AG_DEBUG("Error {}", errc);
+    // if (errc)
+    // AG_DEBUG("Error {}", errc);
     // Call entry point
     proc();
   }
@@ -90,19 +94,44 @@ public:
     m.path = fullPath;
     reloadModule(m);
   }
+  
+  // Create a class instance of the type specified by the factory
+  // Effectively creates a plugin instance and returns a proxy object for
+  // hot-reloading
+  // TODO: should probably return a shared_ptr
+  ReloadablePluginProxy *createReloadablePluginProxy(const char* className, std::type_index interfaceTypeID) {
+	  AG_DEBUG("Creating instance of class {}", className);
+	  auto proxyUnique = std::make_unique<ReloadablePluginProxy>();
+	  auto proxy = proxyUnique.get();
+	  reloadablePluginProxies.push_back(std::move(proxyUnique));
+	  proxy->className = className;
+	  // try to get a factory for the plugin class named 'className'
+	  auto factory = getPluginClassFactory(className);
+	  if (!factory || !factory->implementsInterface(interfaceTypeID)) {
+		  // no factory found for type, or the type does not implement the desired interface
+		  errorMessage("Plugin class {} is unavailable", className);
+		  return proxy;
+	  }
+	  proxy->plugin = factory->createClassInstance();
+	  proxy->module = factory->module;
+	  return proxy;
+  }
 
   // Reload the specified module
   void reloadModule(Module &m) {
     // delete all class factories provided by this module
     for (auto it = classFactories.begin(); it != classFactories.end(); ++it) {
-      if ((*it).second->module == &m) {
+      if ((*it).second && (*it).second->module == &m) {
         classFactories.erase(it);
       }
     }
     // go through all plugin instances that use code from this module and delete
     // them
-    for (auto &pluginInstance : m.reloadablePluginProxies) {
-      pluginInstance->plugin.reset();
+    for (auto &pluginProxy : reloadablePluginProxies) {
+		if (pluginProxy->module == &m) {
+			//pluginProxy->module = nullptr;
+			pluginProxy->plugin.reset();
+		}
     }
 
     // Reload the shared library: this gives the opportunity to the plugin to
@@ -111,15 +140,20 @@ public:
     m.reload();
     // Now that the factories are registered, try to restore the plugin
     // instances
-    for (auto &pluginInstance : m.reloadablePluginProxies) {
-      auto factory = getClassFactory(pluginInstance->className.c_str());
-      if (!factory) {
-        errorMessage("Class {} is not available.", pluginInstance->className);
-        continue;
-      }
-      pluginInstance->plugin = factory->createClassInstance();
-      // TODO: deserialize
-    }
+	for (auto &pluginProxy : reloadablePluginProxies) {
+		AG_DEBUG("Reloading plugin instance {}.", pluginProxy->className);
+		if (!pluginProxy->module || pluginProxy->module == &m)
+		{
+			auto factory = getClassFactory(pluginProxy->className.c_str());
+			if (!factory) {
+				errorMessage("Plugin class {} is unavailable.", pluginProxy->className);
+				continue;
+			}
+			AG_DEBUG("Creating instance of class {}.", pluginProxy->className);
+			pluginProxy->plugin = factory->createClassInstance();
+			// TODO: deserialize
+		}
+	}
   }
 
   // Find a class factory by name
@@ -131,15 +165,8 @@ public:
   void addClassFactory(const char *name,
                        std::unique_ptr<PluginClassFactory> factory) {
     factory->module = currentLoadingModule; // Hack?
-    classFactories[name] = std::move(factory);
-  }
-
-  // Effectively creates a plugin instance and returns a proxy object for
-  // hot-reloading
-  ReloadablePluginProxy *
-  createReloadablePluginProxy(PluginClassFactory &factory) {
-	  AG_DEBUG("Creating instance of class {}", factory.className);
-    return factory.module->createClassInstance(factory);
+	classFactories[name] = std::move(factory);
+	// add factory to module instance?
   }
 
   //
@@ -154,7 +181,7 @@ public:
       } else if (mod.lastWriteTime < lastWriteTime) {
         mod.lastWriteTime = lastWriteTime;
         AG_DEBUG("Module change detected: {}", mod.path.string());
-        mod.reload();
+		reloadModule(mod);
       }
     }
   }
@@ -162,6 +189,7 @@ public:
 private:
   Module *currentLoadingModule = nullptr;
   std::unordered_map<std::string, Module> loadedModules;
+  std::vector<std::unique_ptr<ReloadablePluginProxy>> reloadablePluginProxies;
   std::unordered_map<std::string, std::unique_ptr<PluginClassFactory>>
       classFactories;
 };
@@ -182,8 +210,9 @@ PluginClassFactory *getPluginClassFactory(const char *name) {
 }
 
 ReloadablePluginProxy *
-createReloadablePluginProxy(PluginClassFactory &factory) {
-  return getPluginManager().createReloadablePluginProxy(factory);
+createReloadablePluginProxy(const char* name, std::type_index interfaceTypeID)
+{
+	return getPluginManager().createReloadablePluginProxy(name, interfaceTypeID);
 }
 
 void loadPluginModule(const char *name) { getPluginManager().loadModule(name); }

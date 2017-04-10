@@ -2,6 +2,7 @@ file(GLOB SRC *.cpp ui/*.cpp)
 add_executable(autograph_editor ${SRC})
 reflection_generate_database(autograph_editor ${AG_PUBLIC_INCLUDE_DIR}/autograph/All.h)
 
+set_property(TARGET autograph_editor PROPERTY FOLDER "Engine")
 target_include_directories(autograph_editor PUBLIC ${Boost_INCLUDE_DIRS})
 target_include_directories(autograph_editor PUBLIC ${AG_PUBLIC_INCLUDE_DIR})
 target_link_libraries(

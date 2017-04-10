@@ -1,4 +1,4 @@
-#include "Module.h"
+#include "DeferredSceneRenderer.Config.h"
 #include <autograph/Camera.h>
 #include <autograph/engine/All.h>
 #include <autograph/engine/imgui.h>

@@ -1,6 +1,5 @@
 // Shared ImGui utilities
 #pragma once
-#include <autograph/Camera.h>
 #include <autograph/engine/Meta.h>
 
 namespace ag {

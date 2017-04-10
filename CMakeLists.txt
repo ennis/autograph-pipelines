@@ -86,13 +86,28 @@ function(add_autograph_module NAME SOURCES)
     set(PROJECT_NAME ${NAME})
     configure_file (
         "${PROJECT_SOURCE_DIR}/src/ModuleConfig.h.in"
-        "${CMAKE_CURRENT_BINARY_DIR}/${NAME}_Config.h"
+        "${CMAKE_CURRENT_BINARY_DIR}/${NAME}.Config.h"
     )
     target_include_directories(${NAME} PUBLIC "${CMAKE_CURRENT_BINARY_DIR}/")
-    reflection_generate_database(${NAME} "${CMAKE_CURRENT_SOURCE_DIR}/Module.h")
-    reflection_render_template(${NAME} ${NAME} "${PROJECT_SOURCE_DIR}/src/ModuleMeta.cpp.in")
+    #reflection_generate_database(${NAME} "${CMAKE_CURRENT_SOURCE_DIR}/Module.h")
+    #reflection_render_template(${NAME} ${NAME} "${PROJECT_SOURCE_DIR}/src/ModuleMeta.cpp.in")
     set_property(TARGET ${NAME} PROPERTY FOLDER "Plugins")
 endfunction()
 
-add_subdirectory(src/sceneEditor)
-add_subdirectory(src/deferredRenderer)
+############## Load all plugins ##############
+MACRO(SUBDIRLIST result curdir)
+  FILE(GLOB children RELATIVE ${curdir} ${curdir}/*)
+  SET(dirlist "")
+  FOREACH(child ${children})
+    IF(IS_DIRECTORY ${curdir}/${child})
+      LIST(APPEND dirlist ${child})
+    ENDIF()
+  ENDFOREACH()
+  SET(${result} ${dirlist})
+ENDMACRO()
+
+subdirlist(PLUGINS_SUBDIRS ${PROJECT_SOURCE_DIR}/src/plugins)
+
+foreach(pluginSubdirectory ${PLUGINS_SUBDIRS})
+  add_subdirectory(src/plugins/${pluginSubdirectory})
+endforeach()

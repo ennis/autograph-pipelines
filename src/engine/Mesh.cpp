@@ -1,8 +1,5 @@
 #include <autograph/engine/Mesh.h>
 #include <autograph/support/Debug.h>
-#include <assimp/Importer.hpp>
-#include <assimp/postprocess.h>
-#include <assimp/scene.h>
 #include <stdexcept>
 
 namespace ag {

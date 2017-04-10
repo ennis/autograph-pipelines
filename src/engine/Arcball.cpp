@@ -1,5 +1,7 @@
 #include <autograph/engine/Arcball.h>
 #include <autograph/support/Debug.h>
+#include <autograph/Transform.h>
+#include <autograph/Camera.h>
 #include <glm/gtx/quaternion.hpp>
 #include <glm/gtx/rotate_vector.hpp>
 

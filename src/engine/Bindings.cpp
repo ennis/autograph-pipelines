@@ -15,7 +15,7 @@
 #include <autograph/gl/Texture.h>
 // engine
 #include <autograph/engine/Arcball.h>
-#include <autograph/engine/CameraControl.h>
+#include <autograph/engine/CameraController.h>
 #include <autograph/engine/ImageUtils.h>
 #include <autograph/engine/Mesh.h>
 #include <autograph/engine/RenderTarget.h>
@@ -139,7 +139,7 @@ sol::table openLuaBindings(sol::this_state s) {
       &ivec4::y, "z", &ivec4::z, "w", &ivec4::w);
 
   // DrawPass
-  module.new_usertype<Shader>(
+  /*module.new_usertype<Shader>(
       "Shader", sol::call_constructor,
       sol::constructors<sol::types<>>{},
       "setVertexShader", &Shader::setVertexShader, "setFragmentShader",
@@ -182,7 +182,7 @@ sol::table openLuaBindings(sol::this_state s) {
         dss.stencilOpDPPass = table.get_or("stencilOpDPPass", 0);
 		shader.setDepthStencilState(dss);
       },
-      "setViewport", &Shader::setViewport);
+      "setViewport", &Shader::setViewport);*/
 
 
   // stuff
@@ -205,7 +205,7 @@ sol::table openLuaBindings(sol::this_state s) {
 	  );
 
   // CameraControl
-  module.new_usertype<CameraControl>(
+  /*module.new_usertype<CameraControl>(
       "CameraControl", sol::call_constructor, sol::constructors<sol::types<>>(),
       "zoomIn", &CameraControl::zoomIn, "setZoom", &CameraControl::setZoom,
       "rotate", &CameraControl::rotate, "pan", &CameraControl::pan, "lookAt",
@@ -214,7 +214,7 @@ sol::table openLuaBindings(sol::this_state s) {
       "setAspectRatio", &CameraControl::setAspectRatio, "setFieldOfView",
       &CameraControl::setFieldOfView, "setNearFarPlanes",
       &CameraControl::setNearFarPlanes, "getCamera", &CameraControl::getCamera,
-      "lookDistance", &CameraControl::lookDistance);
+      "lookDistance", &CameraControl::lookDistance);*/
 
   // RenderUtils
   /*module.new_usertype<RenderUtils>("RenderUtils", sol::call_constructor,
