@@ -6,29 +6,28 @@
 #include <string>
 
 namespace ag {
-namespace gl {
 
 //////////////////////////////////////////////
-AG_GL_API const char *getShaderStageName(GLenum stage);
+AG_GL_API const char *getShaderStageName(gl::GLenum stage);
 
 struct AG_GL_API ProgramDeleter {
-	static constexpr GLenum objectType = GL_PROGRAM;
-  void operator()(GLuint obj) { glDeleteProgram(obj); }
+  static constexpr gl::GLenum objectType = gl::PROGRAM;
+  void operator()(gl::GLuint obj) { gl::DeleteProgram(obj); }
 };
 
 struct AG_GL_API ShaderDeleter {
-	static constexpr GLenum objectType = GL_SHADER;
-  void operator()(GLuint obj) { glDeleteShader(obj); }
+  static constexpr gl::GLenum objectType = gl::SHADER;
+  void operator()(gl::GLuint obj) { gl::DeleteShader(obj); }
 };
 
 //////////////////////////////////////////////
 //
 //
 //
-class AG_GL_API Shader {
+class AG_GL_API ShaderObject {
 public:
-  GLuint object() const { return obj_.get(); }
-  static Shader compile(GLenum stage, const char *source);
+  gl::GLuint object() const { return obj_.get(); }
+  static ShaderObject compile(gl::GLenum stage, const char *source);
   bool getCompileStatus();
   std::string getCompileLog();
 
@@ -54,17 +53,17 @@ struct ShaderPPDefine {
  * @details [long description]
  * @return [description]
  */
-class AG_GL_API Program {
+class AG_GL_API ProgramObject {
 public:
-  Program() = default;
-  Program(GLuint obj) : obj_{obj} {}
+  ProgramObject() = default;
+  ProgramObject(gl::GLuint obj) : obj_{obj} {}
 
-  GLuint object() const { return obj_.get(); }
-  void attach(Shader &sh);
+  gl::GLuint object() const { return obj_.get(); }
+  void attach(ShaderObject &sh);
   void link();
   bool getLinkStatus();
   std::string getLinkLog();
-  void operator()(gl::StateGroup &stateGroup) {
+  void operator()(StateGroup &stateGroup) {
     stateGroup.drawStates.program = obj_.get();
   }
 
@@ -79,10 +78,10 @@ public:
    * @param tes_src [description]
    * @return [description]
    */
-  static Program create(const char *vs_src, const char *fs_src,
-                        const char *gs_src = nullptr,
-                        const char *tcs_src = nullptr,
-                        const char *tes_src = nullptr);
+  static ProgramObject create(const char *vs_src, const char *fs_src,
+                              const char *gs_src = nullptr,
+                              const char *tcs_src = nullptr,
+                              const char *tes_src = nullptr);
 
   /**
    * @brief [brief description]
@@ -91,7 +90,7 @@ public:
    * @param cs_src [description]
    * @return [description]
    */
-  static Program createCompute(const char *cs_src);
+  static ProgramObject createCompute(const char *cs_src);
 
   // helper to create a program object from a single-source shader file
   /*static Program loadFromFile(
@@ -101,5 +100,4 @@ public:
 private:
   GLHandle<ProgramDeleter> obj_;
 };
-}
-}
+} // namespace ag

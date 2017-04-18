@@ -50,7 +50,7 @@ Minimal system:
  ✔ drawRect @done (17-02-07 22:16)
  ✘ getParentDirectory(id) is misleading => maybe create a class for resource paths? @cancelled (17-02-26 11:47)
      ResourceID: resource path or full path in filesystem
- ☐ Suggestion: fuse DeferredSceneRenderer and DeferredSceneRenderer::GBuffers
+ ✔ Suggestion: fuse DeferredSceneRenderer and DeferredSceneRenderer::GBuffers @done (17-04-16 22:46)
  ✔ Profiler @done (17-02-20 21:42)
  ☐ GPU profiler @tools
  ☐ Profiler: timeline view @tools
@@ -75,6 +75,8 @@ Minimal system:
  ☐ Do not reload module if the DLL disappeared from the original location @modules 
  ☐ onCameraGUI: const Scene& param @constness
  ☐ Essential plugins that are rebuilt on each reload
+ ☐ Camera: mute Gizmo when moving camera @scene_editor
+ ☐ Be able to integrate a viewport into a QOpenGLWidget
 
 General:
  ✔ Implement cameras @high @minimal_subset @done (16-12-24 14:12)
@@ -105,6 +107,14 @@ Serialization:
  ☐ Load scene
  ☐ Save parameters (to Lua script)
  ☐ Load parameters from Lua script
+
+Editor:
+ ☐ Basic 'editor shell' application
+     With docks and document tabs
+ ☐ Interface: EditorView
+ ☐ Interface: SceneView
+ ☐ Interface: ImageView (TextureView)
+ ☐ Integrate all scene editor functionality into one editor view
 
 Autograph:
  ✔ Binders @done (16-12-18 20:52)

@@ -5,7 +5,7 @@
 #include <autograph/gl/Framebuffer.h>
 
 namespace ag {
-namespace gl {
+
 struct DeviceConfig {
   unsigned init_fb_width = 0;
   unsigned init_fb_height = 0;
@@ -63,5 +63,4 @@ inline BufferSlice uploadFrameArray(T (&data)[N], size_t alignment = -1) {
 
 AG_GL_API uint64_t getFrameCount();
 AG_GL_API void endFrame();
-}
 }

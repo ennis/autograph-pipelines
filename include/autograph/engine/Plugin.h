@@ -38,20 +38,26 @@ struct Module;
 //////////////////////////////////////////////
 // Plugin class registration API
 struct ReloadablePluginProxy {
-  std::string className;
-  std::shared_ptr<Plugin> plugin;
-  Module* module;
+  ReloadablePluginProxy(const char *className_,
+                        std::type_index interfaceTypeID_);
+
+  //////////////////////////////////////////
+  std::string className;	// name of the class
+  std::shared_ptr<Plugin> plugin;	// nullptr if no factory was found for the plugin class
+  std::type_index interfaceTypeIndex;	// required interface type
+  Module *module;	// nullptr if no factory was found for the plugin class
+  bool create(); // re-create the plugin instance
 };
 
 //////////////////////////////////////////////
 // A factory for creating plugin instances
 // These factories are registered by the plugin module
 struct PluginClassFactory {
-  Module *module = nullptr;
-  std::string className;
-
   virtual std::shared_ptr<Plugin> createClassInstance() const = 0;
   virtual bool implementsInterface(std::type_index iface_ti) const = 0;
+
+  Module *module = nullptr;
+  std::string className;
 };
 
 //////////////////////////////////////////////
@@ -88,9 +94,7 @@ registerPluginClassFactory(const char *name,
 AG_ENGINE_API PluginClassFactory *getPluginClassFactory(const char *name);
 
 AG_ENGINE_API ReloadablePluginProxy *
-createReloadablePluginProxy(const char* name, std::type_index interfaceTypeID);
-//AG_ENGINE_API ReloadablePluginProxy *
-//createReloadablePluginProxy(PluginClassFactory &factory);
+createReloadablePluginProxy(const char *name, std::type_index interfaceTypeID);
 
 template <typename T> PluginPtr<T> createClassInstance(const char *className) {
   return PluginPtr<T>{createReloadablePluginProxy(className, typeid(T))};
@@ -120,4 +124,4 @@ void registerClass(const char *name) {
   factory->className = name;
   registerPluginClassFactory(name, std::move(factory));
 }
-}
+} // namespace ag

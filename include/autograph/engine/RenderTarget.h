@@ -28,13 +28,11 @@ public:
   void resize(int w, int h);
 
   int getColorTargetCount() { return static_cast<int>(colorTargets_.size()); }
-  auto getColorTarget(int index) -> gl::Texture & {
-    return colorTargets_[index];
-  }
-  auto getDepthTarget() -> variant<gl::Texture, gl::Renderbuffer> & {
+  auto getColorTarget(int index) -> Texture & { return colorTargets_[index]; }
+  auto getDepthTarget() -> variant<Texture, Renderbuffer> & {
     return depthTarget_;
   }
-  auto getFramebuffer() -> gl::Framebuffer & { return fbo_; }
+  auto getFramebuffer() -> Framebuffer & { return fbo_; }
   auto getSampleCount() { return numSamples_; }
 
   // addColorTarget
@@ -44,10 +42,10 @@ public:
   //
 
 private:
-  SmallVector<gl::Texture, 8> colorTargets_;
-  int numSamples_{ 0 };
-  variant<gl::Texture, gl::Renderbuffer> depthTarget_;
-  gl::Framebuffer fbo_;
+  SmallVector<Texture, 8> colorTargets_;
+  int numSamples_{0};
+  variant<Texture, Renderbuffer> depthTarget_;
+  Framebuffer fbo_;
 };
 
-}
+} // namespace ag

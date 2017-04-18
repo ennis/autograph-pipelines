@@ -4,27 +4,26 @@
 #include <autograph/gl/Capture.h>
 
 namespace ag {
-namespace gl {
 
-inline auto drawArrays(GLenum primitiveType, uint32_t first, uint32_t count) {
+inline auto drawArrays(gl::GLenum primitiveType, uint32_t first, uint32_t count) {
   return [=](StateGroup &sg) {
     bindStateGroup(sg);
     AG_FRAME_TRACE("drawArrays primitiveType={}, first={}, count={}",
                    primitiveType, first, count);
-    glDrawArrays(primitiveType, first, count);
+    gl::DrawArrays(primitiveType, first, count);
   };
 }
 
-inline auto drawIndexed(GLenum primitiveType, uint32_t first, uint32_t count,
+inline auto drawIndexed(gl::GLenum primitiveType, uint32_t first, uint32_t count,
                         uint32_t baseVertex) {
   return [=](StateGroup &sg) {
     bindStateGroup(sg);
     auto indexStride =
-        (sg.uniforms.indexBufferType == GL_UNSIGNED_SHORT) ? 2 : 4;
+        (sg.uniforms.indexBufferType == gl::UNSIGNED_SHORT) ? 2 : 4;
     AG_FRAME_TRACE("drawIndexed primitiveType={}, first={}, count={}, "
                    "baseVertex={}, indexStride={}",
                    primitiveType, first, count, baseVertex, indexStride);
-    glDrawElementsBaseVertex(primitiveType, count, sg.uniforms.indexBufferType,
+    gl::DrawElementsBaseVertex(primitiveType, count, sg.uniforms.indexBufferType,
                              ((const char *)((uintptr_t)first * indexStride)),
                              baseVertex);
   };
@@ -49,27 +48,27 @@ void draw(Framebuffer &fbo, DrawCommand &&drawCommand, Shader &&shader,
 }
 
 inline void clear(Framebuffer &fb, const vec4 &color) {
-  glClearNamedFramebufferfv(fb.object(), GL_COLOR, 0, &color[0]);
+  gl::ClearNamedFramebufferfv(fb.object(), gl::COLOR, 0, &color[0]);
 }
 
 inline void clearTexture(Texture &tex, const vec4 &color) {
-  glClearTexImage(tex.object(), 0, GL_RGBA, GL_FLOAT, &color[0]);
+  gl::ClearTexImage(tex.object(), 0, gl::RGBA, gl::FLOAT, &color[0]);
 }
 
 inline void clearDepth(Framebuffer &fb, float depth) {
-  glClearNamedFramebufferfv(fb.object(), GL_DEPTH, 0, &depth);
+  gl::ClearNamedFramebufferfv(fb.object(), gl::DEPTH, 0, &depth);
 }
 
 inline void clearDepthTexture(Texture &tex, float depth) {
-  glClearTexImage(tex.object(), 0, GL_DEPTH_COMPONENT, GL_FLOAT, &depth);
+  gl::ClearTexImage(tex.object(), 0, gl::DEPTH_COMPONENT, gl::FLOAT, &depth);
 }
 
 inline void clearTexture(Texture &tex, const ivec4 &color) {
-  glClearTexImage(tex.object(), 0, GL_RGBA_INTEGER, GL_INT, &color[0]);
+  gl::ClearTexImage(tex.object(), 0, gl::RGBA_INTEGER, gl::INT, &color[0]);
 }
 
 inline void clearTexture(Texture &tex, const uvec4 &color) {
-  glClearTexImage(tex.object(), 0, GL_RGBA_INTEGER, GL_UNSIGNED_INT, &color[0]);
+  gl::ClearTexImage(tex.object(), 0, gl::RGBA_INTEGER, gl::UNSIGNED_INT, &color[0]);
 }
 
 // Draw a screen-aligned quad
@@ -88,10 +87,10 @@ void drawQuad(Framebuffer &fbo, Shader &&shader, Arguments &&... args) {
       {1.0f, -1.0f, 0.0f, 0.0f},  {1.0f, 1.0f, 0.0f, 0.0f}};
 
   // upload vertex data each frame (who cares)
-  auto vbuf = ag::gl::uploadFrameArray(quad);
+  auto vbuf = ag::uploadFrameArray(quad);
 
-  draw(fbo, drawArrays(GL_TRIANGLES, 0, 6), std::forward<Shader>(shader),
-       gl::bind::vertexBuffer(0, vbuf, sizeof(Vertex2D)),
+  draw(fbo, drawArrays(gl::TRIANGLES, 0, 6), std::forward<Shader>(shader),
+       bind::vertexBuffer(0, vbuf, sizeof(Vertex2D)),
        std::forward<Arguments>(args)...);
 }
 
@@ -123,7 +122,7 @@ void drawRect(Framebuffer &fbo, const Rect2D &rect, Shader &&shader,
   // upload vertex data each frame (who cares)
   auto vbuf = ag::gl::uploadFrameArray(quad);
 
-  draw(fbo, drawArrays(GL_TRIANGLES, 0, 6), std::forward<Shader>(shader),
+  draw(fbo, drawArrays(gl::TRIANGLES, 0, 6), std::forward<Shader>(shader),
        gl::bind::vertexBuffer(0, vbuf, sizeof(Vertex2D)),
        std::forward<Arguments>(args)...);
 }*/
@@ -150,11 +149,11 @@ void drawRect(Framebuffer &fbo, float l, float t, float r, float b, float uv_l,
                       {2.0f * r / w - 1.0f, -2.0f * b / h + 1.0f, uv_r, uv_t}};
 
   // upload vertex data each frame (who cares)
-  auto vbuf = ag::gl::uploadFrameArray(quad);
+  auto vbuf = ag::uploadFrameArray(quad);
 
-  draw(fbo, drawArrays(GL_TRIANGLES, 0, 6), std::forward<Shader>(shader),
-       gl::bind::vertexBuffer(0, vbuf, sizeof(Vertex2D)),
+  draw(fbo, drawArrays(gl::TRIANGLES, 0, 6), std::forward<Shader>(shader),
+       bind::vertexBuffer(0, vbuf, sizeof(Vertex2D)),
        std::forward<Arguments>(args)...);
 }
 }
-}
+

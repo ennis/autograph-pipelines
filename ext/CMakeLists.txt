@@ -101,21 +101,38 @@ target_include_directories(glm INTERFACE glm)
 # glloadgen
 add_subdirectory(glloadgen EXCLUDE_FROM_ALL)
 
+############################################
 # OpenEXR
-add_subdirectory(openexr/IlmBase EXCLUDE_FROM_ALL)
-#set(ILMBASE_INSTALL ${CMAKE_CURRENT_BINARY_DIR})/ilmbase-install)
-#execute_process(${CMAKE_COMMAND} -DCMAKE_INSTALL_PREFIX=${ILMBASE_INSTALL} -G "${CMAKE_GENERATOR}"
-	#WORKING_DIRECTORY )
-#set(ILMBASE_PACKAGE_PREFIX )
-# hack to find half.h and friends
-option(BUILD_SHARED_LIBS    "..." OFF)
-option(USE_ZLIB_WINAPI      "..." OFF)
-option(NAMESPACE_VERSIONING "..." OFF)
-get_property(ILMBASE_INCLUDE_DIRS DIRECTORY openexr/IlmBase PROPERTY INCLUDE_DIRECTORIES)
-include_directories(${ILMBASE_INCLUDE_DIRS})
-add_subdirectory(openexr/OpenEXR EXCLUDE_FROM_ALL)
-get_property(ILMIMF_INCLUDE_DIRS DIRECTORY openexr/OpenEXR PROPERTY INCLUDE_DIRECTORIES)
-target_include_directories(IlmImf INTERFACE ${ILMIMF_INCLUDE_DIRS})
+if (IS_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/openexr_bin AND WIN32)
+	# Use binaries
+	message("Using OpenEXR binaries in ext/openexr_bin")
+	add_library(IlmImf INTERFACE)
+	target_include_directories(IlmImf INTERFACE openexr_bin/include)
+	target_link_libraries(IlmImf INTERFACE 
+		${CMAKE_CURRENT_SOURCE_DIR}/openexr_bin/lib/IlmImf.lib
+		${CMAKE_CURRENT_SOURCE_DIR}/openexr_bin/lib/Iex.lib
+		${CMAKE_CURRENT_SOURCE_DIR}/openexr_bin/lib/Half.lib
+		${CMAKE_CURRENT_SOURCE_DIR}/openexr_bin/lib/IlmThread.lib
+		${CMAKE_CURRENT_SOURCE_DIR}/openexr_bin/lib/Imath.lib)
+else()
+	# Compile from source
+	message("Compiling OpenEXR from source")
+	#set(ILMBASE_INSTALL ${CMAKE_CURRENT_BINARY_DIR})/ilmbase-install)
+	#execute_process(${CMAKE_COMMAND} -DCMAKE_INSTALL_PREFIX=${ILMBASE_INSTALL} -G "${CMAKE_GENERATOR}"
+		#WORKING_DIRECTORY )
+	#set(ILMBASE_PACKAGE_PREFIX )
+	# hack to find half.h and friends
+	option(BUILD_SHARED_LIBS    "..." OFF)
+	option(USE_ZLIB_WINAPI      "..." OFF)
+	option(NAMESPACE_VERSIONING "..." OFF)
+	add_subdirectory(openexr/IlmBase EXCLUDE_FROM_ALL)
+	get_property(ILMBASE_INCLUDE_DIRS DIRECTORY openexr/IlmBase PROPERTY INCLUDE_DIRECTORIES)
+	include_directories(${ILMBASE_INCLUDE_DIRS})
+	add_subdirectory(openexr/OpenEXR EXCLUDE_FROM_ALL)
+	get_property(ILMIMF_INCLUDE_DIRS DIRECTORY openexr/OpenEXR PROPERTY INCLUDE_DIRECTORIES)
+	target_include_directories(IlmImf INTERFACE ${ILMIMF_INCLUDE_DIRS})
+	set_property(TARGET IlmImf PROPERTY FOLDER "External/OpenEXR")
+endif()
 
 # OpenImageIO
 #[[option (EMBEDPLUGINS "Embed format plugins in libOpenImageIO" ON)
@@ -142,8 +159,8 @@ add_library(json INTERFACE)
 target_include_directories(json INTERFACE json/src)
 
 # range-v3
-ADD_LIBRARY(range_v3 INTERFACE) 
-TARGET_INCLUDE_DIRECTORIES(range_v3 INTERFACE range-v3/include)
+#ADD_LIBRARY(range_v3 INTERFACE) 
+#TARGET_INCLUDE_DIRECTORIES(range_v3 INTERFACE range-v3/include)
 
 # hana
 add_library(hana INTERFACE)
@@ -178,8 +195,11 @@ target_link_libraries(luajit_bin INTERFACE ${LUAJIT_LIBRARY})
 message("LuaJIT include: ${LUAJIT_INCLUDE_DIR}")
 message("LuaJIT lib: ${LUAJIT_LIBRARY}")
 else() # Use bundled binaries for windows
-target_include_directories(luajit_bin INTERFACE luajit_bin/include)
-target_link_libraries(luajit_bin INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/luajit_bin/lib/lua51.lib)
+	if (WIN32)
+		message("Trying LuaJIT binaries in ext/luajit_bin")
+		target_include_directories(luajit_bin INTERFACE luajit_bin/include)
+		target_link_libraries(luajit_bin INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/luajit_bin/lib/lua51.lib)
+	endif()
 endif()
 
 # lua52compat
@@ -187,48 +207,48 @@ endif()
 #target_link_libraries(lua52compat luajit_bin)
 
 # binary target for skia 
-add_library(skia-bin INTERFACE)
-target_include_directories(skia-bin INTERFACE 
-	skia-bin/include/android
-	skia-bin/include/c
-	skia-bin/include/codec
-	skia-bin/include/core
-	skia-bin/include/effects
-	skia-bin/include/gpu
-	skia-bin/include/gpu/effects
-	skia-bin/include/gpu/gl
-	skia-bin/include/images
-	skia-bin/include/pathops
-	skia-bin/include/ports
-	skia-bin/include/utils
-	skia-bin/include/utils/mac
-	skia-bin/include)
+#add_library(skia-bin INTERFACE)
+#target_include_directories(skia-bin INTERFACE 
+#	skia-bin/include/android
+#	skia-bin/include/c
+#	skia-bin/include/codec
+#	skia-bin/include/core
+#	skia-bin/include/effects
+#	skia-bin/include/gpu
+#	skia-bin/include/gpu/effects
+#	skia-bin/include/gpu/gl
+#	skia-bin/include/images
+#	skia-bin/include/pathops
+#	skia-bin/include/ports
+#	skia-bin/include/utils
+#	skia-bin/include/utils/mac
+#	skia-bin/include)
 # TODO do this only for windows
-if (WIN32)
-target_link_libraries(skia-bin INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/skia-bin/skia.lib)
-elseif(UNIX)
-find_package(Freetype REQUIRED)
-target_link_libraries(skia-bin INTERFACE 
-	${CMAKE_CURRENT_SOURCE_DIR}/skia-bin/libskialua.a
-	${CMAKE_CURRENT_SOURCE_DIR}/skia-bin/libskia.a 
-	${FREETYPE_LIBRARIES}
-	-lfontconfig
-	)
-endif()
+#if (WIN32)
+#target_link_libraries(skia-bin INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/skia-bin/skia.lib)
+#elseif(UNIX)
+#find_package(Freetype REQUIRED)
+#target_link_libraries(skia-bin INTERFACE 
+#	${CMAKE_CURRENT_SOURCE_DIR}/skia-bin/libskialua.a
+#	${CMAKE_CURRENT_SOURCE_DIR}/skia-bin/libskia.a 
+#	${FREETYPE_LIBRARIES}
+#	-lfontconfig
+#	)
+#endif()
 
 # lua
 # on windows, compile it from source
-if (WIN32)
-add_subdirectory(lua-5.3.3 EXCLUDE_FROM_ALL)
+#if (WIN32)
+#add_subdirectory(lua-5.3.3 EXCLUDE_FROM_ALL)
 # on linux, use find_package
-elseif(UNIX)
-find_package(Lua 5.3 REQUIRED)
-if (LUA_FOUND)
-add_library(lua53 INTERFACE)
-target_include_directories(lua53 INTERFACE ${LUA_INCLUDE_DIR})
-target_link_libraries(lua53 INTERFACE ${LUA_LIBRARIES})
-endif()
-endif()
+#elseif(UNIX)
+#find_package(Lua 5.3 REQUIRED)
+#if (LUA_FOUND)
+#add_library(lua53 INTERFACE)
+#target_include_directories(lua53 INTERFACE ${LUA_INCLUDE_DIR})
+#target_link_libraries(lua53 INTERFACE ${LUA_LIBRARIES})
+#endif()
+#endif()
 
 #sol2
 add_library(sol2 INTERFACE)

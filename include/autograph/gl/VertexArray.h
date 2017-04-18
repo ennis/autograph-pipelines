@@ -4,15 +4,15 @@
 #include <autograph/gl/GLHandle.h>
 
 namespace ag {
-namespace gl {
+
 struct VertexArrayDeleter {
-	static constexpr GLenum objectType = GL_VERTEX_ARRAY;
-  void operator()(GLuint obj) { glDeleteVertexArrays(1, &obj); }
+	static constexpr gl::GLenum objectType = gl::VERTEX_ARRAY;
+  void operator()(gl::GLuint obj) { gl::DeleteVertexArrays(1, &obj); }
 };
 
 struct AG_REFLECT VertexAttribute {
   unsigned slot;
-  GLenum type;
+  gl::GLenum type;
   unsigned size;
   unsigned relativeOffset;
   bool normalized;
@@ -24,10 +24,9 @@ public:
   VertexArray(span<VertexAttribute> attribs);
   void initialize(span<VertexAttribute> attribs);
 
-  GLuint object() const { return obj_.get(); }
+  gl::GLuint object() const { return obj_.get(); }
 
 private:
   GLHandle<VertexArrayDeleter> obj_;
 };
-}
 }

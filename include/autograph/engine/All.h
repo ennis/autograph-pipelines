@@ -1,7 +1,6 @@
 #pragma once 
 #include "Application.h"
 #include "Arcball.h"
-#include "CameraController.h"
 #include "CVar.h"
 #include "DebugOverlay.h"
 #include "ImageUtils.h"
@@ -21,7 +20,6 @@
 #include "ResourcePool.h"
 #include "SceneObject.h"
 #include "SceneLoader.h"
-#include "SceneEditor.h"
 #include "ScriptContext.h"
 #include "Shader.h"
 #include "ShaderUtils.h"

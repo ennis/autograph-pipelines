@@ -45,10 +45,10 @@ template <typename T> class Mesh {
 public:
   Mesh() = default;
   Mesh(std::vector<T> vertices, std::vector<unsigned int> indices) {
-	  vbo_ = gl::Buffer{ vertices.size() * sizeof(T),
-								gl::BufferUsage::Default, vertices.data() };
-	  ibo_ = gl::Buffer{ indices.size() * sizeof(unsigned int),
-								gl::BufferUsage::Default, indices.data() };
+    vbo_ = Buffer{vertices.size() * sizeof(T), BufferUsage::Default,
+                      vertices.data()};
+    ibo_ = Buffer{indices.size() * sizeof(unsigned int),
+                      BufferUsage::Default, indices.data()};
     numVertices_ = (int)vertices.size();
     numIndices_ = (int)indices.size();
     vertices_ = std::move(vertices);
@@ -56,10 +56,10 @@ public:
   }
 
   Mesh(span<const T> vertices, span<unsigned int> indices) {
-	  vbo_ = gl::Buffer{ vertices.size() * sizeof(T),
-								gl::BufferUsage::Default, vertices.data() };
-	  ibo_ = gl::Buffer{ indices.size() * sizeof(unsigned int),
-								gl::BufferUsage::Default, indices.data() };
+    vbo_ = Buffer{vertices.size() * sizeof(T), BufferUsage::Default,
+                      vertices.data()};
+    ibo_ = Buffer{indices.size() * sizeof(unsigned int),
+                      BufferUsage::Default, indices.data()};
     numVertices_ = vertices.size();
     numIndices_ = indices.size();
     vertices_.assign(vertices.begin(), vertices.end());
@@ -73,13 +73,13 @@ public:
   }*/
 
   // binder (draw command)
-  void operator()(gl::StateGroup &sg) {
-    gl::bind::vertexBuffer(0, vbo_.asSlice(), sizeof(T))(sg);
-    gl::bind::indexBuffer(ibo_.asSlice(), GL_UNSIGNED_INT)(sg);
-    gl::bindStateGroup(sg);
+  void operator()(StateGroup &sg) {
+    bind::vertexBuffer(0, vbo_.asSlice(), sizeof(T))(sg);
+    bind::indexBuffer(ibo_.asSlice(), gl::UNSIGNED_INT)(sg);
+    bindStateGroup(sg);
     auto indexStride = 4;
-    glDrawElementsBaseVertex(GL_TRIANGLES, numIndices_, GL_UNSIGNED_INT,
-                             ((const char *)((uintptr_t)0 * indexStride)), 0);
+    gl::DrawElementsBaseVertex(gl::TRIANGLES, numIndices_, gl::UNSIGNED_INT,
+                           ((const char *)((uintptr_t)0 * indexStride)), 0);
   }
 
   auto &getVertices() { return vertices_; }
@@ -88,21 +88,17 @@ public:
   int getVerticesCount() const { return numVertices_; }
   int getIndicesCount() const { return numIndices_; }
 
-  auto getVertexBuffer() {
-    return gl::BufferSlice{vbo_.object(), 0, vbo_.size()};
-  }
+  auto getVertexBuffer() { return BufferSlice{vbo_.object(), 0, vbo_.size()}; }
 
-  auto getIndexBuffer() {
-    return gl::BufferSlice{ibo_.object(), 0, ibo_.size()};
-  }
+  auto getIndexBuffer() { return BufferSlice{ibo_.object(), 0, ibo_.size()}; }
 
 private:
   std::vector<T> vertices_;
   std::vector<unsigned int> indices_;
   int numVertices_{0};
   int numIndices_{0};
-  gl::Buffer vbo_;
-  gl::Buffer ibo_;
+  Buffer vbo_;
+  Buffer ibo_;
 };
 
 template <typename VertexType>
@@ -143,4 +139,4 @@ template <typename VertexType> AABB GetMeshAABB(Mesh<VertexType> &mesh) {
 using Mesh3D = Mesh<Vertex3D>;
 using Mesh2DTex = Mesh<Vertex2DTex>;
 using Mesh2D = Mesh<Vertex2D>;
-}
+} // namespace ag

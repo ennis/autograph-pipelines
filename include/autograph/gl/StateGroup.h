@@ -8,7 +8,6 @@
 #include <autograph/gl/gl_core_4_5.h>
 
 namespace ag {
-namespace gl {
 
 //////////////////////////////////////////////////
 enum class AG_GL_API StateGroupMask {
@@ -40,20 +39,20 @@ static constexpr StateGroupMask StateGroupMask_AllCompute =
 //////////////////////////////////////////////////
 struct AG_GL_API BlendState {
   constexpr BlendState() = default;
-  /*constexpr BlendState(bool enabled_, GLenum modeRGB_, GLenum modeAlpha_,
-          GLenum funcSrcRGB_, GLenum funcDstRGB_,
-          GLenum funcSrcAlpha_, GLenum funcDstAlpha_)
+  /*constexpr BlendState(bool enabled_, gl::GLenum modeRGB_, gl::GLenum modeAlpha_,
+          gl::GLenum funcSrcRGB_, gl::GLenum funcDstRGB_,
+          gl::GLenum funcSrcAlpha_, gl::GLenum funcDstAlpha_)
           : enabled{ enabled_ }, modeRGB{ modeRGB_ }, modeAlpha{ modeAlpha_ },
           funcSrcRGB{ funcSrcRGB_ }, funcDstRGB{ funcDstRGB_ },
           funcSrcAlpha{ funcSrcAlpha_ }, funcDstAlpha{ funcDstAlpha_ } {}*/
 
   bool enabled = true;
-  GLenum modeRGB = GL_FUNC_ADD;
-  GLenum modeAlpha = GL_FUNC_ADD;
-  GLenum funcSrcRGB = GL_SRC_ALPHA;
-  GLenum funcDstRGB = GL_ONE_MINUS_SRC_ALPHA;
-  GLenum funcSrcAlpha = GL_ONE;
-  GLenum funcDstAlpha = GL_ZERO;
+  gl::GLenum modeRGB = gl::FUNC_ADD;
+  gl::GLenum modeAlpha = gl::FUNC_ADD;
+  gl::GLenum funcSrcRGB = gl::SRC_ALPHA;
+  gl::GLenum funcDstRGB = gl::ONE_MINUS_SRC_ALPHA;
+  gl::GLenum funcSrcAlpha = gl::ONE;
+  gl::GLenum funcDstAlpha = gl::ZERO;
 
   constexpr size_t hash() const {
     // TODO
@@ -64,10 +63,10 @@ struct AG_GL_API BlendState {
 struct AG_GL_API DepthStencilState {
   constexpr DepthStencilState() = default;
   /*constexpr DepthStencilState(bool depthTestEnable_, bool depthWriteEnable_,
-          bool stencilEnable_, GLenum stencilFace_,
-          GLenum stencilFunc_, GLint stencilRef_,
-          GLuint stencilMask_, GLenum stencilOpSfail_,
-          GLenum stencilOpDPFail_, GLenum stencilOpDPPass_)
+          bool stencilEnable_, gl::GLenum stencilFace_,
+          gl::GLenum stencilFunc_, gl::GLint stencilRef_,
+          gl::GLuint stencilMask_, gl::GLenum stencilOpSfail_,
+          gl::GLenum stencilOpDPFail_, gl::GLenum stencilOpDPPass_)
           : depthTestEnable{ depthTestEnable_ }, depthWriteEnable{
      depthWriteEnable_ },
           stencilEnable{ stencilEnable_ }, stencilFace{ stencilFace_ },
@@ -79,22 +78,22 @@ struct AG_GL_API DepthStencilState {
   bool depthTestEnable = false;
   bool depthWriteEnable = false;
   bool stencilEnable = false;
-  GLenum depthTestFunc = GL_LEQUAL;
-  GLenum stencilFace = GL_FRONT_AND_BACK;
-  GLenum stencilFunc = 0;
-  GLint stencilRef = 0;
-  GLuint stencilMask = 0xFFFFFFFF;
-  GLenum stencilOpSfail = 0;
-  GLenum stencilOpDPFail = 0;
-  GLenum stencilOpDPPass = 0;
+  gl::GLenum depthTestFunc = gl::LEQUAL;
+  gl::GLenum stencilFace = gl::FRONT_AND_BACK;
+  gl::GLenum stencilFunc = 0;
+  gl::GLint stencilRef = 0;
+  gl::GLuint stencilMask = 0xFFFFFFFF;
+  gl::GLenum stencilOpSfail = 0;
+  gl::GLenum stencilOpDPFail = 0;
+  gl::GLenum stencilOpDPPass = 0;
 };
 
 struct AG_GL_API RasterizerState {
   constexpr RasterizerState() = default;
-  constexpr RasterizerState(GLenum fillMode_) : fillMode{fillMode_} {}
-  GLenum fillMode = GL_FILL;
-  GLenum cullMode = GL_NONE;
-  GLenum frontFace = GL_CCW;
+  constexpr RasterizerState(gl::GLenum fillMode_) : fillMode{fillMode_} {}
+  gl::GLenum fillMode = gl::FILL;
+  gl::GLenum cullMode = gl::NONE;
+  gl::GLenum frontFace = gl::CCW;
   float depthBias = 1.0f;
   float slopeScaledDepthBias = 1.0f;
   bool depthClipEnable = false;
@@ -122,22 +121,22 @@ static constexpr int kMaxUniformBufferSlots = 8;
 static constexpr int kMaxShaderStorageBufferSlots = 8;
 
 struct AG_GL_API Uniforms {
-  std::array<GLuint, kMaxTextureUnits> textures{{0}};
-  std::array<GLuint, kMaxTextureUnits> samplers{{0}};
-  std::array<GLuint, kMaxImageUnits> images{{0}};
-  std::array<GLuint, kMaxUniformBufferSlots> uniformBuffers{{0}};
-  std::array<GLsizeiptr, kMaxUniformBufferSlots> uniformBufferSizes{{0}};
-  std::array<GLintptr, kMaxUniformBufferSlots> uniformBufferOffsets{{0}};
-  std::array<GLuint, kMaxShaderStorageBufferSlots> shaderStorageBuffers{{0}};
-  std::array<GLsizeiptr, kMaxShaderStorageBufferSlots> shaderStorageBufferSizes{
+  std::array<gl::GLuint, kMaxTextureUnits> textures{{0}};
+  std::array<gl::GLuint, kMaxTextureUnits> samplers{{0}};
+  std::array<gl::GLuint, kMaxImageUnits> images{{0}};
+  std::array<gl::GLuint, kMaxUniformBufferSlots> uniformBuffers{{0}};
+  std::array<gl::GLsizeiptr, kMaxUniformBufferSlots> uniformBufferSizes{{0}};
+  std::array<gl::GLintptr, kMaxUniformBufferSlots> uniformBufferOffsets{{0}};
+  std::array<gl::GLuint, kMaxShaderStorageBufferSlots> shaderStorageBuffers{{0}};
+  std::array<gl::GLsizeiptr, kMaxShaderStorageBufferSlots> shaderStorageBufferSizes{
       {0}};
-  std::array<GLintptr, kMaxShaderStorageBufferSlots> shaderStorageBufferOffsets{
+  std::array<gl::GLintptr, kMaxShaderStorageBufferSlots> shaderStorageBufferOffsets{
       {0}};
-  std::array<GLuint, kMaxVertexBufferSlots> vertexBuffers{{0}};
-  std::array<GLintptr, kMaxVertexBufferSlots> vertexBufferOffsets{{0}};
-  std::array<GLsizei, kMaxVertexBufferSlots> vertexBufferStrides{{0}};
+  std::array<gl::GLuint, kMaxVertexBufferSlots> vertexBuffers{{0}};
+  std::array<gl::GLintptr, kMaxVertexBufferSlots> vertexBufferOffsets{{0}};
+  std::array<gl::GLsizei, kMaxVertexBufferSlots> vertexBufferStrides{{0}};
   BufferSlice indexBuffer{0};
-  GLenum indexBufferType{0};
+  gl::GLenum indexBufferType{0};
 };
 
 struct AG_GL_API DrawStates {
@@ -146,15 +145,15 @@ struct AG_GL_API DrawStates {
   std::array<ScissorRect, 8> scissorRects{{0}};
   std::array<Viewport, 8> viewports{{0}};
   std::array<BlendState, 8> blendStates;
-  GLuint vertexArray;
-  GLuint program;
+  gl::GLuint vertexArray;
+  gl::GLuint program;
 };
 
 struct AG_GL_API StateGroup {
   StateGroupMask mask;
   DrawStates drawStates;
   Uniforms uniforms;
-  GLbitfield barrierBits{0};
+  gl::GLbitfield barrierBits{0};
 };
 
 // bind a uniform state group to the opengl pipeline
@@ -168,5 +167,4 @@ AG_GL_API void bindStateGroup(const StateGroup &sg);
 // => uniforms: textures, samplers, UBOs, SSBOs, uniforms, (named uniforms?)
 // => draw uniforms: vertex buffer, index buffers
 // => framebuffers/render targets
-}
 }

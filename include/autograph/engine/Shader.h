@@ -32,10 +32,10 @@ struct PipelineState {
   std::string tessControlShaderSource;
   std::string tessEvalShaderSource;
   std::string computeShaderSource;
-  gl::Program programObject;
-  gl::VertexArray vertexArrayObject;
-  gl::DrawStates drawStates;
-  GLbitfield barrierBits{0};
+  ProgramObject programObject;
+  VertexArray vertexArrayObject;
+  DrawStates drawStates;
+  gl::GLbitfield barrierBits{0};
   int groupSizeX{0};
   int groupSizeY{0};
   int groupSizeZ{0};
@@ -65,15 +65,15 @@ private:
   std::vector<std::shared_ptr<PipelineState>> states;
 };
 
-AG_ENGINE_API PipelineStateCache& getPipelineStateCache();
+AG_ENGINE_API PipelineStateCache &getPipelineStateCache();
 
 //////////////////////////////////////////////
 // Helpers
 namespace detail {
-	AG_ENGINE_API ScriptContext &ensureShaderLuaStateInitialized();
+AG_ENGINE_API ScriptContext &ensureShaderLuaStateInitialized();
 // std::unique_ptr<DrawPass> createDrawPassInternal(const char *shaderId,
 // sol::table table);
-}
+} // namespace detail
 
 ////////////////////////////////////////////////////////
 class AG_ENGINE_API Shader {
@@ -88,22 +88,22 @@ public:
     initialize(id, deftable);
   }
 
-  void operator()(gl::StateGroup &stateGroup);
+  void operator()(StateGroup &stateGroup);
   void initialize(const char *shaderId, sol::table table);
   // void loadFromTable(sol::table config);
-  void bindVertexArray(GLuint vao);
+  void bindVertexArray(gl::GLuint vao);
   void setVertexShader(std::string vs);
   void setFragmentShader(std::string fs);
   void setComputeShader(std::string cs);
   void addShaderKeyword(std::string kw);
   void addShaderDef(std::string kw, std::string def);
   void setViewport(int index, float x, float y, float width, float height);
-  void setBlendState(int index, const gl::BlendState &blendState);
-  void setRasterizerState(const gl::RasterizerState &rs);
-  void setDepthStencilState(const gl::DepthStencilState &ds);
-  auto getDrawStates() -> const gl::DrawStates &;
+  void setBlendState(int index, const BlendState &blendState);
+  void setRasterizerState(const RasterizerState &rs);
+  void setDepthStencilState(const DepthStencilState &ds);
+  auto getDrawStates() -> const DrawStates &;
 
 protected:
   std::shared_ptr<PipelineState> cached;
 };
-}
+} // namespace ag

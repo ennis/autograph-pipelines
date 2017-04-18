@@ -24,7 +24,7 @@ AG_ENGINE_API void saveImageByPath(const char *path, const void *pixelData, int 
 // Note: ideally, should take two formats:
 // - one for the format of the input pixel data
 // - one for the storage format
-AG_ENGINE_API void saveTexture(const char* path, gl::Texture& texture, ImageFormat targetFormat);
+AG_ENGINE_API void saveTexture(const char* path, Texture& texture, ImageFormat targetFormat);
 
 //
 // Loads an image resource in main memory
@@ -36,7 +36,7 @@ AG_ENGINE_API Image loadImage(const char *id,
 
 //
 // Loads a texture
-AG_ENGINE_API gl::Texture
+AG_ENGINE_API Texture
 loadTexture(const char *id,
             ImageFormat targetFormat = ImageFormat::R8G8B8A8_SRGB);
 
@@ -46,17 +46,17 @@ struct TextureResource : public Resource {
 
   virtual void *getPtr() override { return &tex; }
 
-  gl::Texture tex;
+  Texture tex;
 };
 
-template <> struct ResourceTraits<gl::Texture> {
+template <> struct ResourceTraits<Texture> {
   static std::unique_ptr<Resource> load(const char *id) {
     auto ptr = std::make_unique<TextureResource>();
     ptr->tex = loadTexture(id);
     return ptr;
   }
 
-  static gl::Texture *getPtr(Resource &res) {
+  static Texture *getPtr(Resource &res) {
     return &static_cast<TextureResource &>(res).tex;
   }
 };

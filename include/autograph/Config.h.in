@@ -48,7 +48,7 @@
 
 //////////////////////////////////////////////
 namespace ag {
-static constexpr const char projectName[] = "autograph-pipelines";
+static constexpr const char projectName[] = "@PROJECT_DIR_NAME@";
 static constexpr const char projectVersion[] = "@GIT_VERSION@";
 }
 

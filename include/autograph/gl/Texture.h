@@ -5,11 +5,10 @@
 #include <autograph/gl/GLHandle.h>
 
 namespace ag {
-namespace gl {
 
 struct AG_GL_API TextureDeleter {
-	static constexpr GLenum objectType = GL_TEXTURE;
-	void operator()(GLuint tex_obj);
+	static constexpr gl::GLenum objectType = gl::TEXTURE;
+	void operator()(gl::GLuint tex_obj);
 };
 
 class AG_GL_API Texture {
@@ -32,7 +31,7 @@ public:
   auto format() const { return desc_.format; }
   void generateMipmaps();
   const auto &desc() const { return desc_; }
-  GLuint object() const { return obj_.get(); }
+  gl::GLuint object() const { return obj_.get(); }
   explicit operator bool() const { return obj_.get() != 0; }
   void reset();
 
@@ -62,13 +61,13 @@ private:
 
 
 struct GLFormatInfo {
-  GLenum internal_fmt;
-  GLenum external_fmt;
-  GLenum type;
+  gl::GLenum internal_fmt;
+  gl::GLenum external_fmt;
+  gl::GLenum type;
   int num_comp;
   int size;
 };
 
 const GLFormatInfo &getGLImageFormatInfo(ImageFormat fmt);
 }
-}
+

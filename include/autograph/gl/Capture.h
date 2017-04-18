@@ -3,7 +3,6 @@
 #include <autograph/support/Debug.h>
 
 namespace ag {
-namespace gl {
 // indicate that the given frame should be captured
 AG_GL_API void setFrameCapture(uint64_t frameID);
 // indicate that the next frame should be captured
@@ -22,11 +21,10 @@ void frameTrace(const char *function, const char *message, Args &&... args) {
 #ifdef AG_FRAME_TRACE_OUTPUT
 #define AG_FRAME_TRACE(...)                                                    \
   do {                                                                         \
-    if (ag::gl::isFrameCaptureRequested())                                     \
-      ag::gl::frameTrace(__func__, __VA_ARGS__);                               \
+    if (ag::isFrameCaptureRequested())                                     \
+      ag::frameTrace(__func__, __VA_ARGS__);                               \
   } while (0);
 #else
 #define AG_FRAME_TRACE(...)
 #endif
-}
 }

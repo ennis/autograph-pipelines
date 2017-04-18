@@ -3,18 +3,18 @@
 #include "GLHandle.h"
 
 namespace ag {
-namespace gl {
+
 struct AG_GL_API SamplerDesc {
-  GLenum addrU{ GL_REPEAT };
-  GLenum addrV{ GL_REPEAT };
-  GLenum addrW{ GL_REPEAT };
-  GLenum minFilter{ GL_NEAREST };
-  GLenum magFilter{ GL_NEAREST };
+  gl::GLenum addrU{ gl::REPEAT };
+  gl::GLenum addrV{ gl::REPEAT };
+  gl::GLenum addrW{ gl::REPEAT };
+  gl::GLenum minFilter{ gl::NEAREST };
+  gl::GLenum magFilter{ gl::NEAREST };
 };
 
 struct AG_GL_API SamplerDeleter {
-	static constexpr GLenum objectType = GL_SAMPLER;
-  void operator()(GLuint sam_obj) { glDeleteSamplers(1, &sam_obj); }
+	static constexpr gl::GLenum objectType = gl::SAMPLER;
+  void operator()(gl::GLuint sam_obj) { gl::DeleteSamplers(1, &sam_obj); }
 };
 
 // Delayed initialization
@@ -23,17 +23,17 @@ public:
   Sampler() {}
   Sampler(const SamplerDesc &desc) : desc_{desc} {}
 
-  GLuint object() {
+  gl::GLuint object() {
     if (!obj_)
       init();
     return obj_.get();
   }
 
-  void setWrapModeU(GLenum mode);
-  void setWrapModeV(GLenum mode);
-  void setWrapModeW(GLenum mode);
-  void setTextureMinFilter(GLenum filter);
-  void setTextureMagFilter(GLenum filter);
+  void setWrapModeU(gl::GLenum mode);
+  void setWrapModeV(gl::GLenum mode);
+  void setWrapModeW(gl::GLenum mode);
+  void setTextureMinFilter(gl::GLenum filter);
+  void setTextureMagFilter(gl::GLenum filter);
   void setBorderColor(float r, float g, float b, float a);
   void setBorderColor(const vec4& rgba);
 
@@ -42,5 +42,4 @@ private:
   GLHandle<SamplerDeleter> obj_;
   void init();
 };
-}
 }

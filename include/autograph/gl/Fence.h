@@ -1,12 +1,11 @@
 #pragma once
-#include <autograph/Config.h>
+#include <autograph/gl/Config.h>
 #include <cstdint>
 #include <deque>
 #include <autograph/gl/gl_core_4_5.h>
 #include <stdexcept>
 
 namespace ag {
-namespace gl {
 constexpr unsigned kFenceWaitTimeout = 2000000000; // in nanoseconds
 
 //////////////////////////////////////////////
@@ -45,7 +44,7 @@ public:
    * @param timeout [description]
    * @return [description]
    */
-  GLenum advance(uint64_t timeout);
+  gl::GLenum advance(uint64_t timeout);
 
   /**
    * @brief [brief description]
@@ -79,13 +78,13 @@ public:
 
   ~Fence() {
     for (auto s : sync_points)
-      glDeleteSync(s.sync);
+      gl::DeleteSync(s.sync);
   }
 
 
 private:
   struct AG_REFLECT sync_point {
-    GLsync sync;
+    gl::GLsync sync;
     uint64_t target_value;
   };
 
@@ -93,4 +92,4 @@ private:
   std::deque<sync_point> sync_points;
 };
 }
-}
+

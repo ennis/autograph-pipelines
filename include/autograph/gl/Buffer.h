@@ -4,11 +4,10 @@
 #include <stdexcept>
 
 namespace ag {
-namespace gl {
 
 //////////////////////////////////////////////
 struct BufferSlice {
-  GLuint obj;
+  gl::GLuint obj;
   size_t offset;
   size_t size;
 };
@@ -22,8 +21,8 @@ enum class BufferUsage {
 
 //////////////////////////////////////////////
 struct AG_GL_API BufferDeleter {
-	static constexpr GLenum objectType = GL_BUFFER;
-  void operator()(GLuint obj) { glDeleteBuffers(1, &obj); }
+	static constexpr gl::GLenum objectType = gl::BUFFER;
+  void operator()(gl::GLuint obj) { gl::DeleteBuffers(1, &obj); }
 };
 
 class AG_GL_API Buffer {
@@ -31,7 +30,7 @@ public:
   Buffer() = default;
   Buffer(size_t byteSize, BufferUsage usage, const void *initial_data = nullptr);
 
-  GLuint object() const { return obj_.get(); }
+  gl::GLuint object() const { return obj_.get(); }
   BufferUsage getUsage() const { return usage_; }
   size_t size() const { return byte_size_; }
   void *map(size_t offset, size_t size);
@@ -42,5 +41,4 @@ private:
   size_t byte_size_ = 0;
   GLHandle<BufferDeleter> obj_;
 };
-}
 }

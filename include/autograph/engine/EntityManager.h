@@ -77,6 +77,7 @@ class AG_ENGINE_API Scene
 public:
 	Scene(EntityManager& entityManager);
 	void registerComponentManager(ComponentManagerBase& componentManager);
+	void unregisterComponentManager(ComponentManagerBase& componentManager);
 	ComponentManagerBase* getComponentManager(std::type_index ti);
 	template <typename T> T* getComponentManager() {
 		return static_cast<T*>(getComponentManager(typeid(T)));

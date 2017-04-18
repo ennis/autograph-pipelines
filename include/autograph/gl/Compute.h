@@ -2,7 +2,6 @@
 #include <autograph/gl/Bind.h>
 
 namespace ag {
-namespace gl {
 
 ////////////////////////// draw
 
@@ -18,8 +17,8 @@ void dispatchCompute(Shader &&shader, int numGroupsX, int numGroupsY, int numGro
   // 3. call render command
   // The render command is in charge of binding the state group to the pipeline
   bindStateGroup(sg);
-  glDispatchCompute(numGroupsX, numGroupsY, numGroupsZ);
-  glMemoryBarrier(sg.barrierBits);
+  gl::DispatchCompute(numGroupsX, numGroupsY, numGroupsZ);
+  gl::MemoryBarrier(sg.barrierBits);
 }
 
 template <typename Shader, typename... Arguments>
@@ -41,9 +40,9 @@ void dispatchComputeOnImage2D(int width, int height, int groupSizeX, int groupSi
   int numGroupsX = divRoundUp(width, groupSizeX);
   int numGroupsY = divRoundUp(width, groupSizeY);
   int numGroupsZ = 1;
-  glDispatchCompute(numGroupsX, numGroupsY, numGroupsZ); 
-  glMemoryBarrier(sg.barrierBits);
+  gl::DispatchCompute(numGroupsX, numGroupsY, numGroupsZ); 
+  gl::MemoryBarrier(sg.barrierBits);
 }
 
 }
-}
+

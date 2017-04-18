@@ -2,7 +2,6 @@
 #include <autograph/support/Utils.h>
 
 namespace ag {
-namespace gl {
 enum class ShaderStage {
   Vertex = 1 << 0,
   Geometry = 1 << 1,
@@ -12,5 +11,4 @@ enum class ShaderStage {
   Compute = 1 << 5
 };
 ENUM_BIT_FLAGS_OPERATORS(ShaderStage)
-}
 }

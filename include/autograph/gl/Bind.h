@@ -12,15 +12,13 @@
 #include <autograph/gl/gl_core_4_5.h>
 
 namespace ag {
-namespace gl {
-
 namespace bind {
 
 inline auto uniform_float(const char *name, float v) {
   return [=](StateGroup &sg) {
-    int loc = glGetUniformLocation(sg.drawStates.program, name);
+    int loc = gl::GetUniformLocation(sg.drawStates.program, name);
     if (loc != -1) {
-      glProgramUniform1f(sg.drawStates.program, loc, v);
+      gl::ProgramUniform1f(sg.drawStates.program, loc, v);
       AG_FRAME_TRACE("uniform {} = {}", name, v);
     } else {
       AG_FRAME_TRACE(
@@ -32,16 +30,16 @@ inline auto uniform_float(const char *name, float v) {
 
 inline auto uniform_float(int loc, float v) {
   return [=](StateGroup &sg) {
-    glProgramUniform1f(sg.drawStates.program, loc, v);
+    gl::ProgramUniform1f(sg.drawStates.program, loc, v);
     AG_FRAME_TRACE("uniform (loc {}) = {}", loc, v);
   };
 }
 
 inline auto uniform_int(const char *name, int v) {
   return [=](StateGroup &sg) {
-    int loc = glGetUniformLocation(sg.drawStates.program, name);
+    int loc = gl::GetUniformLocation(sg.drawStates.program, name);
     if (loc != -1) {
-      glProgramUniform1i(sg.drawStates.program, loc, v);
+      gl::ProgramUniform1i(sg.drawStates.program, loc, v);
       AG_FRAME_TRACE("uniform {} = {}", name, v);
     } else {
       AG_FRAME_TRACE(
@@ -53,7 +51,7 @@ inline auto uniform_int(const char *name, int v) {
 
 inline auto uniform_int(int loc, int v) {
   return [=](StateGroup &sg) {
-    glProgramUniform1i(sg.drawStates.program, loc, v);
+    gl::ProgramUniform1i(sg.drawStates.program, loc, v);
     AG_FRAME_TRACE("uniform (loc {}) = {}", loc, v);
   };
 }
@@ -61,7 +59,7 @@ inline auto uniform_int(int loc, int v) {
 #define UNIFORM_VECN(ty, value_ty, fn)                                         \
   inline auto uniform_##ty(const char *name, value_ty v) {                     \
     return [=](StateGroup &sg) {                                               \
-      int loc = glGetUniformLocation(sg.drawStates.program, name);             \
+      int loc = gl::GetUniformLocation(sg.drawStates.program, name);             \
       if (loc != -1) {                                                         \
         fn(sg.drawStates.program, loc, 1, &v[0]);                              \
         AG_FRAME_TRACE("uniform {} = {}", name, v);                            \
@@ -79,22 +77,22 @@ inline auto uniform_int(int loc, int v) {
     };                                                                         \
   }
 
-UNIFORM_VECN(vec2, vec2, glProgramUniform2fv)
-UNIFORM_VECN(vec3, vec3, glProgramUniform3fv)
-UNIFORM_VECN(vec4, vec4, glProgramUniform4fv)
-UNIFORM_VECN(ivec2, ivec2, glProgramUniform2iv)
-UNIFORM_VECN(ivec3, ivec3, glProgramUniform3iv)
-UNIFORM_VECN(ivec4, ivec4, glProgramUniform4iv)
+UNIFORM_VECN(vec2, vec2, gl::ProgramUniform2fv)
+UNIFORM_VECN(vec3, vec3, gl::ProgramUniform3fv)
+UNIFORM_VECN(vec4, vec4, gl::ProgramUniform4fv)
+UNIFORM_VECN(ivec2, ivec2, gl::ProgramUniform2iv)
+UNIFORM_VECN(ivec3, ivec3, gl::ProgramUniform3iv)
+UNIFORM_VECN(ivec4, ivec4, gl::ProgramUniform4iv)
 #undef UNIFORM_VECN
 
 #define UNIFORM_MATRIX_NXN(nxn)                                                \
   inline auto uniform_mat##nxn(const char *name, const mat##nxn &v,            \
                                bool transpose = false) {                       \
     return [=](StateGroup &sg) {                                               \
-      int loc = glGetUniformLocation(sg.drawStates.program, name);             \
+      int loc = gl::GetUniformLocation(sg.drawStates.program, name);             \
       if (loc != -1) {                                                         \
         AG_FRAME_TRACE("uniform {} = <matrix>", name);                         \
-        glProgramUniformMatrix##nxn##fv(sg.drawStates.program, loc, 1,         \
+        gl::ProgramUniformMatrix##nxn##fv(sg.drawStates.program, loc, 1,         \
                                         transpose, &v[0][0]);                  \
       } else {                                                                 \
         AG_FRAME_TRACE(                                                        \
@@ -106,7 +104,7 @@ UNIFORM_VECN(ivec4, ivec4, glProgramUniform4iv)
   inline auto uniform_mat##nxn(int loc, const mat##nxn &v,                     \
                                bool transpose = false) {                       \
     return [=](StateGroup &sg) {                                               \
-      glProgramUniformMatrix##nxn##fv(sg.drawStates.program, loc, 1,           \
+      gl::ProgramUniformMatrix##nxn##fv(sg.drawStates.program, loc, 1,           \
                                       transpose, &v[0][0]);                    \
       AG_FRAME_TRACE("uniform (loc {}) = <matrix>", loc);                      \
     };                                                                         \
@@ -118,7 +116,7 @@ UNIFORM_MATRIX_NXN(2)
 UNIFORM_MATRIX_NXN(3x4)
 #undef UNIFORM_MATRIX_NXN
 
-inline auto texture(int unit, GLuint obj, GLuint samplerObj) {
+inline auto texture(int unit, gl::GLuint obj, gl::GLuint samplerObj) {
   return [unit, obj, samplerObj](StateGroup &sg) {
     AG_FRAME_TRACE("tex unit={}, obj={}, sam={}", unit, obj, samplerObj);
     sg.uniforms.textures[unit] = obj;
@@ -135,7 +133,7 @@ inline auto texture(int unit, const Texture &tex, Sampler &sampler) {
   };
 }
 
-inline auto image(int unit, GLuint obj) {
+inline auto image(int unit, gl::GLuint obj) {
   return [unit, obj](StateGroup &sg) {
     AG_FRAME_TRACE("image unit={}, obj={}", unit, obj);
     sg.uniforms.images[unit] = obj;
@@ -176,11 +174,11 @@ inline auto vertexBuffer(int slot, BufferSlice buf, int stride) {
                    buf.offset, stride);
     sg.uniforms.vertexBuffers[slot] = buf.obj;
     sg.uniforms.vertexBufferOffsets[slot] = buf.offset;
-    sg.uniforms.vertexBufferStrides[slot] = static_cast<GLsizei>(stride);
+    sg.uniforms.vertexBufferStrides[slot] = static_cast<gl::GLsizei>(stride);
   };
 }
 
-inline auto indexBuffer(BufferSlice buf, GLenum type) {
+inline auto indexBuffer(BufferSlice buf, gl::GLenum type) {
   return [=](StateGroup &sg) {
     AG_FRAME_TRACE("ibo buf={}, offset={}, size={}, index type={}", buf.obj,
                    buf.offset, buf.size, type);
@@ -189,7 +187,7 @@ inline auto indexBuffer(BufferSlice buf, GLenum type) {
   };
 }
 
-inline auto program(const Program &prog) {
+inline auto program(const ProgramObject &prog) {
   return [obj = prog.object()](StateGroup & sg) {
     AG_FRAME_TRACE("program {}", obj);
     sg.drawStates.program = obj;
@@ -200,10 +198,10 @@ inline auto framebuffer(const Framebuffer &fbo) {
   return [ obj = fbo.object(), w = fbo.width(),
            h = fbo.height() ](StateGroup & sg) {
     AG_FRAME_TRACE("fbo obj={}, size={}x{}", obj, w, h);
-    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, obj);
+    gl::BindFramebuffer(gl::DRAW_FRAMEBUFFER, obj);
     // initialize the default viewport and scissor
-    sg.drawStates.viewports[0] = gl::Viewport{0.0f, 0.0f, (float)w, (float)h};
-    sg.drawStates.scissorRects[0] = gl::ScissorRect{0, 0, w, h};
+    sg.drawStates.viewports[0] = Viewport{0.0f, 0.0f, (float)w, (float)h};
+    sg.drawStates.scissorRects[0] = ScissorRect{0, 0, w, h};
   };
 }
 
@@ -262,7 +260,6 @@ inline auto rasterizerState(const RasterizerState &rs) {
   return [&rs](StateGroup &sg) {
     sg.drawStates.rasterizerState = rs;
   };
-}
 }
 }
 }

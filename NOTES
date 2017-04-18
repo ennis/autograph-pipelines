@@ -2397,3 +2397,116 @@ Image formats:
 
 For OpenGL: introduce the notion of a 'minimal external format' for each ImageFormat
 => the smallest external format able to store data of some internal format without losing precision  
+
+_______________________________________________
+
+Principle: minimize switches between different workspaces
+- e.g. for shaders: do not switch between .lua file and .glsl file
+- e.g. for CMakeFiles: do not split into subdirectories?
+
+_______________________________________________
+
+Autograph core modules
+- core => merge with engine? rename to 'math'
+- engine: windowing, imgui, scene, various other tools
+- support: reusable components
+
+Editor:
+- EditorViews
+	SceneView (plugin, integrates CameraController)
+	ImageView (plugin)
+- In engine: 
+
+_______________________________________________
+
+Simplified header organisation
+
+<autograph/editor/*.h> : Editor shell  (Editor.exe)
+<autograph/gl/*.h> : OpenGL wrapper	(autograph_gl.dll)
+<autograph/engine/*.h> : Engine interface (autograph_engine.dll)
+<autograph/support/*.h> : 
+
+Engine -> GL, Core
+GL -> Core
+Support
+Window -> Engine
+
+Engine:
+- headers: <autograph/engine/*.h>
+- namespace: ag
+- library: autograph_engine.dll
+
+Core:
+- headers: <autograph/*.h> (should be <autograph/core/.h>)
+- namespace: ag
+- library: autograph_core.dll
+
+GL:
+- headers: <autograph/gl/*.h>
+- namespace: ag and ag::gl
+- library: autograph_gl.dll
+
+ApplicationGLFW:
+- headers: <autograph/application/GLFW.h>
+- namespace: ag
+- library: autograph_app_glfw.dll
+
+ApplicationQt:
+- headers: <autograph/application/Qt.h>
+- namespace: ag
+- library: autograph_app_qt.dll
+
+
+Support: 
+- headers: 
+
+_______________________________________________
+
+Change responsibilities for caching of data:
+=> responsibility to the class, not the client
+=> special constructors
+
+e.g. instead of pool.get<Texture>("...")
+Texture::create(cache, "...");
+
+
+_______________________________________________
+
+Interfacing with Qt and/or GLFW?
+** Not originally made to be interfacable with more than one window library! ** 
+
+Solution: 'platform modules': translates and forwards input to the engine
+	-> GLFW, Qt
+- provides an API-specific main loop
+
+Solution: separate game (simulation) loop from OS event loop
+- Engine class instance: holds global frame state, sets up every global module
+- Engine::step(dt, callback)
+- Engine::stop()
+- Engine::setInterface(Qt, GLFW)
+
+- EngineInterface::onEvent(...)
+- EngineInterface::getDefaultFramebuffer()
+- EngineInterface::getWidth()
+- EngineInterface::swapBuffers(...)
+
+_______________________________________________
+
+Move control point:
+enter (click + hit-test point)
+while (mouse-down(0))
+exit (!mouse-down(0))
+
+Select control point:
+enter (click + hit-test point): selected <- point
+exit ()
+
+Display-handle:
+enter(always)
+draw tangent handles
+move-tangent-handle(pointA)
+move-tangent-handle(pointB)
+exit(never)
+
+Move tangent handle:
+enter (click(0) + hit-test point): selected <- point 

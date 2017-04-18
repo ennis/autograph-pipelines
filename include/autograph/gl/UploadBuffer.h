@@ -7,7 +7,6 @@
 #include <vector>
 
 namespace ag {
-namespace gl {
 
 class AG_GL_API UploadBuffer {
 public:
@@ -44,5 +43,4 @@ private:
   std::queue<fenced_region> fencedRegions;
   std::mutex mutex;
 };
-}
 }

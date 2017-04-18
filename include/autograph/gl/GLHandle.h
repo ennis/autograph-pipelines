@@ -1,30 +1,29 @@
 #pragma once
 #include <autograph/gl/Config.h>
-#include <autograph/support/Span.h>
 #include <autograph/gl/gl_core_4_5.h>
+#include <autograph/support/Span.h>
 #include <utility> // swap
 
 namespace ag {
-namespace gl {
 
 struct GLObjectTrackingData {
-  GLuint obj;
-  GLenum type;
+  gl::GLuint obj;
+  gl::GLenum type;
   uint64_t creationFrame;
   // TODO other data?
 };
 
-AG_GL_API void trackGLObject(GLuint obj, GLenum type);
-AG_GL_API void releaseGLObject(GLuint obj, GLenum type);
+AG_GL_API void trackGLObject(gl::GLuint obj, gl::GLenum type);
+AG_GL_API void releaseGLObject(gl::GLuint obj, gl::GLenum type);
 AG_GL_API int getGLObjectCount();
 AG_GL_API const GLObjectTrackingData *getGLObjectData(int index);
-AG_GL_API const char *getGLObjectTypeName(GLenum type);
+AG_GL_API const char *getGLObjectTypeName(gl::GLenum type);
 
-// Wrapper to use GLuint as a unique_ptr handle type
+// Wrapper to use gl::GLuint as a unique_ptr handle type
 // http://stackoverflow.com/questions/6265288/unique-ptr-custom-storage-type-example/6272139#6272139
 template <typename Deleter> struct GLHandle {
   unsigned int obj;
-  GLHandle(GLuint obj_) : obj{obj_} {
+  GLHandle(gl::GLuint obj_) : obj{obj_} {
 #ifdef AG_TRACK_GL_OBJECTS
     trackGLObject(obj_, Deleter::objectType);
 #endif
@@ -65,5 +64,4 @@ template <typename Deleter> struct GLHandle {
   // because of implicit nullptr constructor
   // swappable requirement fulfilled by std::swap
 };
-}
 }

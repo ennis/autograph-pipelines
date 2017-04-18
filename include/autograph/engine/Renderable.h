@@ -22,12 +22,12 @@ enum class StdTexture {
 
 struct StdMaterial 
 {
-  gl::Texture *albedo = nullptr;
-  gl::Texture *normals = nullptr;
-  gl::Texture *roughness = nullptr;
-  gl::Texture *metallic = nullptr;
-  gl::Texture *ambientOcclusion = nullptr;
-  gl::Texture *lightmap = nullptr;
+  Texture *albedo = nullptr;
+  Texture *normals = nullptr;
+  Texture *roughness = nullptr;
+  Texture *metallic = nullptr;
+  Texture *ambientOcclusion = nullptr;
+  Texture *lightmap = nullptr;
 };
 
 class AG_ENGINE_API RenderableComponents : public ComponentManager<StdMaterial>

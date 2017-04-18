@@ -5,11 +5,10 @@
 #include <autograph/gl/Texture.h>
 
 namespace ag {
-namespace gl {
 //////////////////////////////////////////////
 struct AG_GL_API RenderbufferDeleter {
-	static constexpr GLenum objectType = GL_RENDERBUFFER;
-  void operator()(GLuint rb) { glDeleteRenderbuffers(1, &rb); }
+	static constexpr gl::GLenum objectType = gl::RENDERBUFFER;
+  void operator()(gl::GLuint rb) { gl::DeleteRenderbuffers(1, &rb); }
 };
 
 class AG_GL_API Renderbuffer {
@@ -32,8 +31,8 @@ private:
 
 //////////////////////////////////////////////
 struct AG_GL_API FramebufferDeleter {
-	static constexpr GLenum objectType = GL_FRAMEBUFFER;
-  void operator()(GLuint fbo) { glDeleteFramebuffers(1, &fbo); }
+	static constexpr gl::GLenum objectType = gl::FRAMEBUFFER;
+  void operator()(gl::GLuint fbo) { gl::DeleteFramebuffers(1, &fbo); }
 };
 
 //////////////////////////////////////////////
@@ -49,9 +48,9 @@ public:
 
   Framebuffer(GLHandle<FramebufferDeleter> obj) : obj_{std::move(obj)} {}
 
-  void setAttachement(GLenum attachement, GLuint tex);
-  void setAttachement(GLenum attachement, Texture &tex);
-  void setRenderbufferAttachement(GLenum attachement,
+  void setAttachement(gl::GLenum attachement, gl::GLuint tex);
+  void setAttachement(gl::GLenum attachement, Texture &tex);
+  void setRenderbufferAttachement(gl::GLenum attachement,
                                   Renderbuffer &renderbuffer);
 
   /*static Framebuffer create(std::initializer_list<Texture *> color_tex);
@@ -60,7 +59,7 @@ public:
   static Framebuffer createDefault(int w, int h);
 
   bool ensureComplete();
-  GLenum checkStatus();
+  gl::GLenum checkStatus();
   auto object() const { return obj_.get(); }
   auto width() const { return width_; }
   auto height() const { return height_; }
@@ -74,5 +73,4 @@ private:
   int height_{ 0 };
   GLHandle<FramebufferDeleter> obj_;
 };
-}
 }
