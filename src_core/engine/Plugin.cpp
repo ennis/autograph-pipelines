@@ -1,10 +1,15 @@
-#include <Windows.h>
 #include <autograph/engine/Plugin.h>
 #include <autograph/support/Debug.h>
 #include <autograph/support/ProjectRoot.h>
-#include <filesystem>
+#include <experimental/filesystem>
 #include <unordered_map>
 #include <vector>
+
+#ifdef AG_WINDOWS
+#include <Windows.h>
+#elif AG_UNIX
+#include <dlfcn.h>
+#endif
 
 namespace ag {
 
@@ -36,6 +41,39 @@ using ModuleExitFunc = void (*)();
 static constexpr const char kModuleInitFunctionName[] = "moduleInit";
 static constexpr const char kModuleExitFunctionName[] = "moduleExit";
 
+static ModuleHandle loadDynamicLibrary(const char *path) {
+#ifdef AG_WINDOWS
+  return LoadLibraryA(path);
+#elif AG_UNIX
+  return dlopen(path, RTLD_LAZY);
+#endif
+}
+
+static void *getSymbolAddress(ModuleHandle lib, const char *sym) {
+
+#ifdef AG_WINDOWS
+  return GetProcAddress(lib, sym)
+#elif AG_UNIX
+  return dlsym(lib, sym);
+#endif
+}
+
+static void unloadDynamicLibrary(ModuleHandle lib) {
+#ifdef AG_WINDOWS
+  FreeLibrary(lib);
+#elif AG_UNIX
+  dlclose(lib);
+#endif
+}
+
+static std::string getDynamicLibraryFileName(const char *name) {
+#ifdef AG_WINDOWS
+  return std::string{name} + ".dll";
+#elif AG_UNIX
+  return std::string{"lib"} + name + ".so";
+#endif
+}
+
 // Default ctor
 Module::Module() {}
 
@@ -49,7 +87,7 @@ void Module::reload() {
            path.string());
   // If there is a module loaded, unload it
   if (moduleHandle) {
-    FreeLibrary(moduleHandle);
+    unloadDynamicLibrary(moduleHandle);
   }
   // copy DLL to a temporary directory and load it from there
   // to avoid locking the original file and allow someone to replace it
@@ -63,24 +101,24 @@ void Module::reload() {
     return;
   }
   // load the library
-  HMODULE hmod = LoadLibraryA(tmpPath.string().c_str());
-  if (!hmod) {
+  ModuleHandle mod = loadDynamicLibrary(tmpPath.string().c_str());
+  if (!mod) {
     errorMessage("Error loading dynamic module (tmpPath={}, origPath={})",
                  tmpPath.string(), path.string());
     moduleHandle = nullptr;
     return;
   }
   // Find entry point
-  auto proc = (ModuleInitFunc)GetProcAddress(hmod, kModuleInitFunctionName);
+  auto proc = (ModuleInitFunc)getSymbolAddress(mod, kModuleInitFunctionName);
   if (!proc) {
     errorMessage("Module entry point ({}) not found", kModuleInitFunctionName);
-    FreeLibrary(hmod);
+    unloadDynamicLibrary(mod);
     // Module is in 'Unloaded' state
     moduleHandle = nullptr;
     return;
   }
   //
-  moduleHandle = hmod;
+  moduleHandle = mod;
   lastWriteTime = fs::last_write_time(path, errc);
   // if (errc)
   // AG_DEBUG("Error {}", errc);
@@ -90,8 +128,8 @@ void Module::reload() {
 
 ReloadablePluginProxy::ReloadablePluginProxy(
     const char *className_, std::type_index interfaceTypeIndex_)
-    : module{nullptr}, className{className_}, interfaceTypeIndex{
-                                                  interfaceTypeIndex_} {}
+    : module{nullptr}, className{className_},
+      interfaceTypeIndex{interfaceTypeIndex_} {}
 
 class PluginManager {
 public:
@@ -100,11 +138,8 @@ public:
     // get the module called 'name', or create a new one if necessary
     auto &m = loadedModules[name];
     // build DLL path
-    auto projRoot = getProjectRootDirectory();
-    auto fullPath = fs::path{projRoot} / "build/RelWithDebInfo" /
-                    name; // XXX this is hardcoded but we don't want to load
-                          // plugins from anywhere
-    fullPath.replace_extension(".dll");
+    //auto projRoot = getProjectRootDirectory();
+    auto fullPath = getDynamicLibraryFileName(name);
     m.path = fullPath;
     reloadModule(m);
   }
@@ -132,7 +167,7 @@ public:
     // delete all class factories provided by this module
     for (auto it = classFactories.begin(); it != classFactories.end(); ++it) {
       if ((*it).second && (*it).second->module == &m) {
-        classFactories.erase(it);
+        it = classFactories.erase(it);
       }
     }
     // go through all plugin instances that use code from this module and delete

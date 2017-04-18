@@ -1,5 +1,6 @@
 #include <autograph/engine/SceneObject.h>
 #include <autograph/engine/imgui.h>
+#include <algorithm>  // remove
 
 namespace ag {
 

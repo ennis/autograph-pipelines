@@ -1,6 +1,6 @@
-#include <ImfImage.h>
 #include <ImfInputFile.h>
 #include <ImfRgbaFile.h>
+#include <ImfArray.h>
 #include <autograph/engine/Application.h>
 #include <autograph/engine/ImageUtils.h>
 #include <autograph/support/Debug.h>

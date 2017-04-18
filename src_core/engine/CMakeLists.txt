@@ -36,11 +36,11 @@ target_link_libraries(
 		optional
 		gsl 
 		glm 
-		IlmImf
+		OpenEXR
 	)
 
 if(UNIX)
-	target_link_libraries(autograph_engine PUBLIC -lstdc++fs)
+	target_link_libraries(autograph_engine PUBLIC -lstdc++fs ${CMAKE_DL_LIBS})
 endif()
 
 

@@ -2,6 +2,7 @@
 #define POINTER_CPP_GENERATED_HEADEROPENGL_HPP
 
 #include <cstdint>
+#include <cstddef>
 #include <autograph/gl/Config.h>
 
 #ifndef APIENTRY

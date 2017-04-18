@@ -49,10 +49,10 @@ int main(int argc, char *argv[]) {
   // Load plugins
   loadPluginModule("DeferredSceneRenderer");
   auto sceneRenderer = createClassInstance<SceneRenderer>("DeferredSceneRenderer");
-  assert(!sceneRenderer);
+  assert(sceneRenderer);
   loadPluginModule("SceneEditor");
   auto sceneEditor = createClassInstance<SceneEditor>("SceneEditor");
-  assert(!sceneEditor);
+  assert(sceneEditor);
   loadPluginModule("SceneLoader");
   auto sceneLoader = createClassInstance<SceneLoader>("AssimpSceneLoader");
   loadPluginModule("CameraControl");

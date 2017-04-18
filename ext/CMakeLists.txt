@@ -103,12 +103,21 @@ add_subdirectory(glloadgen EXCLUDE_FROM_ALL)
 
 ############################################
 # OpenEXR
-if (IS_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/openexr_bin AND WIN32)
+
+pkg_check_modules(OpenEXR OpenEXR)
+
+if (OpenEXR_FOUND) 
+	# Use system package
+	message("Using OpenEXR from system package")
+	add_library(OpenEXR INTERFACE)
+	target_include_directories(OpenEXR INTERFACE ${OpenEXR_INCLUDE_DIRS})
+	target_link_libraries(OpenEXR INTERFACE ${OpenEXR_LIBRARIES})
+elseif (IS_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/openexr_bin AND WIN32)
 	# Use binaries
 	message("Using OpenEXR binaries in ext/openexr_bin")
-	add_library(IlmImf INTERFACE)
-	target_include_directories(IlmImf INTERFACE openexr_bin/include)
-	target_link_libraries(IlmImf INTERFACE 
+	add_library(OpenEXR INTERFACE)
+	target_include_directories(OpenEXR INTERFACE openexr_bin/include)
+	target_link_libraries(OpenEXR INTERFACE 
 		${CMAKE_CURRENT_SOURCE_DIR}/openexr_bin/lib/IlmImf.lib
 		${CMAKE_CURRENT_SOURCE_DIR}/openexr_bin/lib/Iex.lib
 		${CMAKE_CURRENT_SOURCE_DIR}/openexr_bin/lib/Half.lib
@@ -130,8 +139,10 @@ else()
 	include_directories(${ILMBASE_INCLUDE_DIRS})
 	add_subdirectory(openexr/OpenEXR EXCLUDE_FROM_ALL)
 	get_property(ILMIMF_INCLUDE_DIRS DIRECTORY openexr/OpenEXR PROPERTY INCLUDE_DIRECTORIES)
-	target_include_directories(IlmImf INTERFACE ${ILMIMF_INCLUDE_DIRS})
-	set_property(TARGET IlmImf PROPERTY FOLDER "External/OpenEXR")
+	add_library(OpenEXR INTERFACE)
+	target_include_directories(OpenEXR INTERFACE ${ILMIMF_INCLUDE_DIRS})
+	target_link_libraries(OpenEXR INTERFACE IlmImf)
+	#set_property(TARGET OpenEXR PROPERTY FOLDER "External/OpenEXR")
 endif()
 
 # OpenImageIO

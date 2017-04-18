@@ -5,6 +5,7 @@
 #include <autograph/support/FileDialog.h>
 #include <autograph/support/ProjectRoot.h>
 #include <glm/gtc/matrix_transform.hpp>
+#include <cmath>
 
 namespace ag {
 static void editTransform(Transform &tr) {
@@ -440,7 +441,7 @@ static void curveEditor(std::vector<CurvePoint> &curve, float time) {
   // Zoom
   float scroll = ImGui::GetIO().MouseWheel;
   if (scroll) {
-    const float scale = std::powf(2.0f, scroll);
+    const float scale = std::pow(2.0f, scroll);
     const vec2 vPos{curvePos.x, curvePos.y};
     vec2 rMin = dwin.curveMin - vPos;
     vec2 rMax = dwin.curveMax - vPos;
