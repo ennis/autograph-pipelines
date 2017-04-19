@@ -16,6 +16,50 @@ static void editTransform(Transform &tr) {
   tr.rotation = quat{rotEuler};
 }
 
+class SparseTexture2D
+{
+public:
+	SparseTexture2D()
+	{
+	}
+
+	SparseTexture2D(ImageFormat format, int width, int height, int numMips)
+	{
+		gl::GLuint tex;
+		gl::CreateTextures(gl::TEXTURE_2D, 1, &tex);
+		// set tex parameters
+		gl::TextureParameteri(tex, gl::TEXTURE_SWIZZLE_R, gl::RED);
+		gl::TextureParameteri(tex, gl::TEXTURE_SWIZZLE_G, gl::GREEN);
+		gl::TextureParameteri(tex, gl::TEXTURE_SWIZZLE_B, gl::BLUE);
+		gl::TextureParameteri(tex, gl::TEXTURE_SWIZZLE_A, gl::ALPHA);
+		gl::TextureParameteri(tex, gl::TEXTURE_BASE_LEVEL, 0);
+		gl::TextureParameteri(tex, gl::TEXTURE_MIN_FILTER, gl::LINEAR_MIPMAP_NEAREST);
+		gl::TextureParameteri(tex, gl::TEXTURE_MAG_FILTER, gl::LINEAR);
+		gl::TextureParameteri(tex, gl::TEXTURE_WRAP_S, gl::CLAMP_TO_EDGE);
+		gl::TextureParameteri(tex, gl::TEXTURE_WRAP_T, gl::CLAMP_TO_EDGE);
+		gl::TextureParameteri(tex, gl::TEXTURE_SPARSE_ARB, gl::TRUE_);
+		// Allocate virtual storage
+		auto glfmt = getGLImageFormatInfo(format);
+		gl::TextureStorage2D(tex, numMips, glfmt.internal_fmt, width, height);
+		// Get page size
+		gl::GetInternalformativ(gl::TEXTURE_2D, glfmt.internal_fmt, gl::VIRTUAL_PAGE_SIZE_X_ARB, 1, &pageSizeX);
+		gl::GetInternalformativ(gl::TEXTURE_2D, glfmt.internal_fmt, gl::VIRTUAL_PAGE_SIZE_Y_ARB, 1, &pageSizeY);
+		gl::GetInternalformativ(gl::TEXTURE_2D, glfmt.internal_fmt, gl::VIRTUAL_PAGE_SIZE_Z_ARB, 1, &pageSizeZ);
+		AG_DEBUG("SparseTexture: page size ({}) = {}x{}x{}", getImageFormatInfo(format).name, pageSizeX, pageSizeY, pageSizeZ);
+	}
+
+	void commitRegion(int x, int y, int width, int height)
+	{
+
+	}
+
+private:
+	int pageSizeX = 0;
+	int pageSizeY = 0;
+	int pageSizeZ = 0;
+	GLHandle<TextureDeleter> obj_;
+};
+
 /////////////////////////////////////////////////////////////////////////////////////
 // Transform gizmo
 static void transformGizmo(const Camera &camera, Transform &tr) {

@@ -19,6 +19,8 @@ AG_ENGINE_API void unloadAllPluginModules();
 // Base class for all plugin interfaces
 class Plugin {
 public:
+  virtual void load() {}
+  virtual void unload() {}
   virtual void getName() {}
 
 private:

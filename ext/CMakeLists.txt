@@ -104,7 +104,9 @@ add_subdirectory(glloadgen EXCLUDE_FROM_ALL)
 ############################################
 # OpenEXR
 
+if (UNIX)
 pkg_check_modules(OpenEXR OpenEXR)
+endif()
 
 if (OpenEXR_FOUND) 
 	# Use system package

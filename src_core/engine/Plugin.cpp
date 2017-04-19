@@ -52,7 +52,7 @@ static ModuleHandle loadDynamicLibrary(const char *path) {
 static void *getSymbolAddress(ModuleHandle lib, const char *sym) {
 
 #ifdef AG_WINDOWS
-  return GetProcAddress(lib, sym)
+	return GetProcAddress(lib, sym);
 #elif AG_UNIX
   return dlsym(lib, sym);
 #endif

@@ -59,6 +59,7 @@ private:
   ImageDesc desc_;
 };
 
+int getTextureMipMapCount(int width, int height);
 
 struct GLFormatInfo {
   gl::GLenum internal_fmt;

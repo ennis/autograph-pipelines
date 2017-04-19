@@ -2,6 +2,8 @@
 #include <autograph/support/Debug.h>
 #include <cassert>
 #include <stdexcept>
+#include <cmath>
+#include <algorithm>
 
 namespace ag {
 
@@ -204,4 +206,12 @@ void Texture::reset() {
              depth());
   obj_ = nullptr;
 }
+
+
+int getTextureMipMapCount(int width, int height)
+{
+	// 1000 is the default value of GL_TEXTURE_MAX_LEVEL
+	return std::min((int)std::floor(std::log2(std::max(width, height))), 1000) - 1;
+}
+
 }
