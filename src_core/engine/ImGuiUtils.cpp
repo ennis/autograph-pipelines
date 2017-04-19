@@ -1,18 +1,70 @@
-#include <autograph/engine/ImGuizmo.h>
 #include <autograph/Transform.h>
 #include <autograph/engine/ImGuiUtils.h>
+#include <autograph/engine/ImGuizmo.h>
 #include <autograph/engine/RenderUtils.h>
+#include <autograph/engine/imgui.h>
+#include <autograph/gl/All.h>
 #include <autograph/support/FileDialog.h>
 #include <autograph/support/ProjectRoot.h>
-#include <autograph/gl/All.h>
-#include <autograph/engine/imgui.h>
 
 namespace ag {
 namespace gui {
-void beginFrame() { ImGuizmo::BeginFrame(); }
 
+void beginFrame() { ImGuizmo::BeginFrame(); }
 void endFrame() {}
 
+void saveOpenGLState(OpenGLState &outSavedState) {
+  gl::GetIntegerv(gl::CURRENT_PROGRAM, &outSavedState.last_program);
+  gl::GetIntegerv(gl::TEXTURE_BINDING_2D, &outSavedState.last_texture);
+  gl::GetIntegerv(gl::ACTIVE_TEXTURE, &outSavedState.last_active_texture);
+  gl::GetIntegerv(gl::ARRAY_BUFFER_BINDING, &outSavedState.last_array_buffer);
+  gl::GetIntegerv(gl::ELEMENT_ARRAY_BUFFER_BINDING,
+                  &outSavedState.last_element_array_buffer);
+  gl::GetIntegerv(gl::VERTEX_ARRAY_BINDING, &outSavedState.last_vertex_array);
+  gl::GetIntegerv(gl::BLEND_SRC, &outSavedState.last_blend_src);
+  gl::GetIntegerv(gl::BLEND_DST, &outSavedState.last_blend_dst);
+  gl::GetIntegerv(gl::BLEND_EQUATION_RGB,
+                  &outSavedState.last_blend_equation_rgb);
+  gl::GetIntegerv(gl::BLEND_EQUATION_ALPHA,
+                  &outSavedState.last_blend_equation_alpha);
+  gl::GetIntegerv(gl::VIEWPORT, outSavedState.last_viewport);
+  outSavedState.last_enable_blend = gl::IsEnabled(gl::BLEND);
+  outSavedState.last_enable_cull_face = gl::IsEnabled(gl::CULL_FACE);
+  outSavedState.last_enable_depth_test = gl::IsEnabled(gl::DEPTH_TEST);
+  outSavedState.last_enable_scissor_test = gl::IsEnabled(gl::SCISSOR_TEST);
+}
+
+void restoreOpenGLState(const OpenGLState &savedState) {
+  gl::UseProgram(savedState.last_program);
+  gl::ActiveTexture(savedState.last_active_texture);
+  gl::BindTexture(gl::TEXTURE_2D, savedState.last_texture);
+  gl::BindVertexArray(savedState.last_vertex_array);
+  gl::BindBuffer(gl::ARRAY_BUFFER, savedState.last_array_buffer);
+  gl::BindBuffer(gl::ELEMENT_ARRAY_BUFFER,
+                 savedState.last_element_array_buffer);
+  gl::BlendEquationSeparate(savedState.last_blend_equation_rgb,
+                            savedState.last_blend_equation_alpha);
+  gl::BlendFunc(savedState.last_blend_src, savedState.last_blend_dst);
+  if (savedState.last_enable_blend)
+    gl::Enable(gl::BLEND);
+  else
+    gl::Disable(gl::BLEND);
+  if (savedState.last_enable_cull_face)
+    gl::Enable(gl::CULL_FACE);
+  else
+    gl::Disable(gl::CULL_FACE);
+  if (savedState.last_enable_depth_test)
+    gl::Enable(gl::DEPTH_TEST);
+  else
+    gl::Disable(gl::DEPTH_TEST);
+  if (savedState.last_enable_scissor_test)
+    gl::Enable(gl::SCISSOR_TEST);
+  else
+    gl::Disable(gl::SCISSOR_TEST);
+  gl::Viewport(savedState.last_viewport[0], savedState.last_viewport[1],
+               (gl::GLsizei)savedState.last_viewport[2],
+               (gl::GLsizei)savedState.last_viewport[3]);
+}
 
 template <typename T> bool is_same_type(std::type_index ti) {
   return ti == std::type_index{typeid(T)};
@@ -57,7 +109,7 @@ void enumComboBox(const char *label, int *outValue,
                },
                &values, (int)values.size());
   if (curIdx != -1)
-	*outValue = values[curIdx].second;
+    *outValue = values[curIdx].second;
 }
 
 static const char *getFriendlyName(const meta::Field &f) {
@@ -126,5 +178,5 @@ void genericValue(std::type_index ti, void *data) {
   }
   ImGui::PopID();
 }
-}
-}
+} // namespace gui
+} // namespace ag

@@ -4,8 +4,8 @@
 #include <autograph/gl/All.h>
 #include <autograph/support/FileDialog.h>
 #include <autograph/support/ProjectRoot.h>
-#include <glm/gtc/matrix_transform.hpp>
 #include <cmath>
+#include <glm/gtc/matrix_transform.hpp>
 
 namespace ag {
 static void editTransform(Transform &tr) {
@@ -16,48 +16,46 @@ static void editTransform(Transform &tr) {
   tr.rotation = quat{rotEuler};
 }
 
-class SparseTexture2D
-{
+class SparseTexture2D {
 public:
-	SparseTexture2D()
-	{
-	}
+  SparseTexture2D() {}
 
-	SparseTexture2D(ImageFormat format, int width, int height, int numMips)
-	{
-		gl::GLuint tex;
-		gl::CreateTextures(gl::TEXTURE_2D, 1, &tex);
-		// set tex parameters
-		gl::TextureParameteri(tex, gl::TEXTURE_SWIZZLE_R, gl::RED);
-		gl::TextureParameteri(tex, gl::TEXTURE_SWIZZLE_G, gl::GREEN);
-		gl::TextureParameteri(tex, gl::TEXTURE_SWIZZLE_B, gl::BLUE);
-		gl::TextureParameteri(tex, gl::TEXTURE_SWIZZLE_A, gl::ALPHA);
-		gl::TextureParameteri(tex, gl::TEXTURE_BASE_LEVEL, 0);
-		gl::TextureParameteri(tex, gl::TEXTURE_MIN_FILTER, gl::LINEAR_MIPMAP_NEAREST);
-		gl::TextureParameteri(tex, gl::TEXTURE_MAG_FILTER, gl::LINEAR);
-		gl::TextureParameteri(tex, gl::TEXTURE_WRAP_S, gl::CLAMP_TO_EDGE);
-		gl::TextureParameteri(tex, gl::TEXTURE_WRAP_T, gl::CLAMP_TO_EDGE);
-		gl::TextureParameteri(tex, gl::TEXTURE_SPARSE_ARB, gl::TRUE_);
-		// Allocate virtual storage
-		auto glfmt = getGLImageFormatInfo(format);
-		gl::TextureStorage2D(tex, numMips, glfmt.internal_fmt, width, height);
-		// Get page size
-		gl::GetInternalformativ(gl::TEXTURE_2D, glfmt.internal_fmt, gl::VIRTUAL_PAGE_SIZE_X_ARB, 1, &pageSizeX);
-		gl::GetInternalformativ(gl::TEXTURE_2D, glfmt.internal_fmt, gl::VIRTUAL_PAGE_SIZE_Y_ARB, 1, &pageSizeY);
-		gl::GetInternalformativ(gl::TEXTURE_2D, glfmt.internal_fmt, gl::VIRTUAL_PAGE_SIZE_Z_ARB, 1, &pageSizeZ);
-		AG_DEBUG("SparseTexture: page size ({}) = {}x{}x{}", getImageFormatInfo(format).name, pageSizeX, pageSizeY, pageSizeZ);
-	}
+  SparseTexture2D(ImageFormat format, int width, int height, int numMips) {
+    gl::GLuint tex;
+    gl::CreateTextures(gl::TEXTURE_2D, 1, &tex);
+    // set tex parameters
+    gl::TextureParameteri(tex, gl::TEXTURE_SWIZZLE_R, gl::RED);
+    gl::TextureParameteri(tex, gl::TEXTURE_SWIZZLE_G, gl::GREEN);
+    gl::TextureParameteri(tex, gl::TEXTURE_SWIZZLE_B, gl::BLUE);
+    gl::TextureParameteri(tex, gl::TEXTURE_SWIZZLE_A, gl::ALPHA);
+    gl::TextureParameteri(tex, gl::TEXTURE_BASE_LEVEL, 0);
+    gl::TextureParameteri(tex, gl::TEXTURE_MIN_FILTER,
+                          gl::LINEAR_MIPMAP_NEAREST);
+    gl::TextureParameteri(tex, gl::TEXTURE_MAG_FILTER, gl::LINEAR);
+    gl::TextureParameteri(tex, gl::TEXTURE_WRAP_S, gl::CLAMP_TO_EDGE);
+    gl::TextureParameteri(tex, gl::TEXTURE_WRAP_T, gl::CLAMP_TO_EDGE);
+    gl::TextureParameteri(tex, gl::TEXTURE_SPARSE_ARB, gl::TRUE_);
+    // Allocate virtual storage
+    auto glfmt = getGLImageFormatInfo(format);
+    gl::TextureStorage2D(tex, numMips, glfmt.internal_fmt, width, height);
+    // Get page size
+    gl::GetInternalformativ(gl::TEXTURE_2D, glfmt.internal_fmt,
+                            gl::VIRTUAL_PAGE_SIZE_X_ARB, 1, &pageSizeX);
+    gl::GetInternalformativ(gl::TEXTURE_2D, glfmt.internal_fmt,
+                            gl::VIRTUAL_PAGE_SIZE_Y_ARB, 1, &pageSizeY);
+    gl::GetInternalformativ(gl::TEXTURE_2D, glfmt.internal_fmt,
+                            gl::VIRTUAL_PAGE_SIZE_Z_ARB, 1, &pageSizeZ);
+    AG_DEBUG("SparseTexture: page size ({}) = {}x{}x{}",
+             getImageFormatInfo(format).name, pageSizeX, pageSizeY, pageSizeZ);
+  }
 
-	void commitRegion(int x, int y, int width, int height)
-	{
-
-	}
+  void commitRegion(int x, int y, int width, int height) {}
 
 private:
-	int pageSizeX = 0;
-	int pageSizeY = 0;
-	int pageSizeZ = 0;
-	GLHandle<TextureDeleter> obj_;
+  int pageSizeX = 0;
+  int pageSizeY = 0;
+  int pageSizeZ = 0;
+  GLHandle<TextureDeleter> obj_;
 };
 
 /////////////////////////////////////////////////////////////////////////////////////
@@ -188,7 +186,71 @@ float evaluateCurve(span<const CurvePoint> curve, float time,
   return interpolateCurve(curve[pair.first], curve[pair.second], time);
 }
 
+/////////////////////////////////////////////////////////////////////////////////////
+// Texture viewer
+// if disp{Height,Width} = -1, fill all available space
+// The texture is never stretched
+/*static void textureViewer(const ag::Texture &tex, float widgetWidth,
+                          float widgetHeight) {
+  static Shader textureViewShader{"shaders/default:textureView"};
+  static SamplerDesc textureViewSamplerDesc{
+      gl::CLAMP_TO_EDGE, gl::CLAMP_TO_EDGE, gl::CLAMP_TO_EDGE, gl::NEAREST,
+      gl::NEAREST};
+  static Sampler textureViewSampler{textureViewSamplerDesc};
+
+  int width = tex.width();
+  int height = tex.height();
+
+  static int xoffset = 0;
+  static int yoffset = 0;
+  static float zoomLevel = 1;
+  static bool mirror = false;
+  static bool autofit = true;
+
+  if (autofit) {
+    autofit = false;
+  }
+
+  ImVec2 contentRegion = ImGui::GetContentRegionAvail();
+  float dispWidth = widgetWidth < 0 ? contentRegion.x : widgetWidth;
+  float dispHeight = widgetHeight < 0 ? contentRegion.y : widgetHeight;
+  ImGui::Dummy(ImVec2{dispWidth, dispHeight});
+
+  auto pos = ImGui::GetItemRectMin();
+  auto size = ImGui::GetItemRectSize();
+
+  auto screenToUV = [&](vec2 screen) {
+
+  };
+
+  gui::customRendering([=](const ImDrawList *parentList, const ImDrawCmd *cmd) {
+    auto &fb = getDefaultFramebuffer();
+    auto fb_width = fb.width();
+    auto fb_height = fb.height();
+    float uv_l = (float)xoffset / (float)w;
+    float uv_t = 1.0f / zoomLevel;
+    float uv_r = 1.0f / zoomLevel;
+    float uv_b = (float)yoffset / (float)h;
+    if (mirror)
+      std::swap(uv_t, uv_b);
+    ag::drawRect(getDefaultFramebuffer(), pos.x, pos.y, pos.x + size.x,
+                 pos.y + size.y, uv_l, uv_t, uv_r, uv_b,
+                 getDebugGlobals().textureViewShader,
+                 bind::scissor(0, (int)cmd->ClipRect.x,
+                               (int)(fb_height - cmd->ClipRect.w),
+                               (int)(cmd->ClipRect.z - cmd->ClipRect.x),
+                               (int)(cmd->ClipRect.w - cmd->ClipRect.y)),
+                 bind::texture(0, textureObj,
+                               getDebugGlobals().textureViewSampler.object()),
+                 bind::uniform_float("uLod", lod),
+                 bind::uniform_vec2("uRange", vec2(range_min, range_max)),
+                 bind::uniform_vec4("uBorder", vec4(0.1f, 0.1f, 0.1f, 1.0f)));
+  });
+}
+*/
 static void curveEditor(std::vector<CurvePoint> &curve, float time) {
+  using ag::gui::toVec2;
+  using ag::gui::toImVec2;
   /////////////////////////////////////////////////////////////////
   // state
   const float pointHitTestRadius = 4.0f;
@@ -259,9 +321,6 @@ static void curveEditor(std::vector<CurvePoint> &curve, float time) {
     return vec2{x, y};
   };
 
-  auto toVec2 = [](ImVec2 v) { return vec2{v.x, v.y}; };
-  auto toImVec2 = [](vec2 v) { return ImVec2{v.x, v.y}; };
-
   /////////////////////////////////////////////////////////////////
   // auto-fit display window
   if (autofit) {
@@ -295,7 +354,7 @@ static void curveEditor(std::vector<CurvePoint> &curve, float time) {
 
   /////////////////////////////////////////////////////////////////
   // Background grid
-  // TODO  
+  // TODO
 
   /////////////////////////////////////////////////////////////////
   // Draw curve
@@ -388,14 +447,15 @@ static void curveEditor(std::vector<CurvePoint> &curve, float time) {
       if (clicked && !hitTestPoint) {
         selectedPointIndex = i;
         hitTestPoint = true;
-		draggingPoint = true;	// entry condition for drag
+        draggingPoint = true; // entry condition for drag
       }
     }
   }
 
   /////////////////////////////////////////////////////////////////
   // Drag control point
-  if (ImGui::IsMouseDragging(0, 1.0f) && selectedPointIndex != -1 && draggingPoint == true) {
+  if (ImGui::IsMouseDragging(0, 1.0f) && selectedPointIndex != -1 &&
+      draggingPoint == true) {
     hitTestPoint = true;
     curve[selectedPointIndex].time = curvePos.x;
     if (selectedPointIndex > 0) {
@@ -412,7 +472,7 @@ static void curveEditor(std::vector<CurvePoint> &curve, float time) {
         glm::clamp(curvePos.y, dwin.curveMin.y, dwin.curveMax.y);
   }
   if (!ImGui::IsMouseDown(0)) { // exit condition for drag
-	  draggingPoint = false;
+    draggingPoint = false;
   }
 
   /////////////////////////////////////////////////////////////////
@@ -513,19 +573,19 @@ static void curveEditor(std::vector<CurvePoint> &curve, float time) {
                  CurvePoint{InterpolationMode::Cubic, curvePos.x, curvePos.y,
                             0.0f, 0.0f});
     selectedPointIndex = nearestPoints.second;
-	draggingPoint = true;
+    draggingPoint = true;
   }
 
   /////////////////////////////////////////////////////////////////
   // Guides
   if (!hitTestPoint && hovered) {
     float t = curvePos.x;
-    float val = curvePos.y;
+    float val = evaluateCurve(curve, curvePos.x, RepeatMode::Once);
     drawList->AddLine(ImVec2{mousePos.x, dwin.rectMin.y},
                       ImVec2{mousePos.x, dwin.rectMax.y},
                       IM_COL32(50, 50, 50, 255));
     vec2 circlePos = curveToScreen(
-        curvePos.x, evaluateCurve(curve, curvePos.x, RepeatMode::Once));
+        curvePos.x, val);
     drawList->AddCircleFilled(toImVec2(circlePos), pointHitTestRadius,
                               IM_COL32(128, 255, 128, 255));
     ImGui::SetTooltip("f(%f) = %f", t, val);

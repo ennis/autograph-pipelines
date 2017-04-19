@@ -239,77 +239,6 @@ static ImageFormat GLInternalFormatToImageFormat(gl::GLenum glfmt) {
   }
 }
 
-struct OpenGLState {
-  gl::GLint last_program;
-  gl::GLint last_texture;
-  gl::GLint last_active_texture;
-  gl::GLint last_array_buffer;
-  gl::GLint last_element_array_buffer;
-  gl::GLint last_vertex_array;
-  gl::GLint last_blend_src;
-  gl::GLint last_blend_dst;
-  gl::GLint last_blend_equation_rgb;
-  gl::GLint last_blend_equation_alpha;
-  gl::GLint last_viewport[4];
-  gl::GLboolean last_enable_blend;
-  gl::GLboolean last_enable_cull_face;
-  gl::GLboolean last_enable_depth_test;
-  gl::GLboolean last_enable_scissor_test;
-};
-
-static void saveOpenGLState(OpenGLState &outSavedState) {
-  gl::GetIntegerv(gl::CURRENT_PROGRAM, &outSavedState.last_program);
-  gl::GetIntegerv(gl::TEXTURE_BINDING_2D, &outSavedState.last_texture);
-  gl::GetIntegerv(gl::ACTIVE_TEXTURE, &outSavedState.last_active_texture);
-  gl::GetIntegerv(gl::ARRAY_BUFFER_BINDING, &outSavedState.last_array_buffer);
-  gl::GetIntegerv(gl::ELEMENT_ARRAY_BUFFER_BINDING,
-                  &outSavedState.last_element_array_buffer);
-  gl::GetIntegerv(gl::VERTEX_ARRAY_BINDING, &outSavedState.last_vertex_array);
-  gl::GetIntegerv(gl::BLEND_SRC, &outSavedState.last_blend_src);
-  gl::GetIntegerv(gl::BLEND_DST, &outSavedState.last_blend_dst);
-  gl::GetIntegerv(gl::BLEND_EQUATION_RGB,
-                  &outSavedState.last_blend_equation_rgb);
-  gl::GetIntegerv(gl::BLEND_EQUATION_ALPHA,
-                  &outSavedState.last_blend_equation_alpha);
-  gl::GetIntegerv(gl::VIEWPORT, outSavedState.last_viewport);
-  outSavedState.last_enable_blend = gl::IsEnabled(gl::BLEND);
-  outSavedState.last_enable_cull_face = gl::IsEnabled(gl::CULL_FACE);
-  outSavedState.last_enable_depth_test = gl::IsEnabled(gl::DEPTH_TEST);
-  outSavedState.last_enable_scissor_test = gl::IsEnabled(gl::SCISSOR_TEST);
-}
-
-static void restoreOpenGLState(const OpenGLState &savedState) {
-  gl::UseProgram(savedState.last_program);
-  gl::ActiveTexture(savedState.last_active_texture);
-  gl::BindTexture(gl::TEXTURE_2D, savedState.last_texture);
-  gl::BindVertexArray(savedState.last_vertex_array);
-  gl::BindBuffer(gl::ARRAY_BUFFER, savedState.last_array_buffer);
-  gl::BindBuffer(gl::ELEMENT_ARRAY_BUFFER,
-                 savedState.last_element_array_buffer);
-  gl::BlendEquationSeparate(savedState.last_blend_equation_rgb,
-                            savedState.last_blend_equation_alpha);
-  gl::BlendFunc(savedState.last_blend_src, savedState.last_blend_dst);
-  if (savedState.last_enable_blend)
-    gl::Enable(gl::BLEND);
-  else
-    gl::Disable(gl::BLEND);
-  if (savedState.last_enable_cull_face)
-    gl::Enable(gl::CULL_FACE);
-  else
-    gl::Disable(gl::CULL_FACE);
-  if (savedState.last_enable_depth_test)
-    gl::Enable(gl::DEPTH_TEST);
-  else
-    gl::Disable(gl::DEPTH_TEST);
-  if (savedState.last_enable_scissor_test)
-    gl::Enable(gl::SCISSOR_TEST);
-  else
-    gl::Disable(gl::SCISSOR_TEST);
-  gl::Viewport(savedState.last_viewport[0], savedState.last_viewport[1],
-               (gl::GLsizei)savedState.last_viewport[2],
-               (gl::GLsizei)savedState.last_viewport[3]);
-}
-
 static void beginFixedTooltip(const char *id) {
   ImGui::PushStyleColor(ImGuiCol_WindowBg,
                         ImGui::GetStyle().Colors[ImGuiCol_PopupBg]);
@@ -323,23 +252,6 @@ static void endFixedTooltip() {
   ImGui::PopStyleColor();
 }
 
-template <typename Callback> static void customRendering(Callback callback) {
-  // ImGui::Dummy(ImVec2{ (float)w, (float)h });
-  auto drawList = ImGui::GetWindowDrawList();
-  auto pfn = new std::function<void(const ImDrawList *, const ImDrawCmd *)>{
-      std::move(callback)};
-  auto drawCallback = [](const ImDrawList *parentList, const ImDrawCmd *cmd) {
-    auto pfn = static_cast<
-        std::function<void(const ImDrawList *, const ImDrawCmd *)> *>(
-        cmd->UserCallbackData);
-    OpenGLState savedState;
-    saveOpenGLState(savedState);
-    (*pfn)(parentList, cmd);
-    restoreOpenGLState(savedState);
-    delete pfn;
-  };
-  drawList->AddCallback(drawCallback, pfn);
-}
 
 static void texturePreview(gl::GLuint textureObj, int w, int h, float lod,
                            int xoffset, int yoffset, float zoomLevel,
@@ -348,7 +260,7 @@ static void texturePreview(gl::GLuint textureObj, int w, int h, float lod,
   ImGui::Dummy(ImVec2{(float)w, (float)h});
   auto pos = ImGui::GetItemRectMin();
   auto size = ImGui::GetItemRectSize();
-  customRendering([=](const ImDrawList *parentList, const ImDrawCmd *cmd) {
+  gui::customRendering([=](const ImDrawList *parentList, const ImDrawCmd *cmd) {
     auto &fb = getDefaultFramebuffer();
     auto fb_width = fb.width();
     auto fb_height = fb.height();
