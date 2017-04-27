@@ -126,6 +126,7 @@ int main(int argc, char *argv[]) {
 
   // Q_INIT_RESOURCE(textfinder);
   QApplication app(argc, argv);
+  //QApplication::setStyle(QStyleFactory::create("Fusion"));
 
   QFile styleSheetFile(":qdarkstyle/style.qss");
   if (!styleSheetFile.exists())

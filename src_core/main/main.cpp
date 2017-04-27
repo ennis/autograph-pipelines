@@ -157,16 +157,6 @@ int main(int argc, char *argv[]) {
                                         cam, mode);
     }
 
-    /*{
-      AG_GPU_PROFILE_SCOPE("Rendering/Debug")
-      for (auto &idSceneObj : scene.getObjects()) {
-        auto &sceneObj = idSceneObj.second;
-        if (sceneObj.mesh) {
-                        RenderUtils::drawMesh(gl::getDefaultFramebuffer(), cam,
-    *sceneObj.mesh, sceneObj.worldTransform);
-        }
-      }
-    }*/
   });
 
   ////////////////////////////////////////////////////

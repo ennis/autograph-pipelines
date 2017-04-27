@@ -2481,14 +2481,25 @@ Solution: 'platform modules': translates and forwards input to the engine
 
 Solution: separate game (simulation) loop from OS event loop
 - Engine class instance: holds global frame state, sets up every global module
-- Engine::step(dt, callback)
+- Engine::step(dt)
 - Engine::stop()
 - Engine::setInterface(Qt, GLFW)
+- Engine::onRender(callback)
+- Engine::onInput(callback)
 
-- EngineInterface::onEvent(...)
-- EngineInterface::getDefaultFramebuffer()
-- EngineInterface::getWidth()
-- EngineInterface::swapBuffers(...)
+- Window::onEvent(...)
+- Window::getDefaultFramebuffer()
+- Window::getWidth()
+- Window::swapBuffers(...)
+
+
+Multi-window?
+
+modules:
+autograph_window_qt
+autograph_window_glfw
+autograph_window_headless?
+
 
 _______________________________________________
 
@@ -2510,3 +2521,23 @@ exit(never)
 
 Move tangent handle:
 enter (click(0) + hit-test point): selected <- point 
+
+
+_______________________________________________
+
+Mixed volumetric (minecraft-like) surface reps
+
+
+
+_______________________________________________
+
+Next up:
+- Finish separation between game loop and window management
+- Displacement mapping
+	- Support for tesselation shaders
+		- Shader reform / simplification?
+		 	Goal: no need to edit two (.lua/.glsl) files?
+		 	Embed lua in GLSL, or the contrary?
+		 	Caching
+- Resource caching system v2
+- 
