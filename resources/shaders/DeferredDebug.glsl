@@ -20,7 +20,7 @@ layout(std140, binding = 0) uniform CameraParameters {
   mat4 uViewProjMatrixVelocity;
 };
 
-uniform int uDebugMode;
+uniform int uDebugMode; 
 
 ///////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////

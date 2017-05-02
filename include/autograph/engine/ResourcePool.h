@@ -1,5 +1,5 @@
 #pragma once
-#include <autograph/engine/Config.h>
+#include <autograph/Engine/Exports.h>
 #include <chrono>
 #include <memory>
 #include <unordered_map>
@@ -71,5 +71,42 @@ private:
   std::unordered_map<std::string, std::shared_ptr<Resource>> resourceMap_;
 };
 
-//
+
+class CacheObject
+{
+public:
+	CacheObject(const char* path_) : path{ path_ }
+	{}
+
+	virtual ~CacheObject()
+	{}
+
+	virtual void reload()
+	{}
+
+	const char* getPath() const { return path.c_str(); }
+
+protected:
+	std::string path;
+};
+
+class Cache
+{
+public:
+	void addObject(std::shared_ptr<CacheObject> obj);
+	std::shared_ptr<CacheObject> getObject(const char *path);
+
+	template <typename T>
+	std::shared_ptr<T> getObjectOfType(const char* path)
+	{
+		static_assert(std::is_base_of<CacheObject, T>::value, "T must be a derived class of CacheObject");
+		if (auto& obj = getObject(path)) {
+			return std::dynamic_pointer_cast<T>(obj);
+		}
+	}
+
+private:
+	std::unordered_map<std::string, std::shared_ptr<CacheObject>> cacheObjects_;
+};
+
 }

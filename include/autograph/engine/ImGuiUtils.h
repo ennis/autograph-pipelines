@@ -1,8 +1,8 @@
 // Shared ImGui utilities
 #pragma once
-#include <autograph/engine/Meta.h>
-#include <autograph/gl/gl_core_4_5.h>
-#include <autograph/engine/imgui.h>
+#include <autograph/Engine/Meta.h>
+#include <autograph/Gfx/gl_core_4_5.h>
+#include <autograph/Engine/imgui.h>
 
 namespace ag {
 namespace gui {

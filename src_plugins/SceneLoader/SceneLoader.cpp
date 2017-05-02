@@ -1,12 +1,12 @@
-﻿#include "SceneLoader.Config.h"
+﻿#include "SceneLoader/Exports.h"
 #include <assimp/Importer.hpp>
 #include <assimp/ProgressHandler.hpp>
 #include <assimp/postprocess.h>
 #include <assimp/scene.h>
-#include <autograph/engine/All.h>
-#include <autograph/gl/All.h>
-#include <autograph/support/FileDialog.h>
-#include <autograph/support/ProjectRoot.h>
+#include <autograph/Engine/All.h>
+#include <autograph/Gfx/All.h>
+#include <autograph/Core/Support/FileDialog.h>
+#include <autograph/Core/Support/ProjectRoot.h>
 #include <experimental/filesystem>
 
 using namespace ag;
@@ -258,4 +258,4 @@ private:
 };
 
 //////////////////////////////////////////////
-PLUGIN_ENTRY { ag::registerClass<AssimpSceneLoader, ag::SceneLoader>("AssimpSceneLoader"); }
+SceneLoader_PLUGIN_ENTRY { ag::registerClass<AssimpSceneLoader, ag::SceneLoader>("AssimpSceneLoader"); }

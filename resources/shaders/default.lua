@@ -1,5 +1,3 @@
-require 'shaders/utils'
-
 geometryPass = GeometryPass
 {
 	shaderFile = 'Deferred.glsl'
@@ -19,7 +17,7 @@ deferredPass = ScreenPass
 TAAAverage = ComputeShader 
 {
 	shaderFile = 'TemporalAA.glsl',
-	barrierBits = bit.bor(gl.GL_TEXTURE_FETCH_BARRIER_BIT, gl.GL_SHADER_IMAGE_ACCESS_BARRIER_BIT)
+	barrierBits = bit.bor(GL_TEXTURE_FETCH_BARRIER_BIT, GL_SHADER_IMAGE_ACCESS_BARRIER_BIT)
 }
 
 drawSprite = Geometry2DPass
@@ -53,7 +51,7 @@ drawMeshDefault = GeometryPass
 drawWireMesh = GeometryPass
 {
 	rasterizerState = {
-		fillMode = gl.GL_LINE,
+		fillMode = GL_LINE,
 	},
 	depthStencilState = {
 		depthTestEnable = true,
@@ -65,7 +63,7 @@ drawWireMesh = GeometryPass
 drawWireMeshNoDepth = GeometryPass
 {
 	rasterizerState = {
-		fillMode = gl.GL_LINE,
+		fillMode = GL_LINE,
 	},
 	depthStencilState = {
 		depthTestEnable = false,
@@ -78,11 +76,11 @@ drawWireMeshNoDepth = GeometryPass
 drawWireMesh2DColor = GeometryPass
 {
 	layout = {
-		{ buffer = 0, type = gl.GL_FLOAT, size = 2, relativeOffset = 0, normalized = false },
-		{ buffer = 0, type = gl.GL_UNSIGNED_BYTE, size = 4, relativeOffset = 8, normalized = true }
+		{ buffer = 0, type = GL_FLOAT, size = 2, relativeOffset = 0, normalized = false },
+		{ buffer = 0, type = GL_UNSIGNED_BYTE, size = 4, relativeOffset = 8, normalized = true }
 	},
 	rasterizerState = {
-		fillMode = gl.GL_LINE,
+		fillMode = GL_LINE,
 	},
 	depthStencilState = {
 		depthTestEnable = false,
@@ -97,12 +95,12 @@ local function BlurPasses(defs)
 	local H = ComputeShader {
 		defines = deepcopy(defs),
 		shaderFile = 'Blur.glsl',
-		barrierBits = bit.bor(gl.GL_TEXTURE_FETCH_BARRIER_BIT, gl.GL_SHADER_IMAGE_ACCESS_BARRIER_BIT)
+		barrierBits = bit.bor(GL_TEXTURE_FETCH_BARRIER_BIT, GL_SHADER_IMAGE_ACCESS_BARRIER_BIT)
 	}
 	local V = ComputeShader {
 		defines = deepcopy(defs),
 		shaderFile = 'Blur.glsl',
-		barrierBits = bit.bor(gl.GL_TEXTURE_FETCH_BARRIER_BIT, gl.GL_SHADER_IMAGE_ACCESS_BARRIER_BIT)
+		barrierBits = bit.bor(GL_TEXTURE_FETCH_BARRIER_BIT, GL_SHADER_IMAGE_ACCESS_BARRIER_BIT)
 	}
 	H.defines.BLUR_H = 1
 	V.defines.BLUR_V = 1
@@ -122,7 +120,6 @@ blurH_RGBA16F_AlphaPremult, blurV_RGBA16F_AlphaPremult = BlurPasses
 	OUT_FORMAT = rgba16f,
 	ALPHA_PREMULT = 1
 }
-
 
 blurH_RGBA8, blurV_RGBA8 = BlurPasses
 {

@@ -101,7 +101,7 @@ void EditTransform(const Camera& camera, matrix_t& matrix)
 }
 #endif
 #pragma once
-#include <autograph/engine/Config.h>
+#include <autograph/Engine/Exports.h>
 
 namespace ImGuizmo
 {

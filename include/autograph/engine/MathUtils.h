@@ -1,6 +1,6 @@
 #pragma once
-#include <autograph/engine/Config.h>
-#include <autograph/Types.h>
+#include <autograph/Engine/Exports.h>
+#include <autograph/Core/Types.h>
 #include <cmath>
 
 namespace ag {

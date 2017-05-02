@@ -1,7 +1,7 @@
 #pragma once
-#include <autograph/Types.h>
-#include <autograph/engine/Config.h>
-#include <autograph/gl/Query.h>
+#include <autograph/Core/Types.h>
+#include <autograph/Engine/Exports.h>
+#include <autograph/Gfx/Query.h>
 #include <chrono>
 #include <string>
 #include <vector>

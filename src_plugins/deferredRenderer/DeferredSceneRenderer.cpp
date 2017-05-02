@@ -1,11 +1,11 @@
-#include "DeferredSceneRenderer.Config.h"
-#include <autograph/Camera.h>
-#include <autograph/editor/SceneRenderer.h>
-#include <autograph/engine/All.h>
-#include <autograph/engine/imgui.h>
-#include <autograph/gl/All.h>
-#include <autograph/support/Debug.h>
-#include <autograph/support/ProjectRoot.h>
+#include "DeferredSceneRenderer/Exports.h"
+#include <autograph/Core/Camera.h>
+#include <autograph/Editor/SceneRenderer.h>
+#include <autograph/Engine/All.h>
+#include <autograph/Engine/imgui.h>
+#include <autograph/Gfx/All.h>
+#include <autograph/Core/Support/Debug.h>
+#include <autograph/Core/Support/ProjectRoot.h>
 #include <glm/gtc/matrix_transform.hpp>
 
 namespace ag {
@@ -238,7 +238,7 @@ private:
 };
 } // namespace ag
 
-PLUGIN_ENTRY {
+DeferredSceneRenderer_PLUGIN_ENTRY {
   ag::registerClass<ag::DeferredSceneRenderer, ag::SceneRenderer>(
       "DeferredSceneRenderer");
 }

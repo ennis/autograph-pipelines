@@ -1,5 +1,3 @@
-require 'shaders/utils'
-
 gbuffer = GeometryPass{
 	shaderFile = 'CanvasGBuffers.glsl'
 }

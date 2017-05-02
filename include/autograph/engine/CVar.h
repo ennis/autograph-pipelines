@@ -1,6 +1,6 @@
 #pragma once
-#include <autograph/engine/ImGuiUtils.h>
-#include <autograph/engine/Meta.h>
+#include <autograph/Engine/ImGuiUtils.h>
+#include <autograph/Engine/Meta.h>
 
 namespace ag {
 class AG_ENGINE_API CVarBase {

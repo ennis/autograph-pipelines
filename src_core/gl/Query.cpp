@@ -1,1 +1,0 @@
-#include <autograph/gl/Query.h>

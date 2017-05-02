@@ -1,0 +1,18 @@
+// template for module config file
+#include <autograph/Config.h>
+
+#if defined(@MOD_SHORTNAME@_DLL)
+#if defined(_MSC_VER)
+#if defined(BUILD_@MOD_SHORTNAME@_DLL)
+#define @MOD_SHORTNAME@_API __declspec(dllexport) AG_REFLECT
+#else
+#define @MOD_SHORTNAME@_API __declspec(dllimport)
+#endif
+#else
+#define @MOD_SHORTNAME@_API __attribute__((visibility("default")))
+#endif
+#else
+#define @MOD_SHORTNAME@_API AG_REFLECT
+#endif
+
+#define @MOD_SHORTNAME@_PLUGIN_ENTRY extern "C"  @MOD_SHORTNAME@_API void moduleInit()

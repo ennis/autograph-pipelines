@@ -1,10 +1,10 @@
 #pragma once
-#include <autograph/engine/Config.h>
-#include <autograph/Camera.h>
-#include <autograph/Rect.h>
-#include <autograph/engine/Mesh.h>
-//#include <autograph/engine/RenderTarget.h>
-#include <autograph/gl/Sampler.h>
+#include <autograph/Engine/Exports.h>
+#include <autograph/Core/Camera.h>
+#include <autograph/Core/Rect.h>
+#include <autograph/Engine/Mesh.h>
+//#include <autograph/Engine/RenderTarget.h>
+#include <autograph/Gfx/Sampler.h>
 
 namespace ag {
 

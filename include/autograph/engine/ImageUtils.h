@@ -1,8 +1,8 @@
 #pragma once
 #include "ResourceManager.h"
-#include <autograph/engine/ResourcePool.h>
-#include <autograph/gl/Texture.h>
-#include <autograph/support/Optional.h>
+#include <autograph/Engine/ResourcePool.h>
+#include <autograph/Gfx/Texture.h>
+#include <autograph/Core/Support/Optional.h>
 #include <memory>
 
 namespace ag {

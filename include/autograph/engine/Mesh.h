@@ -1,9 +1,9 @@
 #pragma once
-#include <autograph/AABB.h>
-#include <autograph/Types.h>
-#include <autograph/gl/Bind.h>
-#include <autograph/gl/Buffer.h>
-#include <autograph/support/Span.h>
+#include <autograph/Core/AABB.h>
+#include <autograph/Core/Types.h>
+#include <autograph/Gfx/Bind.h>
+#include <autograph/Gfx/Buffer.h>
+#include <autograph/Core/Support/Span.h>
 #include <vector>
 
 namespace ag {

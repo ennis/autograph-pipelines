@@ -1,7 +1,7 @@
-﻿#include "CameraControl.Config.h"
-#include <autograph/editor/CameraController.h>
-#include <autograph/engine/All.h>
-#include <autograph/gl/All.h>
+﻿#include "CameraControl/Exports.h"
+#include <autograph/Editor/CameraController.h>
+#include <autograph/Engine/All.h>
+#include <autograph/Gfx/All.h>
 #include <glm/gtx/quaternion.hpp>
 #include <glm/gtx/rotate_vector.hpp>
 
@@ -127,10 +127,10 @@ public:
                            ID selectedObject) override {
     bool handled = false;
     // CTRL and SHIFT
-    bool ctrl_down = ImGui::IsKeyDown(GLFW_KEY_LEFT_CONTROL) ||
-                     ImGui::IsKeyDown(GLFW_KEY_RIGHT_CONTROL);
-    bool shift_down = ImGui::IsKeyDown(GLFW_KEY_LEFT_SHIFT) ||
-                      ImGui::IsKeyDown(GLFW_KEY_RIGHT_SHIFT);
+    bool ctrl_down = ImGui::IsKeyDown(KEY_LEFT_CONTROL) ||
+                     ImGui::IsKeyDown(KEY_RIGHT_CONTROL);
+    bool shift_down = ImGui::IsKeyDown(KEY_LEFT_SHIFT) ||
+                      ImGui::IsKeyDown(KEY_RIGHT_SHIFT);
 
     setAspectRatio((float)screenW / (float)screenH);
 
@@ -139,7 +139,7 @@ public:
 	auto selectedObj = sceneObjectComponents->get(selectedObject);
 
     // Camera focus on object
-    if (!ctrl_down && ImGui::IsKeyDown(GLFW_KEY_Z)) {
+    if (!ctrl_down && ImGui::IsKeyDown(KEY_Z)) {
       AG_DEBUG("Camera focus on {}", selectedObject);
       if (selectedObj)
         focusOnObject(scene, *selectedObj);
@@ -237,7 +237,7 @@ private:
 };
 
 //////////////////////////////////////////////
-PLUGIN_ENTRY {
+CameraControl_PLUGIN_ENTRY {
   ag::registerClass<::CameraController, ag::CameraController>(
       "CameraController");
 }

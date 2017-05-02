@@ -1,6 +1,6 @@
 #pragma once
-#include <autograph/engine/Config.h>
-#include <autograph/support/IDTable.h>
+#include <autograph/Engine/Exports.h>
+#include <autograph/Core/Support/IDTable.h>
 #include <unordered_map>
 #include <set>
 #include <typeindex>

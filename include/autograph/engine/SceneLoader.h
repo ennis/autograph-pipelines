@@ -1,5 +1,5 @@
-#include <autograph/engine/EntityManager.h>
-#include <autograph/engine/Plugin.h>
+#include <autograph/Engine/EntityManager.h>
+#include <autograph/Engine/Plugin.h>
 
 namespace ag {
 class ResourcePool;

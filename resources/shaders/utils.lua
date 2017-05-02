@@ -1,29 +1,28 @@
-gl = require 'glapi'
 
 local mesh2DColorLayout = {
-	{ buffer = 0, type = gl.GL_FLOAT, size = 2, relativeOffset = 0, normalized = false },
-	{ buffer = 0, type = gl.GL_UNSIGNED_BYTE, size = 4, relativeOffset = 8, normalized = true }
+	{ buffer = 0, type = GL_FLOAT, size = 2, relativeOffset = 0, normalized = false },
+	{ buffer = 0, type = GL_UNSIGNED_BYTE, size = 4, relativeOffset = 8, normalized = true }
 }
 
 local mesh2DLayout = {
-	{ buffer = 0, type = gl.GL_FLOAT, size = 2, relativeOffset = 0, normalized = false },
-	{ buffer = 0, type = gl.GL_FLOAT, size = 2, relativeOffset = 8, normalized = false }
+	{ buffer = 0, type = GL_FLOAT, size = 2, relativeOffset = 0, normalized = false },
+	{ buffer = 0, type = GL_FLOAT, size = 2, relativeOffset = 8, normalized = false }
 }
 
 local mesh3DLayout = {
-	{ buffer = 0, type = gl.GL_FLOAT, size = 3, relativeOffset = 0, normalized = false },
-	{ buffer = 0, type = gl.GL_FLOAT, size = 3, relativeOffset = 12, normalized = false },
-	{ buffer = 0, type = gl.GL_FLOAT, size = 3, relativeOffset = 24, normalized = false },
-	{ buffer = 0, type = gl.GL_FLOAT, size = 2, relativeOffset = 36, normalized = false }
+	{ buffer = 0, type = GL_FLOAT, size = 3, relativeOffset = 0, normalized = false },
+	{ buffer = 0, type = GL_FLOAT, size = 3, relativeOffset = 12, normalized = false },
+	{ buffer = 0, type = GL_FLOAT, size = 3, relativeOffset = 24, normalized = false },
+	{ buffer = 0, type = GL_FLOAT, size = 2, relativeOffset = 36, normalized = false }
 }
 
 local geometryPassBase =
 {
 	layout = mesh3DLayout,
 	rasterizerState = {
-		fillMode = gl.GL_FILL,
-		cullMode = gl.GL_BACK,
-		frontFace = gl.GL_CCW
+		fillMode = GL_FILL,
+		cullMode = GL_BACK,
+		frontFace = GL_CCW
 	},
 	depthStencilState = {
 		depthTestEnable = true,
@@ -32,12 +31,12 @@ local geometryPassBase =
 	blendState = {
 		[0] = { 
 			enabled = true,
-			modeRGB = gl.GL_FUNC_ADD,
-			modeAlpha = gl.GL_FUNC_ADD,
-			funcSrcRGB = gl.GL_SRC_ALPHA,
-			funcDstRGB = gl.GL_ONE_MINUS_SRC_ALPHA,
-			funcSrcAlpha = gl.GL_ONE,
-			funcDstAlpha = gl.GL_ZERO
+			modeRGB = GL_FUNC_ADD,
+			modeAlpha = GL_FUNC_ADD,
+			funcSrcRGB = GL_SRC_ALPHA,
+			funcDstRGB = GL_ONE_MINUS_SRC_ALPHA,
+			funcSrcAlpha = GL_ONE,
+			funcDstAlpha = GL_ZERO
 		},
 		[1] = { enabled = false }
 	},
@@ -48,9 +47,9 @@ local geometry2DPassBase =
 {
 	layout = mesh2DLayout,
 	rasterizerState = {
-		fillMode = gl.GL_FILL,
-		cullMode = gl.GL_BACK,
-		frontFace = gl.GL_CCW
+		fillMode = GL_FILL,
+		cullMode = GL_BACK,
+		frontFace = GL_CCW
 	},
 	depthStencilState = {
 		depthTestEnable = true,
@@ -59,12 +58,12 @@ local geometry2DPassBase =
 	blendState = {
 		[0] = { 
 			enabled = true,
-			modeRGB = gl.GL_FUNC_ADD,
-			modeAlpha = gl.GL_FUNC_ADD,
-			funcSrcRGB = gl.GL_SRC_ALPHA,
-			funcDstRGB = gl.GL_ONE_MINUS_SRC_ALPHA,
-			funcSrcAlpha = gl.GL_ONE,
-			funcDstAlpha = gl.GL_ZERO
+			modeRGB = GL_FUNC_ADD,
+			modeAlpha = GL_FUNC_ADD,
+			funcSrcRGB = GL_SRC_ALPHA,
+			funcDstRGB = GL_ONE_MINUS_SRC_ALPHA,
+			funcSrcAlpha = GL_ONE,
+			funcDstAlpha = GL_ZERO
 		},
 		[1] = { enabled = false }
 	},
@@ -73,19 +72,19 @@ local geometry2DPassBase =
 local screenPassBase = {
 	layout = mesh2DLayout,
 	rasterizerState = {
-		fillMode = gl.GL_FILL,
-		cullMode = gl.GL_BACK,
-		frontFace = gl.GL_CCW
+		fillMode = GL_FILL,
+		cullMode = GL_BACK,
+		frontFace = GL_CCW
 	},
 	blendState = {
 		[0] = { 
 			enabled = true,
-			modeRGB = gl.GL_FUNC_ADD,
-			modeAlpha = gl.GL_FUNC_ADD,
-			funcSrcRGB = gl.GL_SRC_ALPHA,
-			funcDstRGB = gl.GL_ONE_MINUS_SRC_ALPHA,
-			funcSrcAlpha = gl.GL_ONE,
-			funcDstAlpha = gl.GL_ZERO
+			modeRGB = GL_FUNC_ADD,
+			modeAlpha = GL_FUNC_ADD,
+			funcSrcRGB = GL_SRC_ALPHA,
+			funcDstRGB = GL_ONE_MINUS_SRC_ALPHA,
+			funcSrcAlpha = GL_ONE,
+			funcDstAlpha = GL_ZERO
 		},
 		[1] = { enabled = false }
 	},	

@@ -1,5 +1,5 @@
 #pragma once
-#include <autograph/engine/Config.h>
+#include <autograph/Engine/Exports.h>
 
 namespace ag {
 // renders a debug GUI on the currently active ImGui context

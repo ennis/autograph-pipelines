@@ -1,5 +1,5 @@
 #pragma once
-#include <autograph/engine/Config.h>
+#include <autograph/Engine/Exports.h>
 #include <memory>
 #include <string>
 #include <typeindex>

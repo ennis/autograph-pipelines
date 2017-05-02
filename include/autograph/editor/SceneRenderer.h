@@ -1,6 +1,6 @@
 #pragma once
-#include <autograph/engine/All.h>
-#include <autograph/gl/All.h>
+#include <autograph/Engine/All.h>
+#include <autograph/Gfx/All.h>
 
 namespace ag {
 class SceneRenderer : public Extension {

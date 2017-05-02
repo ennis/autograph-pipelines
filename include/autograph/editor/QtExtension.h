@@ -1,5 +1,5 @@
 #pragma once
-#include <autograph/engine/Plugin.h>
+#include <autograph/Engine/Plugin.h>
 #include <QtWidgets>
 
 namespace ag

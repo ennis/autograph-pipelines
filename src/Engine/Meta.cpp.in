@@ -1,0 +1,389 @@
+/////////////////////////////////////////////////////////////////////
+// Automatically generated file: DO NOT EDIT
+{{=<% %>=}}
+<%#metaHeaders%>
+#include "<%.%>"
+<%/metaHeaders%>
+#include <exception>
+#include <typeindex>
+#include <cstdint>
+#include <cstddef>
+#include <string>
+#include <unordered_map>
+#include <autograph/Engine/Meta.h>
+
+namespace ag  
+{
+namespace meta 
+{
+// base templates
+template <typename T> struct RecordReflect;
+
+template <typename T> struct EnumReflect;
+
+// https://rmf.io/cxx11/overload-ranking/
+struct overload_otherwise {
+  overload_otherwise(...) {}
+};
+
+template <unsigned I> struct overload_choice : overload_choice<I + 1> {};
+// terminate recursive inheritence at a convenient point,
+// large enough to cover all cases
+template <> struct overload_choice<10> {};
+
+// "for clarity"
+struct select_overload : overload_choice<0> {};
+
+// candidates for serialization
+
+template <typename T>
+constexpr bool is_msgpack_packable_v =
+    std::is_fundamental<T>::value || std::is_same<T, std::string>::value || 
+    (std::is_array<T>::value && std::is_fundamental<std::remove_all_extents_t<T>>::value);
+
+//============================================
+// #1: msgpack primitive type
+//		=> overload selected by Expression SFINAE (p.pack)
+template <typename T, typename = std::enable_if_t<is_msgpack_packable_v<T>>>
+auto serialize_impl0(overload_choice<0>, packer &p, const T &v)
+    -> void {
+  p.pack(v);
+}
+
+//============================================
+// #2: static member serialize
+//		=> overload selected by Expression SFINAE (T::serialize)
+template <typename T>
+auto serialize_impl0(overload_choice<1>, packer &p, const T &v)
+    -> decltype(v.serialize(p), void()) {
+  T::serialize(p);
+}
+
+//============================================
+// #3: automatic serialization (structs)
+//		=> overload selected by Expression SFINAE
+//(RecordReflect<T>::serialize_impl)
+template <typename T>
+auto serialize_impl0(overload_choice<2>, packer &p, const T &v)
+    -> decltype(RecordReflect<T>::serialize(p, &v), void()) {
+  RecordReflect<T>::serialize(p, &v);
+}
+
+//============================================
+// #3: automatic serialization (enums)
+//		=> overload selected by Expression SFINAE
+//(EnumReflect<T>::serialize_impl)
+template <typename T>
+auto serialize_impl0(overload_choice<3>, packer &p, const T &v)
+    -> decltype(EnumReflect<T>::serialize(p, &v), void()) {
+  EnumReflect<T>::serialize(p, &v);
+}
+
+//============================================
+// #4: default
+//		=> output binary data?
+template <typename T>
+auto serialize_impl0(overload_otherwise, packer &p, const T &v) -> void {}
+
+// dispatcher
+template <typename T>
+void serialize_impl(packer& p, const T& v)
+{
+	serialize_impl0(select_overload{}, p, v);
+}
+
+/////////////////////////////////////////////////////////////////////
+// RECORD REFLECTION DATA
+
+<%#decls%>
+<%#isStruct%>
+///////////////////////////
+// struct <%qualName%>
+template <>
+struct RecordReflect<<%qualName%>> {
+	// attribute instances
+<%#attrs%>
+	static constexpr auto A_<%attrID%> = <%initializer%>;
+<%/attrs%>
+
+<%#fields%> 
+<%#isPublic%>
+<%#numAttrs%>
+	// attribute table for field <%name%>
+<%#attrs%>
+	static const decltype(<%initializer%>) A_<%name%>_<%attrID%>;
+<%/attrs%>
+	// attribute table for field <%name%>
+	static const std::array<Attribute, <%numAttrs%>> field_attributes_<%name%>;
+<%/numAttrs%>
+<%/isPublic%>
+<%/fields%>
+
+
+<%#numPublicFields%> 
+	static const std::array<Field, <%numPublicFields%>> field_data;
+<%/numPublicFields%>
+<%#numBases%> 
+	static const std::array<std::type_index, <%numBases%>> bases_data;
+<%/numBases%>
+<%#numAttrs%>
+	static const std::array<Attribute, <%numAttrs%>> attr_data;
+<%/numAttrs%>
+	static const Record metaobj;
+
+	// field access thunks
+	<%#fields%> 
+	<%#isPublic%>
+	static void* field_thunk_<%name%>(void* ptr) {
+		return &reinterpret_cast<<%classQualName%>*>(ptr)-><%name%>;
+	}
+	<%/isPublic%>
+	<%/fields%>
+
+	static void serialize(packer& p, const void* data);
+};
+
+<%#fields%> 
+<%#isPublic%>
+<%#numAttrs%>
+	// attribute table for field <%name%>
+<%#attrs%>
+	const decltype(<%initializer%>) RecordReflect<<%classQualName%>>::A_<%name%>_<%attrID%> = <%initializer%>;
+<%/attrs%>
+	// attribute table for field <%name%>
+	const std::array<Attribute, <%numAttrs%>> RecordReflect<<%classQualName%>>::field_attributes_<%name%> = {{
+<%#attrs%>
+	{ std::type_index{ typeid(decltype(A_<%name%>_<%attrID%>)) }, &RecordReflect<<%classQualName%>>::A_<%name%>_<%attrID%> },
+<%/attrs%>
+	}};
+<%/numAttrs%>
+<%/isPublic%>
+<%/fields%>
+
+<%#numPublicFields%> 
+const std::array<Field, <%numPublicFields%>> RecordReflect<<%qualName%>>::field_data  { {
+	<%#fields%> 
+	<%#isPublic%>
+	Field { "<%name%>", "<%qualName%>", std::type_index{typeid(<%qualType%>)}, offsetof(<%classQualName%>, <%name%>), &RecordReflect<<%classQualName%>>::field_thunk_<%name%>, 
+	<%#numAttrs%> RecordReflect<<%classQualName%>>::field_attributes_<%name%> <%/numAttrs%> <%^numAttrs%> {} <%/numAttrs%> }, 
+	<%/isPublic%>
+	<%/fields%>
+}};
+<%/numPublicFields%>
+
+<%#numBases%> 
+const std::array<std::type_index, <%numBases%>> RecordReflect<<%qualName%>>::bases_data { {
+	<%#bases%> 
+	std::type_index { typeid(<%baseClassName%>) } ,
+	<%/bases%>
+} };
+<%/numBases%>
+
+<%#numAttrs%>
+const std::array<Attribute, <%numAttrs%>> RecordReflect<<%qualName%>>::attr_data;
+<%/numAttrs%>
+
+const Record RecordReflect<<%qualName%>>::metaobj { "<%qualName%>", 
+	<%#numPublicFields%> RecordReflect<<%qualName%>>::field_data <%/numPublicFields%> <%^numPublicFields%> gsl::span<Field>{} <%/numPublicFields%>,
+	<%#numBases%> RecordReflect<<%qualName%>>::bases_data <%/numBases%> <%^numBases%> gsl::span<std::type_index>{} <%/numBases%>,
+	{},	// attribute table
+	&RecordReflect<<%qualName%>>::serialize,	// serialize
+	nullptr // deserialize
+	};
+
+template <>
+const Type* typeOf<<%qualName%>>() {
+return &RecordReflect<<%qualName%>>::metaobj;
+}
+
+<%/isStruct%>
+<%/decls%>
+
+
+/////////////////////////////////////////////////////////////////////
+// ENUM REFLECTION DATA
+
+///////////////////////////
+// helpers
+template <typename T>
+uint64_t getEnumValue(const void* data) { return *reinterpret_cast<const T*>(data); }
+template <typename T>
+void setEnumValue(void* data, uint64_t value) { *reinterpret_cast<T*>(data) = value; }
+
+template <typename T>
+struct EnumReflect;
+
+<%#decls%>
+<%#isEnum%>
+template<> struct EnumReflect<<%qualName%>> 
+{
+<%#enumerators%> 
+<%#numAttrs%>
+// attribute table for enumerator <%name%>
+<%#attrs%>
+static const decltype(<%initializer%>) A_<%name%>_<%attrID%>;
+<%/attrs%>
+// attribute table for enumerator <%name%>
+static const std::array<Attribute, <%numAttrs%>> enumerator_attributes_<%name%>;
+<%/numAttrs%>
+<%/enumerators%>
+
+<%#numEnumerators%> 
+	static const std::array<Enumerator, <%numEnumerators%>> enumerator_data;
+<%/numEnumerators%>	
+	static const Enum metaobj;
+	static void serialize(packer& p, const void* data) ;
+};
+
+
+<%#enumerators%> 
+<%#numAttrs%>
+// attribute table for enumerator <%name%>
+<%#attrs%>
+const decltype(<%initializer%>) EnumReflect<<%enumQualName%>>::A_<%name%>_<%attrID%> = <%initializer%>;
+<%/attrs%>
+const std::array<Attribute, <%numAttrs%>> EnumReflect<<%enumQualName%>>::enumerator_attributes_<%name%>  { {
+<%#attrs%>
+	{ std::type_index{ typeid(decltype(A_<%name%>_<%attrID%>)) }, &A_<%name%>_<%attrID%> },
+<%/attrs%>
+}};
+<%/numAttrs%>
+<%/enumerators%>
+
+<%#numEnumerators%> 
+const std::array<Enumerator, <%numEnumerators%>> EnumReflect<<%qualName%>>::enumerator_data  { {
+	<%#enumerators%> 
+	Enumerator { "<%name%>", static_cast<uint64_t>(<%qualName%>), 
+	<%#numAttrs%> EnumReflect<<%enumQualName%>>::enumerator_attributes_<%name%> <%/numAttrs%> <%^numAttrs%> {} <%/numAttrs%> }, 
+	<%/enumerators%>
+}};
+<%/numEnumerators%>
+
+
+const Enum EnumReflect<<%qualName%>>::metaobj { "<%qualName%>", 
+	<%#numEnumerators%> EnumReflect<<%qualName%>>::enumerator_data <%/numEnumerators%> <%^numEnumerators%> gsl::span<Enumerator>{} <%/numEnumerators%>,	// enumerators
+	&getEnumValue<std::underlying_type_t<<%qualName%>>>,	// get_value
+	&setEnumValue<std::underlying_type_t<<%qualName%>>>,	// set_value
+	{},	// attribute table
+	&EnumReflect<<%qualName%>>::serialize, // serialize
+	nullptr		//deserialize
+};
+
+///////////////////////////
+// enum <%qualName%>
+template <> const char* getEnumeratorName<<%qualName%>, void>(<%qualName%> value) {
+	switch (value) {
+	<%#enumerators%>
+	case <%qualName%>: return "<%name%>";
+	<%/enumerators%>
+	default: return "<invalid>";
+	}
+}
+
+// generated by meta<enum_type>::getEnumValue(const char* name)
+template <> <%qualName%> getEnumeratorValue<<%qualName%>, void>(const char* name) {
+	std::string namestr{name};
+	<%#enumerators%>
+	<%#isFirst%>
+	if (namestr == "<%name%>") { return <%qualName%>; }
+	<%/isFirst%>
+	<%^isFirst%>
+	else if (namestr == "<%name%>") { return <%qualName%>; }
+	<%/isFirst%>
+	<%/enumerators%>
+	std::terminate();
+}
+
+
+template <>
+const Type* typeOf<<%qualName%>>() {
+return &EnumReflect<<%qualName%>>::metaobj;
+}
+
+<%/isEnum%>
+<%/decls%>
+
+
+/////////////////////////////////////////////////////////////////////
+// SERIALIZATION
+
+<%#decls%>
+
+<%#isStruct%>
+void RecordReflect<<%qualName%>>::serialize(packer& p, const void* data) 
+{
+/*auto obj = reinterpret_cast<const <%classQualName%>*>(data);
+p.pack_map(<%numPublicFields%>);
+<%#fields%> 
+<%#isPublic%>
+p.pack("<%name%>");
+serialize_impl(p, obj-><%name%>);
+<%/isPublic%>
+<%/fields%>*/
+}
+<%/isStruct%>
+
+<%#isEnum%>
+void EnumReflect<<%qualName%>>::serialize(packer& p, const void* data) 
+{
+/*auto v = *reinterpret_cast<const <%qualName%>*>(data);
+p.pack(getEnumeratorName(v));*/
+}
+<%/isEnum%>
+
+<%/decls%>
+
+
+/////////////////////////////////////////////////////////////////////
+// TYPEINDEX MAP
+static std::unordered_map<std::type_index, const Type*> typeindex_to_metaobject;
+static bool typeindex_to_metaobject_initialized = false;
+
+const Type *typeOf(std::type_index ti)
+{
+	if (!typeindex_to_metaobject_initialized) {
+		using kv_pair = decltype(typeindex_to_metaobject)::value_type;
+		typeindex_to_metaobject.insert({
+			<%#decls%>
+			<%#isEnum%>
+			kv_pair{typeid(<%qualName%>), &EnumReflect<<%qualName%>>::metaobj},
+			<%/isEnum%>
+			<%/decls%>
+			<%#decls%>
+			<%#isStruct%>
+			kv_pair{typeid(<%qualName%>), &RecordReflect<<%qualName%>>::metaobj},
+			<%/isStruct%>
+			<%/decls%>
+		});
+		typeindex_to_metaobject_initialized = true;
+	}
+	auto it = typeindex_to_metaobject.find(ti);
+	if (it != typeindex_to_metaobject.end()) {
+		return it->second;
+	}
+	return nullptr;
+}
+
+
+<%#decls%>
+<%#isType%>
+/*template <> struct meta_attr<<%qualName%>> {
+	// attribute instances for <%qualName%>
+	<%#attrs%>
+	static constexpr <%qualType%> A_<%attrID%> = <%initializer%>;
+	<%/attrs%>
+	// attribute table
+	const std::array<meta_attr_entry, <%numAttrs%>>& table() {
+		static std::array<meta_attr_entry, <%numAttrs%>> data_ = { {
+		<%#attrs%>
+			{ std::type_index{typeid(<%qualType%>)}, &meta_attr<<%qualName%>>::A_<%attrID%> },
+			<%/attrs%>
+		} };
+		return data_;
+	}
+};*/
+<%/isType%>
+<%/decls%>
+
+}
+}

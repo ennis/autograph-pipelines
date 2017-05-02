@@ -1,6 +1,6 @@
 #pragma once
-#include <autograph/engine/Config.h>
-#include <autograph/support/Span.h>
+#include <autograph/Engine/Exports.h>
+#include <autograph/Core/Support/Span.h>
 #include <cstddef> // somehow needed for size_t
 #include <type_traits>
 #include <typeindex>

@@ -1,5 +1,5 @@
 #pragma once
-#include <autograph/engine/EntityManager.h>
+#include <autograph/Engine/EntityManager.h>
 
 namespace ag {
 struct AG_ENGINE_API Light {};

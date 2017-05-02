@@ -1,27 +1,105 @@
-# 
+# Macro to set the shared library flag for subprojects
+macro(OVERRIDE_BUILD_SHARED arg)
+set(BUILD_SHARED_LIBS ${arg} CACHE BOOL "..." FORCE)
+endmacro()
+
+#------------------------------------------
+# OpenGL
+find_package(OpenGL REQUIRED)
+add_library(OpenGL INTERFACE)
+target_include_directories(OpenGL INTERFACE ${OPENGL_INCLUDE_DIRS})
+target_link_libraries(OpenGL INTERFACE ${OPENGL_LIBRARIES})
+
+
+#------------------------------------------
+# Boost
+set(Boost_USE_STATIC_LIBS ON)
+find_package(Boost COMPONENTS thread filesystem system context REQUIRED)
+
+
+#--------------------------------------------------------------------
+# PkgConfig
 if (UNIX)
 find_package(PkgConfig REQUIRED)
 endif()
 
+
+#--------------------------------------------------------------------
 # zlib (required for skia)
 add_subdirectory(zlib)
 TARGET_INCLUDE_DIRECTORIES(zlibstatic INTERFACE zlib/)
 set_property(TARGET zlibstatic PROPERTY FOLDER "External")
 
+
+#--------------------------------------------------------------------
 # cppformat
+OVERRIDE_BUILD_SHARED(OFF)
 add_subdirectory(cppformat EXCLUDE_FROM_ALL)
 set_property(TARGET fmt PROPERTY FOLDER "External")
 
+
+#--------------------------------------------------------------------
+# glm
+add_library(glm INTERFACE)
+target_include_directories(glm INTERFACE glm)
+#target_link_libraries(glm INTERFACE glloadgen)
+
+
+#--------------------------------------------------------------------
+# variant 
+add_library(variant INTERFACE)
+target_include_directories(variant INTERFACE variant/include)
+
+
+#--------------------------------------------------------------------
+# json
+add_library(json INTERFACE)
+target_include_directories(json INTERFACE json/src)
+
+
+#--------------------------------------------------------------------
+# range-v3
+#ADD_LIBRARY(range_v3 INTERFACE) 
+#TARGET_INCLUDE_DIRECTORIES(range_v3 INTERFACE range-v3/include)
+
+
+#--------------------------------------------------------------------
+# hana
+add_library(hana INTERFACE)
+TARGET_INCLUDE_DIRECTORIES(hana INTERFACE hana/include)
+
+
+#--------------------------------------------------------------------
+# optional
+add_library(optional INTERFACE)
+TARGET_INCLUDE_DIRECTORIES(optional INTERFACE Optional)
+
+
+#--------------------------------------------------------------------
+# GSL
+add_library(gsl INTERFACE)
+TARGET_INCLUDE_DIRECTORIES(gsl INTERFACE GSL)
+
+
+#--------------------------------------------------------------------
+# stb
+add_library(stb INTERFACE)
+target_include_directories(stb INTERFACE stb)
+
+
+#--------------------------------------------------------------------
 # mcpp
-add_subdirectory(mcpp EXCLUDE_FROM_ALL)
-target_include_directories(mcpp INTERFACE mcpp/)
-set_property(TARGET mcpp PROPERTY FOLDER "External")
+#add_subdirectory(mcpp EXCLUDE_FROM_ALL)
+#target_include_directories(mcpp INTERFACE mcpp/)
+#set_property(TARGET mcpp PROPERTY FOLDER "External")
 
 # bustache
 #add_subdirectory(bustache EXCLUDE_FROM_ALL)
 
+
+#--------------------------------------------------------------------
 # assimp
-option(BUILD_SHARED_LIBS "..." OFF)
+OVERRIDE_BUILD_SHARED(ON)
 option(ASSIMP_NO_EXPORT "..." ON)
 option(ASSIMP_BUILD_ASSIMP_TOOLS "..." OFF)
 option(ASSIMP_BUILD_SAMPLES "..." OFF)
@@ -73,12 +151,10 @@ add_subdirectory(assimp EXCLUDE_FROM_ALL)
 target_include_directories(assimp INTERFACE assimp/include)
 set_property(TARGET assimp PROPERTY FOLDER "External")
 
-# stb
-add_library(stb INTERFACE)
-target_include_directories(stb INTERFACE stb)
 
+#--------------------------------------------------------------------
 # GLFW 
-option(BUILD_SHARED_LIBS "..." OFF)
+OVERRIDE_BUILD_SHARED(ON)
 option(GLFW_BUILD_EXAMPLES "..." OFF)
 option(GLFW_BUILD_TESTS "..." OFF)
 option(GLFW_BUILD_DOCS "..." OFF)
@@ -86,28 +162,15 @@ option(GLFW_INSTALL "..." OFF)
 option(GLFW_DOCUMENT_INTERNALS "..." OFF)
 add_subdirectory(glfw EXCLUDE_FROM_ALL)
 target_include_directories(glfw INTERFACE glfw/include)
+set_property(TARGET glfw PROPERTY FOLDER "External")
 
-# imgui (with addons)
-#file(GLOB IMGUI_SOURCES imgui/*.cpp imgui_glfw3/*.cpp)
-#add_library(imgui STATIC ${IMGUI_SOURCES})
-#target_include_directories(imgui PUBLIC imgui imgui_glfw3)
-#target_link_libraries(imgui PRIVATE glloadgen glfw glm stb)
 
-# glm
-add_library(glm INTERFACE)
-target_include_directories(glm INTERFACE glm)
-#target_link_libraries(glm INTERFACE glloadgen)
-
-# glloadgen
-add_subdirectory(glloadgen EXCLUDE_FROM_ALL)
-
-############################################
+#--------------------------------------------------------------------
 # OpenEXR
-
+OVERRIDE_BUILD_SHARED(OFF)
 if (UNIX)
 pkg_check_modules(OpenEXR OpenEXR)
 endif()
-
 if (OpenEXR_FOUND) 
 	# Use system package
 	message("Using OpenEXR from system package")
@@ -128,11 +191,8 @@ elseif (IS_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/openexr_bin AND WIN32)
 else()
 	# Compile from source
 	message("Compiling OpenEXR from source")
-	#set(ILMBASE_INSTALL ${CMAKE_CURRENT_BINARY_DIR})/ilmbase-install)
-	#execute_process(${CMAKE_COMMAND} -DCMAKE_INSTALL_PREFIX=${ILMBASE_INSTALL} -G "${CMAKE_GENERATOR}"
-		#WORKING_DIRECTORY )
-	#set(ILMBASE_PACKAGE_PREFIX )
 	# hack to find half.h and friends
+	OVERRIDE_BUILD_SHARED(ON)
 	option(BUILD_SHARED_LIBS    "..." OFF)
 	option(USE_ZLIB_WINAPI      "..." OFF)
 	option(NAMESPACE_VERSIONING "..." OFF)
@@ -147,7 +207,8 @@ else()
 	#set_property(TARGET OpenEXR PROPERTY FOLDER "External/OpenEXR")
 endif()
 
-# OpenImageIO
+#--------------------------------------------------------------------
+# OpenImageIO 
 #[[option (EMBEDPLUGINS "Embed format plugins in libOpenImageIO" ON)
 option (OIIO_BUILD_TOOLS "Build the command-line tools" ON)
 option (OIIO_BUILD_TESTS "Build the unit tests" OFF)
@@ -157,35 +218,12 @@ option (USE_PYTHON "Build the Python bindings" OFF)
 set(BUILDSTATIC TRUE)
 add_subdirectory(oiio)]]
 
+#--------------------------------------------------------------------
 # nanovg
 #file(GLOB NANOVG_SOURCES nanovg/src/*.c)
 #add_library(nanovg EXCLUDE_FROM_ALL STATIC ${NANOVG_SOURCES})
 #target_include_directories(nanovg INTERFACE nanovg/src)
 #target_link_libraries(nanovg PUBLIC stb)
-
-# variant 
-add_library(variant INTERFACE)
-target_include_directories(variant INTERFACE variant/include)
-
-# json
-add_library(json INTERFACE)
-target_include_directories(json INTERFACE json/src)
-
-# range-v3
-#ADD_LIBRARY(range_v3 INTERFACE) 
-#TARGET_INCLUDE_DIRECTORIES(range_v3 INTERFACE range-v3/include)
-
-# hana
-add_library(hana INTERFACE)
-TARGET_INCLUDE_DIRECTORIES(hana INTERFACE hana/include)
-
-# optional
-add_library(optional INTERFACE)
-TARGET_INCLUDE_DIRECTORIES(optional INTERFACE Optional)
-
-# GSL
-add_library(gsl INTERFACE)
-TARGET_INCLUDE_DIRECTORIES(gsl INTERFACE GSL)
 
 # msgpack
 #add_library(msgpack INTERFACE)
@@ -199,6 +237,7 @@ TARGET_INCLUDE_DIRECTORIES(gsl INTERFACE GSL)
 #target_include_directories(mono INTERFACE ${MONO_INCLUDE_DIR})
 #target_link_libraries(mono INTERFACE ${MONO_LIBRARY})
 
+#--------------------------------------------------------------------
 # luajit-bin
 add_library(luajit_bin INTERFACE)
 find_package(LuaJIT)
@@ -263,11 +302,13 @@ endif()
 #endif()
 #endif()
 
+#--------------------------------------------------------------------
 #sol2
 add_library(sol2 INTERFACE)
 target_include_directories(sol2 INTERFACE sol2)
 target_link_libraries(sol2 INTERFACE luajit_bin optional)
 
+#--------------------------------------------------------------------
 # nativefiledialog
 set(NFD_SOURCES_COMMON nativefiledialog/src/nfd_common.c)
 if (WIN32)

@@ -1,9 +1,10 @@
-#include "SceneEditor.Config.h"
-#include <autograph/editor/SceneEditor.h>
-#include <autograph/engine/All.h>
-#include <autograph/gl/All.h>
-#include <autograph/support/FileDialog.h>
-#include <autograph/support/ProjectRoot.h>
+#include <SceneEditor/Exports.h>
+#include <autograph/Editor/SceneEditor.h>
+#include <autograph/Engine/All.h>
+#include <autograph/Gfx/All.h>
+#include <autograph/Core/Transform.h>
+#include <autograph/Core/Support/FileDialog.h>
+#include <autograph/Core/Support/ProjectRoot.h>
 #include <cmath>
 #include <glm/gtc/matrix_transform.hpp>
 
@@ -679,10 +680,10 @@ public:
       ImGui::EndChild();
 
       if (selected->mesh) {
-        RenderUtils::drawWireMesh(getDefaultFramebuffer(), camera,
+        RenderUtils::drawWireMesh(getGfxContext().getDefaultFramebuffer(), camera,
                                   *selected->mesh, selected->worldTransform);
       }
-      RenderUtils::drawBoundingBox(getDefaultFramebuffer(), camera,
+      RenderUtils::drawBoundingBox(getGfxContext().getDefaultFramebuffer(), camera,
                                    selected->getApproximateWorldBounds());
     }
 
@@ -695,6 +696,6 @@ public:
 };
 } // namespace ag
 
-PLUGIN_ENTRY {
+SceneEditor_PLUGIN_ENTRY {
   ag::registerClass<ag::DefaultSceneEditor, ag::SceneEditor>("SceneEditor");
 }

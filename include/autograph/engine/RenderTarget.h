@@ -1,9 +1,9 @@
 #pragma once
-#include <autograph/engine/Config.h>
-#include <autograph/gl/Framebuffer.h>
-#include <autograph/gl/Texture.h>
-#include <autograph/support/SmallVector.h>
-#include <autograph/support/Variant.h>
+#include <autograph/Engine/Exports.h>
+#include <autograph/Gfx/Framebuffer.h>
+#include <autograph/Gfx/Texture.h>
+#include <autograph/Core/Support/SmallVector.h>
+#include <autograph/Core/Support/Variant.h>
 
 namespace ag {
 class AG_ENGINE_API RenderTarget {

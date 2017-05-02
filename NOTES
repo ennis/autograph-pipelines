@@ -2447,18 +2447,26 @@ GL:
 - library: autograph_gl.dll
 
 ApplicationGLFW:
-- headers: <autograph/application/GLFW.h>
+- headers: <autograph/window/GLFW.h>
 - namespace: ag
-- library: autograph_app_glfw.dll
+- library: (static, depends on GLFW.dll) 
 
 ApplicationQt:
-- headers: <autograph/application/Qt.h>
+- headers: <autograph/window/Qt.h>
 - namespace: ag
-- library: autograph_app_qt.dll
-
+- library: (static, depends on Qt DLLs)
 
 Support: 
 - headers: 
+
+Merge autograph_core, autograph_gl, autograph_support to autograph_engine
+Benefits:
+	- single Config.h
+	- single DLL to link against
+
+ag::gfx	  // low-level graphics (autograph_gfx.dll)
+ag::prof  // profiling
+ag::gl    // OpenGL api 
 
 _______________________________________________
 
@@ -2500,7 +2508,6 @@ autograph_window_qt
 autograph_window_glfw
 autograph_window_headless?
 
-
 _______________________________________________
 
 Move control point:
@@ -2533,11 +2540,55 @@ _______________________________________________
 
 Next up:
 - Finish separation between game loop and window management
+	- Rewrite imgui GLFW3 backend 
+	- Stuff in gl module could benefit from the profiling/frame capture module of the framework
+		module engine -> prof, gfx, debug
+		module gfx -> prof, debug
+
 - Displacement mapping
 	- Support for tesselation shaders
 		- Shader reform / simplification?
 		 	Goal: no need to edit two (.lua/.glsl) files?
+		 	NO: evolve the current system
+		 		- remove gl. prefix
+		 		- implicit import of shader/utils
+		 		- use a better preprocessor?
 		 	Embed lua in GLSL, or the contrary?
 		 	Caching
+		 	Move in Gfx module
 - Resource caching system v2
-- 
+	class Cache
+	class CacheEntry
+
+
+- Should we actually control the pipeline state through files?
+	- Proposal: higher level shader (graphs, etc.)
+	- Some operations are code-driven
+		- Setting formats for a blur compute shader
+		- Enabling variant flags
+		=> A shader file cannot know in advance all of the shader variants
+	- Some would benefit from being data-driven
+		e.g.
+			- Setting the samplers in the shader file
+	- Input layout?
+		- In code VS in shader?
+
+- Pipeline template:
+	- Lua file, contains pipeline state, can be overriden
+	- essentially, a flexible set of render states, some states can be undefined
+	- Used to initialize pipeline variants
+	- what to do on reload?
+
+- One file per template
+
+- Pipeline variant
+	- Load from file (with state mask?)
+		- VertexShader, FragmentShader, GeometryShader, TCS, TES, Samplers, blend state, rasterizer state
+		- variable degree of flexibility
+	- Set flags (e.g. BLUR_FORMAT=..., BLUR_H, BLUR_V)
+	- Compile 
+		- hash parameters
+		- look into cache for existing shader
+	- On template reload:
+		- Issue: modifications may have been made to the base template
+		=> reload according to state mask 

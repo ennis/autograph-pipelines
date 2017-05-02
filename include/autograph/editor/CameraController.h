@@ -1,9 +1,9 @@
 #pragma once
-#include <autograph/engine/Config.h>
-#include <autograph/engine/Plugin.h>
-#include <autograph/engine/SceneObject.h>
-#include <autograph/Camera.h>
-#include <autograph/AABB.h>
+#include <autograph/Engine/Exports.h>
+#include <autograph/Engine/Plugin.h>
+#include <autograph/Engine/SceneObject.h>
+#include <autograph/Core/Camera.h>
+#include <autograph/Core/AABB.h>
 #include <glm/gtx/rotate_vector.hpp>
 
 namespace ag {

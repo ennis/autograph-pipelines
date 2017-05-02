@@ -1,8 +1,9 @@
 #pragma once
-#include <autograph/Transform.h>
-#include <autograph/AABB.h>
-#include <autograph/engine/EntityManager.h>
-#include <autograph/engine/Mesh.h>
+#include <autograph/Engine/Exports.h>
+#include <autograph/Core/Transform.h>
+#include <autograph/Core/AABB.h>
+#include <autograph/Engine/EntityManager.h>
+#include <autograph/Engine/Mesh.h>
 #include <unordered_map>
 #include <string>
 #include <vector>

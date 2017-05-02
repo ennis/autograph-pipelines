@@ -5,7 +5,7 @@
 //-----------------------------------------------------------------------------
 
 #pragma once
-#include <autograph/engine/Config.h>
+#include <autograph/Engine/Exports.h>
 
 //---- Define assertion handler. Defaults to calling assert().
 #ifdef _WIN32

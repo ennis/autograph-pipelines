@@ -1,18 +1,20 @@
 #pragma once
-#include <autograph/engine/Application.h>
-#include <autograph/engine/ScriptContext.h>
-#include <autograph/gl/Bind.h>
-#include <autograph/gl/Buffer.h>
-#include <autograph/gl/Framebuffer.h>
-#include <autograph/gl/Program.h>
-#include <autograph/gl/Sampler.h>
-#include <autograph/gl/StateGroup.h>
-#include <autograph/gl/Texture.h>
-#include <autograph/gl/VertexArray.h>
-#include <autograph/support/Optional.h>
-#include <autograph/support/SmallVector.h>
-#include <autograph/support/Span.h>
-#include <autograph/support/Variant.h>
+#include <autograph/Engine/Application.h>
+#include <autograph/Engine/ScriptContext.h>
+#include <autograph/Engine/ResourcePool.h>
+#include <autograph/Gfx/Bind.h>
+#include <autograph/Gfx/Buffer.h>
+#include <autograph/Gfx/Framebuffer.h>
+#include <autograph/Gfx/Program.h>
+#include <autograph/Gfx/Sampler.h>
+#include <autograph/Gfx/StateGroup.h>
+#include <autograph/Gfx/Texture.h>
+#include <autograph/Gfx/VertexArray.h>
+#include <autograph/Core/Support/Optional.h>
+#include <autograph/Core/Support/SmallVector.h>
+#include <autograph/Core/Support/Span.h>
+#include <autograph/Core/Support/Variant.h>
+#include <autograph/Core/Support/Flags.h>
 #include <memory>
 #include <vector>
 
@@ -106,4 +108,78 @@ public:
 protected:
   std::shared_ptr<PipelineState> cached;
 };
+
+struct CachedPipeline : public CacheObject
+{
+	uint64_t hash{ 0 };
+	// Path of the shader file, if it was loaded from a file
+	std::string origShaderPath;
+	ShaderType shaderType{ ShaderType::Draw };
+	bool shouldRecompile{ true };
+	bool compileOk{ false };
+	std::string vertexShaderSource;
+	std::string fragmentShaderSource;
+	std::string geometryShaderSource;
+	std::string tessControlShaderSource;
+	std::string tessEvalShaderSource;
+	std::string computeShaderSource;
+	ProgramObject programObject;
+	VertexArray vertexArrayObject;
+	DrawStates drawStates;
+	gl::GLbitfield computeBarrierBits{ 0 };
+	int computeGroupSizeX{ 0 };
+	int computeGroupSizeY{ 0 };
+	int computeGroupSizeZ{ 0 };
+	/*void loadFromShaderFile(const char *shaderId, sol::table table);
+	void loadFromTable(sol::table config);
+	void compile();*/
+};
+
+enum class PipelineStateMask
+{
+	VertexShader = (1 << 0),
+	FragmentShader = (1 << 1),
+	GeometryShader = (1 << 2),
+	TessControlShader = (1 << 3),
+	TessEvalShader = (1 << 4),
+	Samplers = (1 << 5),
+	Viewports = (1 << 6),
+	BlendStates = (1 << 7),
+	ComputeShader = (1 << 8),
+	RasterizerState = (1 << 9),
+	DepthStencilState = (1 << 10),
+	InputLayout = (1 << 11),
+	All = 0xFFFF
+};
+ENUM_BIT_FLAGS_OPERATORS(PipelineStateMask)
+
+class AG_ENGINE_API Pipeline
+{
+public:
+	// Create an empty pipeline of the specified type
+	Pipeline(PipelineType type = PipelineType::Draw);
+	// Load from source
+	Pipeline(const char* templateSource, PipelineStateMask stateMask = PipelineStateMask::All);
+	// Load a pipeline
+	Pipeline(Cache& cache, const char* templatePath, PipelineStateMask stateMask = PipelineStateMask::All);
+	// Destructor
+	~Pipeline();
+
+	// set individual shader sources
+	void setVertexShader(std::string vs);
+	void setFragmentShader(std::string fs);
+	void setGeometryShader(std::string cs);
+	void setTessControlShader(std::string tcs);
+	void setTessEvalShader(std::string tes);
+	// ignored if PipelineType != draw
+	void setComputeShader(std::string cs);
+
+	// Bind to a state group
+	void operator()(StateGroup &stateGroup);
+
+private: 
+	std::shared_ptr<PipelineCacheObject> cached_;
+};
+
+
 } // namespace ag

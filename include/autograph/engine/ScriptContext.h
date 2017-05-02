@@ -1,5 +1,5 @@
 #pragma once
-#include <autograph/engine/Config.h>
+#include <autograph/Engine/Exports.h>
 #include <sol/state.hpp>
 
 namespace ag {

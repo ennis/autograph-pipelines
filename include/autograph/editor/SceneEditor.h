@@ -1,7 +1,7 @@
 #pragma once
-#include <autograph/engine/Config.h>
-#include <autograph/engine/Plugin.h>
-#include <autograph/engine/EntityManager.h>
+#include <autograph/Engine/Exports.h>
+#include <autograph/Engine/Plugin.h>
+#include <autograph/Engine/EntityManager.h>
 
 namespace ag {
 	class Scene;

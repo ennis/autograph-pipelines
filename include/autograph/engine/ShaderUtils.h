@@ -1,7 +1,7 @@
 #pragma once
 // TODO maybe rename this to 'ShaderCommon.h' or something more explicit
-#include <autograph/Camera.h>
-#include <autograph/Rect.h>
+#include <autograph/Core/Camera.h>
+#include <autograph/Core/Rect.h>
 
 namespace ag {
 struct CameraPerObjectUniforms {
