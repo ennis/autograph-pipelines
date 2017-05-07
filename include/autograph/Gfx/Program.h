@@ -64,7 +64,7 @@ public:
   bool getLinkStatus();
   std::string getLinkLog();
   void operator()(StateGroup &stateGroup) {
-    stateGroup.drawStates.program = obj_.get();
+    stateGroup.program = obj_.get();
   }
 
   /**

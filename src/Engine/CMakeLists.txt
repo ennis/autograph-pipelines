@@ -3,6 +3,8 @@ file(GLOB LIB_SOURCES *.cpp)
 file(GLOB LIB_HEADERS *.hpp)
 file(GLOB IMGUI_SOURCES imgui/*.cpp)
 
+find_package(Boost REQUIRED COMPONENTS wave)
+
 autograph_add_module(
 	SHARED 
 	NAME autographEngine
@@ -26,6 +28,7 @@ target_link_libraries(
 		variant
 		optional
 		glm 
+		mcpp
 		OpenEXR
 		$<$<PLATFORM_ID:Linux>:${CMAKE_DL_LIBS}>
 	)

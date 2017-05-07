@@ -83,9 +83,9 @@ public:
   Framebuffer &getFramebuffer() { return fbo; }
 
   void reloadShaders() {
-    geometryPassShader = Shader{"shaders/default:geometryPass"};
-    deferredPassShader = Shader{"shaders/default:deferredPass"};
-    TAAAverageShader = Shader{"shaders/default:TAAAverage"};
+    geometryPassShader = GPUPipeline{ GPUPipelineType::Graphics, "shaders/default.lua$geometryPass"};
+    deferredPassShader = GPUPipeline{ GPUPipelineType::Graphics, "shaders/default.lua$deferredPass"};
+    TAAAverageShader = GPUPipeline{ GPUPipelineType::Compute, "shaders/default.lua$TAA_Average"};
   }
 
   void renderScene(Framebuffer &target, SceneObjectComponents &sceneObjects,
@@ -226,9 +226,9 @@ private:
   int TAACurrentSample = 0;
   Framebuffer fbo;
   Framebuffer deferredTargetFbo;
-  Shader geometryPassShader;
-  Shader deferredPassShader;
-  Shader TAAAverageShader;
+  GPUPipeline geometryPassShader;
+  GPUPipeline deferredPassShader;
+  GPUPipeline TAAAverageShader;
 
   struct ObjectRenderData {
     mat4 prevModelMat;

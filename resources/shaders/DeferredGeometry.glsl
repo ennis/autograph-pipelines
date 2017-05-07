@@ -1,6 +1,8 @@
 #version 450
 #include "Utils.glsli"
 
+#pragma stages(vertex,fragment)
+
 layout(std140, binding = 0) uniform CameraParameters {
   mat4 uViewMatrix;
   mat4 uProjMatrix;
@@ -12,7 +14,7 @@ layout(std140, binding = 0) uniform CameraParameters {
 
 uniform int uObjectID;
 
-## if _VERTEX_ then
+#ifdef _VERTEX_
 
 	uniform mat4 uPrevModelMatrix;
 	uniform mat4 uModelMatrix;
@@ -42,8 +44,9 @@ uniform int uObjectID;
 	  prevPos = uPrevViewProjMatrixVelocity * uPrevModelMatrix * vec4(iPosition, 1.0f);
 	  curPos = uViewProjMatrixVelocity * uModelMatrix * vec4(iPosition, 1.0f);
 	}
+#endif
 
-## elseif _FRAGMENT_ then
+#ifdef _FRAGMENT_
 
 	in vec3 Nv0;
 	//in vec3 Pv;
@@ -75,5 +78,5 @@ uniform int uObjectID;
       rtVelocity = vec4(0.5*vel,0,1);
 	}
 
-## end
+#endif
 

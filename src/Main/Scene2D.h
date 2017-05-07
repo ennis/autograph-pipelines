@@ -48,7 +48,7 @@ private:
   Mesh2DTex tileGrid_;
   int gridWidthTiles_{0};  // in tiles
   int gridHeightTiles_{0}; // in tiles
-  Shader tileMapShader_;
+  GPUPipeline tileMapShader_;
   Sampler sampler_;
 };
 }

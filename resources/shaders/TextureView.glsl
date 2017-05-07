@@ -1,8 +1,9 @@
 #version 450
 #include "Utils.glsli"
 #include "Blend.glsli"
+#pragma stages(vertex,fragment)
 
-## if _VERTEX_ then
+#ifdef _VERTEX_
 
 layout(location = 0) in vec2 pos;
 layout(location = 1) in vec2 texcoord;
@@ -11,8 +12,9 @@ void main() {
   gl_Position = vec4(pos, 0.0, 1.0);
   fTexcoord = texcoord;
 }
+#endif
 
-## elseif _FRAGMENT_ then
+#ifdef _FRAGMENT_
 
 layout(binding = 0) uniform sampler2D tex;
 layout(location = 0) out vec4 color;
@@ -37,4 +39,4 @@ void main() {
   	mix(vec4(0.5,0.5,0.5,1.0), vec4(0.8,0.8,0.8,1.0), checker(uv, res.x/20.0f)));
 }
 
-## end
+#endif

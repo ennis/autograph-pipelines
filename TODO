@@ -77,6 +77,7 @@ Minimal system:
  ☐ Essential plugins that are rebuilt on each reload
  ☐ Camera: mute Gizmo when moving camera @scene_editor
  ☐ Be able to integrate a viewport into a QOpenGLWidget
+ ☐ Consider using std::string_view pervasively
 
 General:
  ✔ Implement cameras @high @minimal_subset @done (16-12-24 14:12)
@@ -116,7 +117,7 @@ Editor:
  ☐ Interface: ImageView (TextureView)
  ☐ Integrate all scene editor functionality into one editor view
 
-Autograph:
+Autograph/Gfx:
  ✔ Binders @done (16-12-18 20:52)
  ✔ Named uniforms @done (17-01-21 17:00)
  ☐ Implementation limits
@@ -212,7 +213,7 @@ Editor/painter:
  ☐ Qt GUI: UI builder @low
  ☐ Rendering pipeline from Lua
 
-Engine:
+Autograph/Engine:
  ✔ Basic renderer: take a scene and draw the visuals @done (17-01-15 12:25)
  ✔ Basic deferred shading @done (17-01-15 12:25)
  ☐ Transparent pass

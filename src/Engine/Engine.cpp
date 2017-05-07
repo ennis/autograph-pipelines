@@ -57,12 +57,12 @@ bool Engine::processEventHooks(const Event &ev, Window *w) {
       AG_DEBUG("Profiler {}", enableProfiler_ ? "ON" : "OFF");
 	  return false;
     }
-    if (mods == (KEY_MOD_CONTROL) && key == KEY_F5 &&
+    /*if (mods == (KEY_MOD_CONTROL) && key == KEY_F5 &&
         action == KeyAction::Press) {
       // reload all shaders
       getPipelineStateCache().reloadAll();
 	  return false;
-    }
+    }*/
   }
   return true;
 }

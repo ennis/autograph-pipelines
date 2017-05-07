@@ -13,9 +13,7 @@ target_link_libraries(OpenGL INTERFACE ${OPENGL_LIBRARIES})
 
 #------------------------------------------
 # Boost
-set(Boost_USE_STATIC_LIBS ON)
-find_package(Boost COMPONENTS thread filesystem system context REQUIRED)
-
+#find_package(Boost REQUIRED COMPONENTS thread filesystem system context wave)
 
 #--------------------------------------------------------------------
 # PkgConfig
@@ -89,9 +87,9 @@ target_include_directories(stb INTERFACE stb)
 
 #--------------------------------------------------------------------
 # mcpp
-#add_subdirectory(mcpp EXCLUDE_FROM_ALL)
-#target_include_directories(mcpp INTERFACE mcpp/)
-#set_property(TARGET mcpp PROPERTY FOLDER "External")
+add_subdirectory(mcpp EXCLUDE_FROM_ALL)
+target_include_directories(mcpp INTERFACE mcpp/)
+set_property(TARGET mcpp PROPERTY FOLDER "External")
 
 # bustache
 #add_subdirectory(bustache EXCLUDE_FROM_ALL)

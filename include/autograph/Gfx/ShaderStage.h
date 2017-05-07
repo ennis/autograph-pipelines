@@ -1,5 +1,5 @@
 #pragma once
-#include <autograph/Core/Support/Utils.h>
+#include <autograph/Core/Support/Flags.h>
 
 namespace ag {
 enum class ShaderStage {
@@ -11,4 +11,4 @@ enum class ShaderStage {
   Compute = 1 << 5
 };
 ENUM_BIT_FLAGS_OPERATORS(ShaderStage)
-}
+} // namespace ag

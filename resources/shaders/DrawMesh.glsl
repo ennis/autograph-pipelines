@@ -1,7 +1,7 @@
 #version 450
 #include "MeshShader.glsli"
 
-## if _VERTEX_ then
+#ifdef _VERTEX_
 
 out vec3 Nv0;
 out vec3 Pv;
@@ -12,8 +12,9 @@ void main() {
   Nv0 = (uViewMatrix * uModelMatrix * vec4(iNormal, 0.0)).xyz;
   Pv = (uViewMatrix * uModelMatrix * vec4(iPosition, 1.0)).xyz;
 }
+#endif
 
-## elseif _FRAGMENT_ then
+#ifdef _FRAGMENT_
 
 in vec3 Nv0;
 in vec3 Pv;
@@ -28,5 +29,5 @@ void main() {
   color = vec4(uColor.rgb*dot(Nv,V), uColor.a);
 }
 
-## end
+#endif
 

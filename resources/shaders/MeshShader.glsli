@@ -1,5 +1,7 @@
 
-## if _VERTEX_ then 
+#pragma stages(vertex,fragment)
+
+#ifdef _VERTEX_ 
 layout(std140, binding = 0) uniform CameraParameters {
   mat4 uViewMatrix;
   mat4 uProjMatrix;
@@ -14,4 +16,4 @@ layout(location = 1) in vec3 iNormal;
 layout(location = 2) in vec3 iTangent;
 layout(location = 3) in vec2 iTexcoords;
 
-## end
+#endif

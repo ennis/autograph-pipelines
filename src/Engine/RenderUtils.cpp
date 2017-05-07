@@ -24,20 +24,20 @@ struct RenderUtilsState {
   }
 
   void reloadShaders() {
-    drawSpriteShader = Shader{"shaders/default:drawSprite"};
-    drawMeshShader = Shader{"shaders/default:drawMeshDefault"};
-    drawWireMeshShader = Shader{"shaders/default:drawWireMesh"};
-    drawWireMeshNoDepthShader = Shader{"shaders/default:drawWireMeshNoDepth"};
-    drawWireMesh2DColorShader = Shader{"shaders/default:drawWireMesh2DColor"};
+    drawSpriteShader = GPUPipeline{ GPUPipelineType::Graphics, "shaders/default.lua$drawSprite"};
+    drawMeshShader = GPUPipeline{ GPUPipelineType::Graphics, "shaders/default.lua$drawMeshDefault"};
+    drawWireMeshShader = GPUPipeline{ GPUPipelineType::Graphics, "shaders/default.lua$drawWireMesh"};
+    drawWireMeshNoDepthShader = GPUPipeline{ GPUPipelineType::Graphics, "shaders/default.lua$drawWireMeshNoDepth"};
+    drawWireMesh2DColorShader = GPUPipeline{ GPUPipelineType::Graphics, "shaders/default.lua$drawWireMesh2DColor"};
   }
 
   Sampler samplerNearest;
   Sampler samplerLinear;
-  Shader drawSpriteShader;
-  Shader drawMeshShader;
-  Shader drawWireMeshShader;
-  Shader drawWireMeshNoDepthShader;
-  Shader drawWireMesh2DColorShader;
+  GPUPipeline drawSpriteShader;
+  GPUPipeline drawMeshShader;
+  GPUPipeline drawWireMeshShader;
+  GPUPipeline drawWireMeshNoDepthShader;
+  GPUPipeline drawWireMesh2DColorShader;
 };
 
 static RenderUtilsState &getRenderUtilsState() {

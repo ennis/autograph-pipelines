@@ -2,9 +2,7 @@
 #include <array>
 #include <autograph/Config.h>
 #include <autograph/Gfx/Buffer.h>
-//#include <autograph/Core/Support/Optional.h>
-//#include <autograph/Core/Support/SmallVector.h>
-#include <autograph/Core/Support/Utils.h>
+#include <autograph/Core/Support/Flags.h>
 #include <autograph/Gfx/gl_core_4_5.h>
 
 namespace ag {
@@ -37,7 +35,7 @@ static constexpr StateGroupMask StateGroupMask_AllCompute =
     StateGroupMask::UniformBuffers | StateGroupMask::ShaderStorageBuffers;
 
 //////////////////////////////////////////////////
-struct AG_GFX_API BlendState {
+struct BlendState {
   constexpr BlendState() = default;
   /*constexpr BlendState(bool enabled_, gl::GLenum modeRGB_, gl::GLenum modeAlpha_,
           gl::GLenum funcSrcRGB_, gl::GLenum funcDstRGB_,
@@ -60,7 +58,7 @@ struct AG_GFX_API BlendState {
   }
 };
 
-struct AG_GFX_API DepthStencilState {
+struct DepthStencilState {
   constexpr DepthStencilState() = default;
   /*constexpr DepthStencilState(bool depthTestEnable_, bool depthWriteEnable_,
           bool stencilEnable_, gl::GLenum stencilFace_,
@@ -88,7 +86,7 @@ struct AG_GFX_API DepthStencilState {
   gl::GLenum stencilOpDPPass = 0;
 };
 
-struct AG_GFX_API RasterizerState {
+struct RasterizerState {
   constexpr RasterizerState() = default;
   constexpr RasterizerState(gl::GLenum fillMode_) : fillMode{fillMode_} {}
   gl::GLenum fillMode = gl::FILL;
@@ -100,14 +98,14 @@ struct AG_GFX_API RasterizerState {
   bool scissorEnable = false;
 };
 
-struct AG_GFX_API ScissorRect {
+struct ScissorRect {
   int x;
   int y;
   int w;
   int h;
 };
 
-struct AG_GFX_API Viewport {
+struct Viewport {
   float x;
   float y;
   float w;
@@ -120,7 +118,7 @@ static constexpr int kMaxVertexBufferSlots = 8;
 static constexpr int kMaxUniformBufferSlots = 8;
 static constexpr int kMaxShaderStorageBufferSlots = 8;
 
-struct AG_GFX_API Uniforms {
+struct Uniforms {
   std::array<gl::GLuint, kMaxTextureUnits> textures{{0}};
   std::array<gl::GLuint, kMaxTextureUnits> samplers{{0}};
   std::array<gl::GLuint, kMaxImageUnits> images{{0}};
@@ -139,19 +137,18 @@ struct AG_GFX_API Uniforms {
   gl::GLenum indexBufferType{0};
 };
 
-struct AG_GFX_API DrawStates {
+//struct DrawStates {
+//};
+
+struct StateGroup {
+  StateGroupMask mask;
   DepthStencilState depthStencilState;
   RasterizerState rasterizerState;
-  std::array<ScissorRect, 8> scissorRects{{0}};
-  std::array<Viewport, 8> viewports{{0}};
   std::array<BlendState, 8> blendStates;
+  std::array<ScissorRect, 8> scissorRects{ { 0 } };
+  std::array<Viewport, 8> viewports{ { 0 } };
   gl::GLuint vertexArray;
   gl::GLuint program;
-};
-
-struct AG_GFX_API StateGroup {
-  StateGroupMask mask;
-  DrawStates drawStates;
   Uniforms uniforms;
   gl::GLbitfield barrierBits{0};
 };
