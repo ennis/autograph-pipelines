@@ -1,10 +1,11 @@
-#include <ImfInputFile.h>
+/*#include <ImfInputFile.h>
 #include <ImfRgbaFile.h>
-#include <ImfArray.h>
+#include <ImfArray.h>*/
 #include <autograph/Engine/Application.h>
 #include <autograph/Engine/ImageUtils.h>
 #include <autograph/Core/Support/Debug.h>
 #include <experimental/filesystem>
+#include <OpenImageIO/imageio.h>
 
 namespace fs = std::experimental::filesystem;
 
@@ -28,7 +29,8 @@ static void *stbi_realloc_sized(void *ptr, size_t oldsz, size_t newsz) {
 namespace ag {
 static std::unique_ptr<uint8_t[]> loadImageByPathRaw(const char *path,
                                                      int &width, int &height,
-                                                     int &comp, int req_cmp) {
+                                                     int &comp, int req_cmp) 
+{
   auto raw_data = stbi_load(path, &width, &height, &comp, req_cmp);
   if (!raw_data) {
     errorMessage("Missing, corrupt image file, or unsupported format: {}",
@@ -61,57 +63,101 @@ Image loadImage(const char *id, ImageFormat targetFormat) {
   return img;
 }
 
-Texture loadTexture(const char *id, ImageFormat targetFormat) {
-  auto path = ResourceManager::getFilesystemPath(id);
-  if (path.empty()) {
-    throw std::runtime_error{"loadTexture: file not found"};
+
+Texture loadTexture(const char *path, ImageFormat targetFormat) 
+{
+  auto fspath = ResourceManager::getFilesystemPath(path);
+  if (fspath.empty()) {
+	  errorMessage("loadTexture: {}: path not found", path);
+	return {};
   }
 
-  Texture tex;
-
-  // inspect extension to see if we must load a EXR image
-  if (fs::path{path}.extension() == ".exr") {
-    // TODO support more target formats
-    if (targetFormat == ImageFormat::R16G16B16A16_SFLOAT) {
-      Imf::Array2D<Imf::Rgba> data;
-      Imf::RgbaInputFile inputFile{path.c_str()};
-      auto dw = inputFile.dataWindow();
-      int width = dw.max.x - dw.min.x + 1;
-      int height = dw.max.y - dw.min.y + 1;
-      data.resizeErase(height, width);
-      AG_DEBUG("Loading OpenEXR image {}x{}", width, height);
-      inputFile.setFrameBuffer(&data[0][0] - dw.min.x - dw.min.y * width, 1,
-                               width);
-      inputFile.readPixels(
-          dw.min.y, dw.max.y); // create target texture and upload our data
-      tex = Texture::create2D(targetFormat, width, height);
-      gl::TextureSubImage2D(tex.object(), 0, 0, 0, width, height, gl::RGBA16F,
-                          gl::HALF_FLOAT, &data[0][0]);
-    } else {
-      errorMessage("Not implemented");
-    }
-    // TODO advanced loading
-    // load with OpenEXR
-    // Imf::Array2D<Imf::Rgba> data;
-    // Imf::InputFile inputFile{ path.c_str() };
-
-    // inputFile.
-    // const Imf::ChannelList& channels = inputFile.header().channels();
-    // for (Imf::ChannelList::ConstIterator i = channels.begin(); i !=
-    // channels.end(); ++i) {
-    //  const Imf::Channel& channel = i.channel();
-    //}
-
-    // Look for different channels depending on the target texture format
-  } else {
-    // load with stbimage
-    int comp;
-    int w, h;
-    auto data = loadImageByPathRaw(path.c_str(), w, h, comp, 4);
-    tex = Texture::create2D(targetFormat, w, h);
-	gl::TextureSubImage2D(tex.object(), 0, 0, 0, w, h, gl::RGBA,
-                        gl::UNSIGNED_INT_8_8_8_8_REV, data.get());
+  using namespace OIIO;
+  ImageInput* in = ImageInput::open(fspath);
+  if (!in) {
+	  errorMessage("loadTexture: error loading image at {}", fspath.c_str());
+	  return {};
   }
+
+  const auto& spec = in->spec();
+  if (spec.nchannels < 1 && spec.nchannels > 4) {
+	  errorMessage("loadTexture: invalid number of channels {}", fspath.c_str());
+	  return {};
+  }
+
+  AG_DEBUG("Loading image {}x{} nchannels {} format {}", spec.width, spec.height, spec.nchannels, spec.format.c_str());
+  
+  // So the goal here is to load the contents of the image file into a texture
+  // First, we have to load it in a temporary buffer
+  // The pipeline is as follows:
+  //
+  //             OIIO               OpenGL  
+  //     file     ->   intermediate   ->    texture 
+  //  (FILE_FMT)        (INT_FMT)          (TEX_FMT)  
+  //
+  // The user is allowed to choose TEX_FMT, but we have to choose a format for
+  // the staging buffer (INT_FMT)
+  // We should choose the format that minimizes the amount of conversion required
+  // 
+
+  // Choose the format of the file contents for the staging buffer
+  // OpenGL should do the conversion
+  gl::GLenum glchannels;
+  switch (spec.nchannels) {
+  case 1: glchannels = gl::RED; break;
+  case 2: glchannels = gl::RG; break;
+  case 3: glchannels = gl::RGB; break;
+  case 4: glchannels = gl::RGBA; break;
+	// TODO depth/stencil format? BRGA ordering?
+  }
+
+  gl::GLenum glcompfmt;
+  switch (spec.format.basetype)
+  {
+  case TypeDesc::UINT8:
+	  glcompfmt = gl::UNSIGNED_BYTE;
+	  break;
+  case TypeDesc::INT8:
+	  glcompfmt = gl::BYTE;
+	  break;
+  case TypeDesc::UINT16:
+	  glcompfmt = gl::UNSIGNED_SHORT;
+	  break;
+  case TypeDesc::INT16:
+	  glcompfmt = gl::SHORT;
+	  break;
+  case TypeDesc::UINT:
+	  glcompfmt = gl::UNSIGNED_INT;
+	  break;
+  case TypeDesc::INT:
+	  glcompfmt = gl::INT;
+	  break;
+  case TypeDesc::HALF: 
+	  glcompfmt = gl::HALF_FLOAT;
+	  break;
+  case TypeDesc::FLOAT: 
+	  glcompfmt = gl::FLOAT;
+	  break;
+  case TypeDesc::UINT64: 
+	  // fallthrough
+  case TypeDesc::INT64:
+	  // fallthrough
+  case TypeDesc::DOUBLE:
+	  // fallthrough
+  default:
+	  errorMessage("loadTexture: unsupported format {}", spec.format.c_str());
+	  break;
+  }
+
+  // allocate the temporary buffer
+  size_t bufsize = spec.width * spec.height * spec.format.basesize() * spec.nchannels;
+  std::vector<unsigned char> buf( bufsize );
+  // load data
+  in->read_image(spec.format, buf.data());
+  // create texture object
+  Texture tex = Texture::create2D(targetFormat, spec.width, spec.height);
+  // upload data
+  gl::TextureSubImage2D(tex.object(), 0, 0, 0, spec.width, spec.height, glchannels, glcompfmt, buf.data());
   return tex;
 }
 
@@ -119,15 +165,14 @@ void writeEXR(const char *path, const void *pixelData, int width, int height,
               ImageFormat inputFormat, ImageFormat targetFormat) 
 {
 	AG_DEBUG("Writing OpenEXR image {}x{} {}", width, height, getImageFormatInfo(inputFormat).name);
-  if (inputFormat == ImageFormat::R16G16B16A16_SFLOAT) {
+  /*if (inputFormat == ImageFormat::R16G16B16A16_SFLOAT) {
     Imf::RgbaChannels rgbaChannels = Imf::WRITE_RGBA;
     Imf::RgbaOutputFile outputFile{path, width, height, rgbaChannels};
     outputFile.setFrameBuffer((const Imf::Rgba *)pixelData, 1, width);
     outputFile.writePixels(height);
-  } else {
+  } else {*/
     // TODO
     errorMessage("Not implemented");
-  }
 }
 
 void saveImageByPath(const char *path, const void *pixelData, int width,

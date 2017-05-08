@@ -207,14 +207,42 @@ endif()
 
 #--------------------------------------------------------------------
 # OpenImageIO 
-#[[option (EMBEDPLUGINS "Embed format plugins in libOpenImageIO" ON)
-option (OIIO_BUILD_TOOLS "Build the command-line tools" ON)
-option (OIIO_BUILD_TESTS "Build the unit tests" OFF)
-option (USE_OPENGL "Include OpenGL support" OFF)
-option (USE_QT "Include Qt support" OFF)
-option (USE_PYTHON "Build the Python bindings" OFF)
-set(BUILDSTATIC TRUE)
-add_subdirectory(oiio)]]
+find_package(OpenImageIO)
+
+if (NOT OpenImageIO_FOUND)
+# use bundled version
+	add_library(OpenImageIO SHARED IMPORTED GLOBAL)
+	message( STATUS "Using OpenImageIO binaries." )
+	set_property(TARGET OpenImageIO PROPERTY IMPORTED_LOCATION "${CMAKE_CURRENT_SOURCE_DIR}/OpenImageIO_bin/bin/OpenImageIO.dll")
+	set_property(TARGET OpenImageIO PROPERTY IMPORTED_IMPLIB "${CMAKE_CURRENT_SOURCE_DIR}/OpenImageIO_bin/lib/OpenImageIO.lib")
+	set_property(TARGET OpenImageIO PROPERTY INTERFACE_INCLUDE_DIRECTORIES "${CMAKE_CURRENT_SOURCE_DIR}/OpenImageIO_bin/include")
+	message( STATUS "Copying OpenImageIO shared libraries." )
+	set(OIIO_ExternalSharedLibraries 
+		"${CMAKE_CURRENT_SOURCE_DIR}/OpenImageIO_bin/bin/ptex.dll"
+		"${CMAKE_CURRENT_SOURCE_DIR}/OpenImageIO_bin/bin/Half.dll"
+		"${CMAKE_CURRENT_SOURCE_DIR}/OpenImageIO_bin/bin/Iex-2_2.dll"
+		"${CMAKE_CURRENT_SOURCE_DIR}/OpenImageIO_bin/bin/IexMath-2_2.dll"
+		"${CMAKE_CURRENT_SOURCE_DIR}/OpenImageIO_bin/bin/IlmImf-2_2.dll"
+		"${CMAKE_CURRENT_SOURCE_DIR}/OpenImageIO_bin/bin/IlmImfUtil-2_2.dll"
+		"${CMAKE_CURRENT_SOURCE_DIR}/OpenImageIO_bin/bin/IlmThread-2_2.dll"
+		"${CMAKE_CURRENT_SOURCE_DIR}/OpenImageIO_bin/bin/Imath-2_2.dll"
+		"${CMAKE_CURRENT_SOURCE_DIR}/OpenImageIO_bin/bin/boost_chrono-vc140-mt-1_63.dll"
+		"${CMAKE_CURRENT_SOURCE_DIR}/OpenImageIO_bin/bin/boost_date_time-vc140-mt-1_63.dll"
+		"${CMAKE_CURRENT_SOURCE_DIR}/OpenImageIO_bin/bin/boost_filesystem-vc140-mt-1_63.dll"
+		"${CMAKE_CURRENT_SOURCE_DIR}/OpenImageIO_bin/bin/boost_system-vc140-mt-1_63.dll"
+		"${CMAKE_CURRENT_SOURCE_DIR}/OpenImageIO_bin/bin/boost_thread-vc140-mt-1_63.dll"
+		"${CMAKE_CURRENT_SOURCE_DIR}/OpenImageIO_bin/bin/boost_timer-vc140-mt-1_63.dll"
+		"${CMAKE_CURRENT_SOURCE_DIR}/OpenImageIO_bin/bin/jpeg62.dll"
+		"${CMAKE_CURRENT_SOURCE_DIR}/OpenImageIO_bin/bin/libpng16.dll"
+		"${CMAKE_CURRENT_SOURCE_DIR}/OpenImageIO_bin/bin/tiff.dll"
+		"${CMAKE_CURRENT_SOURCE_DIR}/OpenImageIO_bin/bin/tiffxx.dll"
+		"${CMAKE_CURRENT_SOURCE_DIR}/OpenImageIO_bin/bin/turbojpeg.dll"
+		"${CMAKE_CURRENT_SOURCE_DIR}/OpenImageIO_bin/bin/OpenImageIO.dll"
+	)
+	file(COPY ${OIIO_ExternalSharedLibraries} DESTINATION "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}" NO_SOURCE_PERMISSIONS)
+else()
+endif()
+
 
 #--------------------------------------------------------------------
 # nanovg

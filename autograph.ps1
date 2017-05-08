@@ -19,7 +19,7 @@ $PROJECT_NAME = "autograph";
 $BUILD_DIR = "build";
 $coreSourceDir = "src";
 $pluginsSourceDir = "src";
-$BOOST_DEBUG = "TRUE";
+$BOOST_DEBUG = "FALSE";
 
 #########################################################################
 # Templates
@@ -74,8 +74,7 @@ function runCMakeConfig()
     cmake ../ -G "Visual Studio 15 2017 Win64" `
         -DBOOST_ROOT:PATH=$BOOST_INCLUDE_DIR `
         -DLLVM_DIR:PATH=$LLVM_DIR `
-        -DClang_DIR:PATH=$Clang_DIR `
-        -DBoost_DEBUG:BOOL=TRUE
+        -DClang_DIR:PATH=$Clang_DIR 
     cd ../
 }
 

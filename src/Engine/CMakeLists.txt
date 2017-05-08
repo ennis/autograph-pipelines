@@ -29,6 +29,6 @@ target_link_libraries(
 		optional
 		glm 
 		mcpp
-		OpenEXR
+		OpenImageIO
 		$<$<PLATFORM_ID:Linux>:${CMAKE_DL_LIBS}>
 	)
