@@ -4,9 +4,9 @@
 #include <autograph/Engine/All.h>
 #include <autograph/Gfx/All.h>
 #include <autograph/Window/WindowGLFW.h>
-#include <autograph/editor/CameraController.h>
-#include <autograph/editor/SceneEditor.h>
-#include <autograph/editor/SceneRenderer.h>
+#include <autograph/Editor/CameraController.h>
+#include <autograph/Editor/SceneEditor.h>
+#include <autograph/Editor/SceneRenderer.h>
 #include <experimental/filesystem>
 #include <iostream>
 #include <memory>

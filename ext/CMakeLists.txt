@@ -103,6 +103,16 @@ set_property(TARGET mcpp PROPERTY FOLDER "External")
 
 #--------------------------------------------------------------------
 # assimp
+find_package(Assimp)
+if (Assimp_FOUND)
+# use system package
+add_library(assimp SHARED IMPORTED GLOBAL)
+message( STATUS "Using system-provided Assimp library." )
+set_property(TARGET assimp PROPERTY IMPORTED_LOCATION "${ASSIMP_LIBRARIES}")
+set_property(TARGET assimp PROPERTY INTERFACE_INCLUDE_DIRECTORIES "${ASSIMP_INCLUDE_DIRS}")
+else()
+message( STATUS "Building Assimp library." )
+# compile bundled
 OVERRIDE_BUILD_SHARED(ON)
 option(ASSIMP_NO_EXPORT "..." ON)
 option(ASSIMP_BUILD_ASSIMP_TOOLS "..." OFF)
@@ -154,7 +164,7 @@ option(ASSIMP_BUILD_X_IMPORTER "..." OFF)
 add_subdirectory(assimp EXCLUDE_FROM_ALL)
 target_include_directories(assimp INTERFACE assimp/include)
 set_property(TARGET assimp PROPERTY FOLDER "External")
-
+endif()
 
 #--------------------------------------------------------------------
 # GLFW 

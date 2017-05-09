@@ -14,7 +14,7 @@ void VertexArray::initialize(ag::span<VertexAttribute> attribs) {
  // GLuint strides[max_attribs] = {0};
   gl::GLuint vertex_array_obj;
   gl::CreateVertexArrays(1, &vertex_array_obj);
-  assert(num_attribs < getGLImplementationLimits().max_vertex_attributes);
+  assert(num_attribs < getGfxContext().getGLImplementationLimits().max_vertex_attributes);
   int attribindex = 0;
   for (auto &&a : attribs) {
     assert(a.slot < max_attribs);
