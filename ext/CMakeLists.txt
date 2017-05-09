@@ -10,7 +10,6 @@ add_library(OpenGL INTERFACE)
 target_include_directories(OpenGL INTERFACE ${OPENGL_INCLUDE_DIRS})
 target_link_libraries(OpenGL INTERFACE ${OPENGL_LIBRARIES})
 
-
 #------------------------------------------
 # Boost
 #find_package(Boost REQUIRED COMPONENTS thread filesystem system context wave)
@@ -24,16 +23,20 @@ endif()
 
 #--------------------------------------------------------------------
 # zlib (required for skia)
-find_package(ZLIB)
+#[[find_package(ZLIB)
 if(ZLIB_FOUND)
+message(STATUS "Using system provided zlib")
+message(STATUS " - include dirs: ${ZLIB_INCLUDE_DIRS}")
+message(STATUS " - libraries: ${ZLIB_LIBRARIES}")
 add_library(zlibstatic INTERFACE)
 target_include_directories(zlibstatic INTERFACE ${ZLIB_INCLUDE_DIRS})
 target_link_libraries(zlibstatic INTERFACE ${ZLIB_LIBRARIES})
 else()
+message(STATUS "Building own zlib")
 add_subdirectory(zlib)
 TARGET_INCLUDE_DIRECTORIES(zlibstatic INTERFACE zlib/)
 set_property(TARGET zlibstatic PROPERTY FOLDER "External")
-endif()
+endif()]]
 
 #--------------------------------------------------------------------
 # cppformat
@@ -108,6 +111,8 @@ if (Assimp_FOUND)
 # use system package
 add_library(assimp SHARED IMPORTED GLOBAL)
 message( STATUS "Using system-provided Assimp library." )
+message(STATUS " - include dirs: ${ASSIMP_INCLUDE_DIRS}")
+message(STATUS " - libraries: ${ASSIMP_LIBRARIES}")
 set_property(TARGET assimp PROPERTY IMPORTED_LOCATION "${ASSIMP_LIBRARIES}")
 set_property(TARGET assimp PROPERTY INTERFACE_INCLUDE_DIRECTORIES "${ASSIMP_INCLUDE_DIRS}")
 else()

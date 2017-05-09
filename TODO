@@ -79,6 +79,16 @@ Minimal system:
  ☐ Be able to integrate a viewport into a QOpenGLWidget
  ☐ Consider using std::string_view pervasively
 
+Build robustness:
+ ☐ CMake: global variable that contains the runtime output directory @cmake
+ ☐ Revert to eggs::variant type (std::variant implementations unstable) @ext_libs
+ ☐ Put all binary dependencies in ext/deps_bin/<library>-<version> @source_tree
+ ☐ Copy DLLs to the runtime directory @cmake
+ ☐ Use imported targets @cmake
+ ☐ Deduplicate compiled instances of zlib @cmake
+     CMake doesn't make it easy: need a hook to find_package(ZLIB) for assimp
+
+
 General:
  ✔ Implement cameras @high @minimal_subset @done (16-12-24 14:12)
  ✔ Camera control from Lua script @high @minimal_subset @done (16-12-24 14:12)

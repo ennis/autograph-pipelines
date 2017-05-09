@@ -40,8 +40,11 @@
 #define STX_NAMESPACE_NAME ag
 #endif
 
-#if defined(__has_include) && !defined(STX_NO_STD_VARIANT)
-#if __has_include(<variant>)
+//#define STX_NO_STD_VARIANT 1
+
+//#if defined(__has_include) && !defined(STX_NO_STD_VARIANT)
+#if _MSC_VER >= 1910
+//#if __has_include(<variant>)
 #include <variant>
 namespace STX_NAMESPACE_NAME {
 using std::variant;
@@ -49,6 +52,7 @@ using std::visit;
 using std::holds_alternative;
 using std::get_if;
 using std::monostate;
+using std::get;
 using std::bad_variant_access;
 using std::variant_size;
 using std::variant_size_v;
@@ -65,8 +69,8 @@ using std::in_place_index_t;
 using std::in_place_index;
 }
 #define STX_HAVE_STD_VARIANT 1
-#endif // __hasinclude(any)
-#endif // defined(__hasinclude)
+//#endif // __hasinclude(variant)
+#endif // _MSC_VER >= 1910
 
 #ifndef STX_HAVE_STD_VARIANT
 
