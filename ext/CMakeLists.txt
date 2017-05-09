@@ -26,10 +26,16 @@ endif()
 
 #--------------------------------------------------------------------
 # zlib (required for skia)
+find_package(ZLIB)
+if(ZLIB_FOUND)
+add_library(zlibstatic INTERFACE)
+target_include_directories(zlibstatic INTERFACE ${ZLIB_INCLUDE_DIRS})
+target_link_libraries(zlibstatic INTERFACE ${ZLIB_LIBRARIES})
+else()
 add_subdirectory(zlib)
 TARGET_INCLUDE_DIRECTORIES(zlibstatic INTERFACE zlib/)
 set_property(TARGET zlibstatic PROPERTY FOLDER "External")
-
+endif()
 
 #--------------------------------------------------------------------
 # cppformat
@@ -209,6 +215,13 @@ endif()
 
 #--------------------------------------------------------------------
 # OpenImageIO 
+find_package(OpenImageIO)
+if (${OpenImageIO_FOUND})
+	message("Found OpenImageIO: ${OPENIMAGEIO_INCLUDE_DIRS}")
+	add_library(OpenImageIO INTERFACE)
+	target_include_directories(OpenImageIO INTERFACE ${OPENIMAGEIO_INCLUDE_DIRS})
+	target_link_libraries(OpenImageIO INTERFACE ${OPENIMAGEIO_LIBRARIES})
+else()
 #[[option (EMBEDPLUGINS "Embed format plugins in libOpenImageIO" ON)
 option (OIIO_BUILD_TOOLS "Build the command-line tools" ON)
 option (OIIO_BUILD_TESTS "Build the unit tests" OFF)
@@ -217,6 +230,7 @@ option (USE_QT "Include Qt support" OFF)
 option (USE_PYTHON "Build the Python bindings" OFF)
 set(BUILDSTATIC TRUE)
 add_subdirectory(oiio)]]
+endif()
 
 #--------------------------------------------------------------------
 # nanovg
