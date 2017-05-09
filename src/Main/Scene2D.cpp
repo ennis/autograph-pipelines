@@ -6,7 +6,7 @@
 
 namespace ag {
 Scene2D::Scene2D() {
-  tileMapShader_ = Shader{"shaders/tileMap:tileMap"};
+  tileMapShader_ = GPUPipeline{GPUPipelineType::Graphics, "shaders/tileMap.lua$tileMap"};
   SamplerDesc desc;
   desc.minFilter = gl::NEAREST;
   desc.magFilter = gl::NEAREST;

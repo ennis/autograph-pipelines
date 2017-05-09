@@ -1,3 +1,5 @@
+require 'shaders/utils'
+
 gbuffer = GeometryPass{
 	shaderFile = 'CanvasGBuffers.glsl'
 }
@@ -5,3 +7,4 @@ gbuffer = GeometryPass{
 evaluation = ScreenPass{
 	shaderFile = 'CanvasEval.glsl'
 }
+

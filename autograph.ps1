@@ -12,13 +12,14 @@ Param(
 
 #########################################################################
 # Config
-$BOOST_INCLUDE_DIR = "C:\Boost\include\boost-1_62";
+$BOOST_INCLUDE_DIR = "C:\Boost\boost_1_64_0";
 $LLVM_DIR = "C:\Users\Alexandre\Developpement\llvm3.9\lib\cmake\llvm";
 $Clang_DIR = "C:\Users\Alexandre\Developpement\llvm3.9\lib\cmake\clang";
-$PROJECT_NAME = "pipelines";
+$PROJECT_NAME = "autograph";
 $BUILD_DIR = "build";
-$coreSourceDir = "src_core";
-$pluginsSourceDir = "src_plugins";
+$coreSourceDir = "src";
+$pluginsSourceDir = "src";
+$BOOST_DEBUG = "FALSE";
 
 #########################################################################
 # Templates
@@ -71,9 +72,9 @@ function runCMakeConfig()
     mkdir -Force -Path $BUILD_DIR/
     cd build/
     cmake ../ -G "Visual Studio 15 2017 Win64" `
-        -DBoost_INCLUDE_DIR:PATH=$BOOST_INCLUDE_DIR `
+        -DBOOST_ROOT:PATH=$BOOST_INCLUDE_DIR `
         -DLLVM_DIR:PATH=$LLVM_DIR `
-        -DClang_DIR:PATH=$Clang_DIR
+        -DClang_DIR:PATH=$Clang_DIR 
     cd ../
 }
 

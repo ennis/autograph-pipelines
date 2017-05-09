@@ -2,7 +2,9 @@
 layout(binding = 0) uniform sampler2D tileset;
 layout(binding = 1) uniform sampler2D tilemap;
 
-## if _VERTEX_ then
+#pragma stages(vertex,fragment)
+
+#ifdef _VERTEX_
 
 layout(location = 0) in vec2 pos;
 layout(location = 1) in vec2 texcoord;
@@ -28,8 +30,9 @@ void main() {
   vec2 tileTexcoords = texelFetch(tilemap, tilePos, 0).rg;
   fTexcoord = tileTexcoords + vec2(tileSize)/textureSize(tileset,0) * vec2(corner & 1, (corner >> 1) & 1);
 }
+#endif
 
-## elseif _FRAGMENT_ then
+#ifdef _FRAGMENT_
 
 layout(location = 0) out vec4 color;
 centroid in vec2 fTexcoord;
@@ -39,5 +42,5 @@ void main() {
   //color = vec4(fTexcoord, 1.0, 1.0);
 }
 
-## end
+#endif
 

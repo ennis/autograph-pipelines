@@ -1,5 +1,6 @@
 #version 450
 #include "Utils.glsli"
+#pragma stages(compute)
 
 layout(binding=0) uniform sampler2D uPrev; 
 layout(binding=1) uniform sampler2D uFrame; 

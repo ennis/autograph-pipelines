@@ -45,30 +45,30 @@ static void bindUniforms(const Uniforms &uniforms) {
 
 void bindStateGroup(const StateGroup &sg) {
   // Viewports
-  if (not_empty(sg.mask & StateGroupMask::Viewports)) {
-    gl::ViewportArrayv(0, 8, (const float *)sg.drawStates.viewports.data());
+  if (!!(sg.mask & StateGroupMask::Viewports)) {
+    gl::ViewportArrayv(0, 8, (const float *)sg.viewports.data());
   }
 
   // Scissor rect
-  if (not_empty(sg.mask & StateGroupMask::ScissorRect)) {
-    gl::ScissorArrayv(0, 8, (const int *)sg.drawStates.scissorRects.data());
+  if (!!(sg.mask & StateGroupMask::ScissorRect)) {
+    gl::ScissorArrayv(0, 8, (const int *)sg.scissorRects.data());
   }
 
   // Blend states
-  if (not_empty(sg.mask & StateGroupMask::BlendStates)) {
-    if (sg.drawStates.blendStates.empty())
+  if (!!(sg.mask & StateGroupMask::BlendStates)) {
+    if (sg.blendStates.empty())
       gl::Disable(gl::BLEND);
     else {
       gl::Enable(gl::BLEND); // XXX is this necessary
       for (int i = 0; i < 8; ++i) {
-        if (sg.drawStates.blendStates[i].enabled) {
+        if (sg.blendStates[i].enabled) {
           gl::Enablei(gl::BLEND, i);
-          gl::BlendEquationSeparatei(i, sg.drawStates.blendStates[i].modeRGB,
-                                   sg.drawStates.blendStates[i].modeAlpha);
-          gl::BlendFuncSeparatei(i, sg.drawStates.blendStates[i].funcSrcRGB,
-                               sg.drawStates.blendStates[i].funcDstRGB,
-                               sg.drawStates.blendStates[i].funcSrcAlpha,
-                               sg.drawStates.blendStates[i].funcDstAlpha);
+          gl::BlendEquationSeparatei(i, sg.blendStates[i].modeRGB,
+                                   sg.blendStates[i].modeAlpha);
+          gl::BlendFuncSeparatei(i, sg.blendStates[i].funcSrcRGB,
+                               sg.blendStates[i].funcDstRGB,
+                               sg.blendStates[i].funcSrcAlpha,
+                               sg.blendStates[i].funcDstAlpha);
         } else
           gl::Disablei(gl::BLEND, i);
       }
@@ -76,46 +76,46 @@ void bindStateGroup(const StateGroup &sg) {
   }
 
   // Depth stencil state
-  if (not_empty(sg.mask & StateGroupMask::DepthStencilState)) {
-    if (sg.drawStates.depthStencilState.depthTestEnable)
+  if (!!(sg.mask & StateGroupMask::DepthStencilState)) {
+    if (sg.depthStencilState.depthTestEnable)
       gl::Enable(gl::DEPTH_TEST);
     else
       gl::Disable(gl::DEPTH_TEST);
 
-    if (sg.drawStates.depthStencilState.depthWriteEnable)
+    if (sg.depthStencilState.depthWriteEnable)
       gl::DepthMask(gl::TRUE_);
     else
       gl::DepthMask(gl::FALSE_);
 
-    gl::DepthFunc(sg.drawStates.depthStencilState.depthTestFunc);
+    gl::DepthFunc(sg.depthStencilState.depthTestFunc);
 
-    if (sg.drawStates.depthStencilState.stencilEnable) {
+    if (sg.depthStencilState.stencilEnable) {
       gl::Enable(gl::STENCIL_TEST);
-      gl::StencilFuncSeparate(sg.drawStates.depthStencilState.stencilFace,
-                            sg.drawStates.depthStencilState.stencilFunc,
-                            sg.drawStates.depthStencilState.stencilRef,
-                            sg.drawStates.depthStencilState.stencilMask);
-      gl::StencilOp(sg.drawStates.depthStencilState.stencilOpSfail,
-                  sg.drawStates.depthStencilState.stencilOpDPFail,
-                  sg.drawStates.depthStencilState.stencilOpDPPass);
+      gl::StencilFuncSeparate(sg.depthStencilState.stencilFace,
+                            sg.depthStencilState.stencilFunc,
+                            sg.depthStencilState.stencilRef,
+                            sg.depthStencilState.stencilMask);
+      gl::StencilOp(sg.depthStencilState.stencilOpSfail,
+                  sg.depthStencilState.stencilOpDPFail,
+                  sg.depthStencilState.stencilOpDPPass);
     } else
       gl::Disable(gl::STENCIL_TEST);
   }
 
   // Rasterizer
-  if (not_empty(sg.mask & StateGroupMask::RasterizerState)) {
-    gl::PolygonMode(gl::FRONT_AND_BACK, sg.drawStates.rasterizerState.fillMode);
+  if (!!(sg.mask & StateGroupMask::RasterizerState)) {
+    gl::PolygonMode(gl::FRONT_AND_BACK, sg.rasterizerState.fillMode);
     gl::Disable(gl::CULL_FACE);
   }
 
   // Vertex array
-  if (not_empty(sg.mask & StateGroupMask::VertexArray)) {
-    gl::BindVertexArray(sg.drawStates.vertexArray);
+  if (!!(sg.mask & StateGroupMask::VertexArray)) {
+    gl::BindVertexArray(sg.vertexArray);
   }
 
   // program
-  if (not_empty(sg.mask & StateGroupMask::Program)) {
-    gl::UseProgram(sg.drawStates.program);
+  if (!!(sg.mask & StateGroupMask::Program)) {
+    gl::UseProgram(sg.program);
   }
 
   // Uniforms

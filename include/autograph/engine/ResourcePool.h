@@ -2,8 +2,8 @@
 #include <autograph/Engine/Exports.h>
 #include <chrono>
 #include <memory>
-#include <unordered_map>
 #include <string>
+#include <unordered_map>
 
 namespace ag {
 struct Resource {
@@ -71,42 +71,36 @@ private:
   std::unordered_map<std::string, std::shared_ptr<Resource>> resourceMap_;
 };
 
-
-class CacheObject
-{
+class CacheObject {
 public:
-	CacheObject(const char* path_) : path{ path_ }
-	{}
+  CacheObject(const char *path_) : path{path_} {}
 
-	virtual ~CacheObject()
-	{}
+  virtual ~CacheObject() {}
 
-	virtual void reload()
-	{}
+  virtual void reload() {}
 
-	const char* getPath() const { return path.c_str(); }
+  const char *getPath() const { return path.c_str(); }
 
 protected:
-	std::string path;
+  std::string path;
 };
 
-class Cache
-{
+class Cache {
 public:
-	void addObject(std::shared_ptr<CacheObject> obj);
-	std::shared_ptr<CacheObject> getObject(const char *path);
+  void addObject(std::shared_ptr<CacheObject> obj);
+  std::shared_ptr<CacheObject> getObject(const char *path);
 
-	template <typename T>
-	std::shared_ptr<T> getObjectOfType(const char* path)
-	{
-		static_assert(std::is_base_of<CacheObject, T>::value, "T must be a derived class of CacheObject");
-		if (auto& obj = getObject(path)) {
-			return std::dynamic_pointer_cast<T>(obj);
-		}
-	}
+  template <typename T> std::shared_ptr<T> getObjectOfType(const char *path) {
+    static_assert(std::is_base_of<CacheObject, T>::value,
+                  "T must be a derived class of CacheObject");
+    if (auto &obj = getObject(path)) {
+      return std::dynamic_pointer_cast<T>(obj);
+    }
+	return nullptr;
+  }
 
 private:
-	std::unordered_map<std::string, std::shared_ptr<CacheObject>> cacheObjects_;
+  std::unordered_map<std::string, std::shared_ptr<CacheObject>> cacheObjects_;
 };
 
-}
+} // namespace ag

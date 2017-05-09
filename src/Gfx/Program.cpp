@@ -151,7 +151,7 @@ ProgramObject ProgramObject::create(const char *vs_src, const char *fs_src,
     prog.attach(tes);
   }
   if (tcs_src) {
-    tes = checkedCompile(tes_src, gl::TESS_CONTROL_SHADER);
+    tcs = checkedCompile(tcs_src, gl::TESS_CONTROL_SHADER);
     prog.attach(tcs);
   }
 

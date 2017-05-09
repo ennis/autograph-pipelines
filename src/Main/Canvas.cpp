@@ -109,7 +109,7 @@ void CanvasRenderer::renderCanvas(SceneObjectComponents &scene, Canvas &canvas) 
 }
 
 void CanvasRenderer::reloadShaders() {
-  gbufferPass = Shader{"shaders/canvas:gbuffer"};
-  evaluationPass = Shader{"shaders/canvas:evaluation"};
+	gbufferPass = GPUPipeline{ GPUPipelineType::Graphics, "shaders/canvas.lua$gbuffer" };
+  evaluationPass = GPUPipeline{ GPUPipelineType::Graphics, "shaders/canvas.lua$evaluation"};
 }
 }

@@ -15,42 +15,42 @@ namespace bind {
 
 inline auto uniform_float(const char *name, float v) {
   return [=](StateGroup &sg) {
-    int loc = gl::GetUniformLocation(sg.drawStates.program, name);
+    int loc = gl::GetUniformLocation(sg.program, name);
     if (loc != -1) {
-      gl::ProgramUniform1f(sg.drawStates.program, loc, v);
+      gl::ProgramUniform1f(sg.program, loc, v);
       AG_FRAME_TRACE("uniform {} = {}", name, v);
     } else {
       AG_FRAME_TRACE(
           "uniform {} not present in shader or optimized out (program={})",
-          name, sg.drawStates.program);
+          name, sg.program);
     }
   };
 }
 
 inline auto uniform_float(int loc, float v) {
   return [=](StateGroup &sg) {
-    gl::ProgramUniform1f(sg.drawStates.program, loc, v);
+    gl::ProgramUniform1f(sg.program, loc, v);
     AG_FRAME_TRACE("uniform (loc {}) = {}", loc, v);
   };
 }
 
 inline auto uniform_int(const char *name, int v) {
   return [=](StateGroup &sg) {
-    int loc = gl::GetUniformLocation(sg.drawStates.program, name);
+    int loc = gl::GetUniformLocation(sg.program, name);
     if (loc != -1) {
-      gl::ProgramUniform1i(sg.drawStates.program, loc, v);
+      gl::ProgramUniform1i(sg.program, loc, v);
       AG_FRAME_TRACE("uniform {} = {}", name, v);
     } else {
       AG_FRAME_TRACE(
           "uniform {} not present in shader or optimized out (program={})",
-          name, sg.drawStates.program);
+          name, sg.program);
     }
   };
 }
 
 inline auto uniform_int(int loc, int v) {
   return [=](StateGroup &sg) {
-    gl::ProgramUniform1i(sg.drawStates.program, loc, v);
+    gl::ProgramUniform1i(sg.program, loc, v);
     AG_FRAME_TRACE("uniform (loc {}) = {}", loc, v);
   };
 }
@@ -58,20 +58,20 @@ inline auto uniform_int(int loc, int v) {
 #define UNIFORM_VECN(ty, value_ty, fn)                                         \
   inline auto uniform_##ty(const char *name, value_ty v) {                     \
     return [=](StateGroup &sg) {                                               \
-      int loc = gl::GetUniformLocation(sg.drawStates.program, name);           \
+      int loc = gl::GetUniformLocation(sg.program, name);                      \
       if (loc != -1) {                                                         \
-        fn(sg.drawStates.program, loc, 1, &v[0]);                              \
+        fn(sg.program, loc, 1, &v[0]);                                         \
         AG_FRAME_TRACE("uniform {} = {}", name, v);                            \
       } else {                                                                 \
         AG_FRAME_TRACE(                                                        \
             "uniform {} not present in shader or optimized out (program={})",  \
-            name, sg.drawStates.program);                                      \
+            name, sg.program);                                                 \
       }                                                                        \
     };                                                                         \
   }                                                                            \
   inline auto uniform_##ty(int loc, value_ty v) {                              \
     return [=](StateGroup &sg) {                                               \
-      fn(sg.drawStates.program, loc, 1, &v[0]);                                \
+      fn(sg.program, loc, 1, &v[0]);                                           \
       AG_FRAME_TRACE("uniform (loc {}) = {}", loc, v);                         \
     };                                                                         \
   }
@@ -88,23 +88,23 @@ UNIFORM_VECN(ivec4, ivec4, gl::ProgramUniform4iv)
   inline auto uniform_mat##nxn(const char *name, const mat##nxn &v,            \
                                bool transpose = false) {                       \
     return [=](StateGroup &sg) {                                               \
-      int loc = gl::GetUniformLocation(sg.drawStates.program, name);           \
+      int loc = gl::GetUniformLocation(sg.program, name);                      \
       if (loc != -1) {                                                         \
         AG_FRAME_TRACE("uniform {} = <matrix>", name);                         \
-        gl::ProgramUniformMatrix##nxn##fv(sg.drawStates.program, loc, 1,       \
-                                          transpose, &v[0][0]);                \
+        gl::ProgramUniformMatrix##nxn##fv(sg.program, loc, 1, transpose,       \
+                                          &v[0][0]);                           \
       } else {                                                                 \
         AG_FRAME_TRACE(                                                        \
             "uniform {} not present in shader or optimized out (program={})",  \
-            name, sg.drawStates.program);                                      \
+            name, sg.program);                                                 \
       }                                                                        \
     };                                                                         \
   }                                                                            \
   inline auto uniform_mat##nxn(int loc, const mat##nxn &v,                     \
                                bool transpose = false) {                       \
     return [=](StateGroup &sg) {                                               \
-      gl::ProgramUniformMatrix##nxn##fv(sg.drawStates.program, loc, 1,         \
-                                        transpose, &v[0][0]);                  \
+      gl::ProgramUniformMatrix##nxn##fv(sg.program, loc, 1, transpose,         \
+                                        &v[0][0]);                             \
       AG_FRAME_TRACE("uniform (loc {}) = <matrix>", loc);                      \
     };                                                                         \
   }
@@ -189,7 +189,7 @@ inline auto indexBuffer(BufferSlice buf, gl::GLenum type) {
 inline auto program(const ProgramObject &prog) {
   return [obj = prog.object()](StateGroup & sg) {
     AG_FRAME_TRACE("program {}", obj);
-    sg.drawStates.program = obj;
+    sg.program = obj;
   };
 }
 
@@ -199,22 +199,22 @@ inline auto framebuffer(const Framebuffer &fbo) {
     AG_FRAME_TRACE("fbo obj={}, size={}x{}", obj, w, h);
     gl::BindFramebuffer(gl::DRAW_FRAMEBUFFER, obj);
     // initialize the default viewport and scissor
-    sg.drawStates.viewports[0] = Viewport{0.0f, 0.0f, (float)w, (float)h};
-    sg.drawStates.scissorRects[0] = ScissorRect{0, 0, w, h};
+    sg.viewports[0] = Viewport{0.0f, 0.0f, (float)w, (float)h};
+    sg.scissorRects[0] = ScissorRect{0, 0, w, h};
   };
 }
 
 inline auto vertexArray(const VertexArray &vao) {
   return [obj = vao.object()](StateGroup & sg) {
     AG_FRAME_TRACE("vao {}", obj);
-    sg.drawStates.vertexArray = obj;
+    sg.vertexArray = obj;
   };
 }
 
 inline auto viewport(const Viewport &vp) {
   return [=](StateGroup &sg) {
     AG_FRAME_TRACE("vp rect={},{}:{}x{}", vp.x, vp.y, vp.w, vp.h);
-    sg.drawStates.viewports[0] = vp;
+    sg.viewports[0] = vp;
   };
 }
 
@@ -222,7 +222,7 @@ inline auto viewport(int index, const Viewport &vp) {
   return [=](StateGroup &sg) {
     AG_FRAME_TRACE("vp index={}, rect={},{}:{}x{}", index, vp.x, vp.y, vp.w,
                    vp.h);
-    sg.drawStates.viewports[index] = vp;
+    sg.viewports[index] = vp;
   };
 }
 
@@ -230,7 +230,7 @@ inline auto scissor(int index, const ScissorRect &s) {
   return [=](StateGroup &sg) {
     AG_FRAME_TRACE("scissor index={}, rect={},{}:{}x{}", index, s.x, s.y, s.w,
                    s.h);
-    sg.drawStates.scissorRects[index] = s;
+    sg.scissorRects[index] = s;
   };
 }
 
@@ -238,22 +238,20 @@ inline auto scissor(int index, int left, int bottom, int width, int height) {
   return [=](StateGroup &sg) {
     AG_FRAME_TRACE("scissor index={}, rect={},{}:{}x{}", index, left, bottom,
                    width, height);
-    sg.drawStates.scissorRects[index] =
-        ScissorRect{left, bottom, width, height};
+    sg.scissorRects[index] = ScissorRect{left, bottom, width, height};
   };
 }
 
 inline auto blendState(int index, const BlendState &bs) {
-  return
-      [index, &bs](StateGroup &sg) { sg.drawStates.blendStates[index] = bs; };
+  return [index, &bs](StateGroup &sg) { sg.blendStates[index] = bs; };
 }
 
 inline auto depthStencilState(const DepthStencilState &dss) {
-  return [&dss](StateGroup &sg) { sg.drawStates.depthStencilState = dss; };
+  return [&dss](StateGroup &sg) { sg.depthStencilState = dss; };
 }
 
 inline auto rasterizerState(const RasterizerState &rs) {
-  return [&rs](StateGroup &sg) { sg.drawStates.rasterizerState = rs; };
+  return [&rs](StateGroup &sg) { sg.rasterizerState = rs; };
 }
 } // namespace bind
 } // namespace ag

@@ -1,7 +1,8 @@
 #version 450
 #include "MeshShader.glsli"
+#pragma stages(vertex,fragment)
 
-## if _VERTEX_ then
+#ifdef _VERTEX_
 
 out vec3 Nw0;
 out vec3 Pv;
@@ -16,8 +17,9 @@ void main() {
   Pv = (uViewMatrix * uModelMatrix * vec4(iPosition, 1.0)).xyz;
   fTexcoords = iTexcoords;
 }
+#endif
 
-## elseif _FRAGMENT_ then
+#ifdef _FRAGMENT_ 
 
 in vec3 Nw0;
 in vec3 Pv;
@@ -33,5 +35,5 @@ void main() {
   rtDiffuse = vec4(1.0);  // TODO
 }
 
-## end
+#endif
 

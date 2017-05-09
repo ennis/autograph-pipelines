@@ -28,5 +28,5 @@
     return static_cast<std::underlying_type_t<type>>(a) != 0;                  \
   }                                                                            \
   constexpr inline bool operator!(type a) {                                    \
-    return static_cast<std::underlying_type_t<type>>(a) != 0;                  \
+    return static_cast<std::underlying_type_t<type>>(a) == 0;                  \
   }

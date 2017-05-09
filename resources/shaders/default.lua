@@ -1,6 +1,8 @@
+require 'shaders/utils'
+
 geometryPass = GeometryPass
 {
-	shaderFile = 'Deferred.glsl'
+	shaderFile = 'DeferredGeometry.glsl'
 }
 
 deferredPass = ScreenPass
@@ -14,9 +16,9 @@ deferredPass = ScreenPass
 		[4] = { enabled = false }}
 }
 
-TAAAverage = ComputeShader 
+TAA_Average = ComputeShader 
 {
-	shaderFile = 'TemporalAA.glsl',
+	shaderFile = 'TAA_Average.glsl',
 	barrierBits = bit.bor(GL_TEXTURE_FETCH_BARRIER_BIT, GL_SHADER_IMAGE_ACCESS_BARRIER_BIT)
 }
 

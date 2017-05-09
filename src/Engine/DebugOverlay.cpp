@@ -19,7 +19,7 @@ namespace ag {
 static const char *imageFileFilters = "png,jpg,jpeg,bmp,tga,psd,gif";
 
 struct DebugOverlayGlobals {
-  Shader textureViewShader = Shader{"shaders/default:textureView"};
+  GPUPipeline textureViewShader = GPUPipeline{GPUPipelineType::Graphics, "shaders/default.lua:textureView"};
   Sampler textureViewSampler;
 };
 
@@ -550,7 +550,7 @@ static void ComboGLenum(const char *label, gl::GLenum *outValue,
   *outValue = values[curIdx].second;
 }
 
-static void pipelineStateGUI(PipelineState *ps) {
+/*static void pipelineStateGUI(PipelineState *ps) {
   //////////////////////////////////////////////////////
   // Depth-stencil
   if (ImGui::CollapsingHeader("Depth-stencil state")) {
@@ -680,14 +680,14 @@ static void pipelineStatesGUI() {
     ImGui::PopID();
   }
   ImGui::End();
-}
+}*/
 
 void drawDebugOverlay(double dt) {
   beginFixedTooltip("frame");
   ImGui::TextDisabled("Frame time: %.06f ms (%.02f FPS)", dt * 1000.0f,
                       1.0f / dt);
   endFixedTooltip();
-  pipelineStatesGUI();
+  //pipelineStatesGUI();
   GLObjectListGUI();
   showCVarGui();
 }

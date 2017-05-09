@@ -57,7 +57,7 @@ public:
   void reloadShaders();
 
 private:
-  Shader gbufferPass;
-  Shader evaluationPass;
+  GPUPipeline gbufferPass;
+  GPUPipeline evaluationPass;
 };
 }

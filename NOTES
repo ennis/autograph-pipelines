@@ -2592,3 +2592,56 @@ Next up:
 	- On template reload:
 		- Issue: modifications may have been made to the base template
 		=> reload according to state mask 
+
+- Preprocessing of shader sources => when?
+	- On load: loose runtime definitions
+	- On compile: PipelineDesc contains combined source code?
+
+- Cache files?
+- Compilation of the pipeline needs the Cache
+
+Bikeshedding:
+	Pipeline: not clear it's about the GPU
+	GPUPipeline
+	GraphicsPipeline
+	GPUPipelineConfig
+	GPUPipelineConfiguration
+	{GPU|Graphics}Pipeline{Config|Configuration|}
+
+	gfx::PipelineState: compiled pipeline state object
+
+
+Pipeline file: contains initialization (private, may be made public after)
+	=> Lua data file
+-> functions for loading individual state?
+	loadVertexArray(descfile) -> VAO
+	loadRasterizerState(desc) -> RS
+
+Compilation: manual (make program, etc.)
+
+GPUPipelineFile should be a wrapper around sol::table or something
+with accessors for each individual state
+
+
+GPU pipeline cache:
+
+Input: GraphicsPipelineDesc or ComputePipelineDesc 
+Returns: compiled pipeline state
+
+
+Issue: abstract API differences?
+- Common stuff: (Gfx public interface)
+	- textures
+	- shaders (individual)
+	- pipeline state
+	- pipeline state object
+
+- API details: (Gfx internals)
+	- binding of resources
+	- Pipeline state object caching
+	- Pipeline state compilation (incl. shader compilation)
+	- Gfx must have access to the cache (well, *a* cache not the global one)
+		- must move Cache into autographCore
+
+Bother: must translate input layout to what the API expects
+	- To solve: put pipeline file loading code into Gfx
