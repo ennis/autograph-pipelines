@@ -629,11 +629,17 @@ struct GraphicsPipelineDesc {
   const char *geometryShader = nullptr;
   const char *tessControlShader = nullptr;
   const char *tessEvalShader = nullptr;
+  const char *vertexShaderPath = "<unknown>";
+  const char *fragmentShaderPath = "<unknown>";
+  const char *geometryShaderPath = "<unknown>";
+  const char *tessControlShaderPath = "<unknown>";
+  const char *tessEvalShaderPath = "<unknown>";
 };
 
 // Complete description of a compute pipeline
 struct ComputePipelineDesc {
   const char *computeShader = nullptr;
+  const char *computeShaderPath = "<unknown>";
   gl::GLbitfield memoryBarrierBits = 0;
 };
 
@@ -652,9 +658,9 @@ GPUPipeline::GPUPipeline(GPUPipelineType type, const char *pathSubpath,
                          LoadMask stateMask, Cache *cache)
     : type_{type}, cache_{cache}, loadMask_{stateMask} {
   auto path = ResourceManager::getFilesystemPath(pathSubpath);
-  auto tableName = ResourceManager::getSubpathPart(pathSubpath);
-  if (tableName.empty()) {
-    tableName = "_G";
+  shaderName_ = ResourceManager::getSubpathPart(pathSubpath);
+  if (shaderName_.empty()) {
+    shaderName_ = "_G";
   }
 
   // create a cache entry for the file
@@ -663,7 +669,7 @@ GPUPipeline::GPUPipeline(GPUPipelineType type, const char *pathSubpath,
   if (!templateFile_) {
     templateFile_ = std::make_shared<CachedGPUPipelineFile>(path.c_str());
     // load pipeline file
-    loadGPUPipelineFile(path.c_str(), tableName.c_str(), templateFile_->desc);
+    loadGPUPipelineFile(path.c_str(), shaderName_.c_str(), templateFile_->desc);
   }
 
   // now import our state
@@ -672,7 +678,7 @@ GPUPipeline::GPUPipeline(GPUPipelineType type, const char *pathSubpath,
   if (!!(loadMask_ & LoadMask::BlendStates))
     blendStates = templateFile_->desc.blendStates;
   if (!!(loadMask_ & LoadMask::DepthStencilState))
-	  depthStencilState = templateFile_->desc.depthStencilState;
+    depthStencilState = templateFile_->desc.depthStencilState;
   // if (!!(loadMask_ & LoadMask::Viewports))
   //  viewports = templateFile->desc.viewports;
   if (!!(loadMask_ & LoadMask::InputLayout))
@@ -685,13 +691,11 @@ GPUPipeline::GPUPipeline(GPUPipelineType type, const char *pathSubpath,
   }
   if (!!(loadMask_ & LoadMask::FragmentShader)) {
     fragmentShader = templateFile_->desc.shaderSources.fragmentShader.source;
-    fragmentShaderPath =
-        templateFile_->desc.shaderSources.fragmentShader.path;
+    fragmentShaderPath = templateFile_->desc.shaderSources.fragmentShader.path;
   }
   if (!!(loadMask_ & LoadMask::GeometryShader)) {
     geometryShader = templateFile_->desc.shaderSources.geometryShader.source;
-    geometryShaderPath =
-        templateFile_->desc.shaderSources.geometryShader.path;
+    geometryShaderPath = templateFile_->desc.shaderSources.geometryShader.path;
   }
   if (!!(loadMask_ & LoadMask::TessControlShader)) {
     tessControlShader =
@@ -701,8 +705,7 @@ GPUPipeline::GPUPipeline(GPUPipelineType type, const char *pathSubpath,
   }
   if (!!(loadMask_ & LoadMask::TessEvalShader)) {
     tessEvalShader = templateFile_->desc.shaderSources.tessEvalShader.source;
-    tessEvalShaderPath =
-        templateFile_->desc.shaderSources.tessEvalShader.path;
+    tessEvalShaderPath = templateFile_->desc.shaderSources.tessEvalShader.path;
   }
   if (!!(loadMask_ & LoadMask::ComputeShader)) {
     computeShader = templateFile_->desc.shaderSources.computeShader.source;
@@ -732,8 +735,10 @@ createGraphicsPipelineState(const char *name, const GraphicsPipelineDesc &desc,
       desc.tessControlShader, desc.tessEvalShader);
   if (!state->prog.getLinkStatus()) {
     errorMessage("Failed to create program");
-    debugMessage("====== Vertex shader: ======\n {}", desc.vertexShader);
-    debugMessage("====== Fragment shader: ======\n {}", desc.fragmentShader);
+    debugMessage("====== Vertex shader ({}): ======\n {}",
+                 desc.vertexShaderPath, desc.vertexShader);
+    debugMessage("====== Fragment shader ({}): ======\n {}",
+                 desc.fragmentShaderPath, desc.fragmentShader);
     return nullptr;
   } else {
     return state;
@@ -747,7 +752,8 @@ createComputePipelineState(const char *name, const ComputePipelineDesc &desc,
   state->prog = ProgramObject::createCompute(desc.computeShader);
   if (!state->prog.getLinkStatus()) {
     errorMessage("Failed to create program");
-    debugMessage("====== Compute shader: ======\n {}", desc.computeShader);
+    debugMessage("====== Compute shader ({}): ======\n {}",
+                 desc.computeShaderPath, desc.computeShader);
     return nullptr;
   } else {
     return state;
@@ -755,6 +761,7 @@ createComputePipelineState(const char *name, const ComputePipelineDesc &desc,
 }
 
 void GPUPipeline::compile() {
+  AG_DEBUG("Compiling: {}${}", templateFile_->getPath(), shaderName_.c_str());
   std::vector<const char *> macros;
   for (const auto &d : shaderDefines)
     macros.push_back(d.c_str());
@@ -793,6 +800,12 @@ void GPUPipeline::compile() {
     desc.tessEvalShader = shaderSources.tessEvalShader.source.empty()
                               ? nullptr
                               : shaderSources.tessEvalShader.source.c_str();
+
+    desc.vertexShaderPath = shaderSources.vertexShader.path.c_str();
+    desc.fragmentShaderPath = shaderSources.fragmentShader.path.c_str();
+    desc.geometryShaderPath = shaderSources.geometryShader.path.c_str();
+    desc.tessControlShaderPath = shaderSources.tessControlShader.path.c_str();
+    desc.tessEvalShaderPath = shaderSources.tessEvalShader.path.c_str();
     // create pipeline
     state_ =
         createGraphicsPipelineState(templateFile_->getPath(), desc, cache_);
@@ -804,6 +817,7 @@ void GPUPipeline::compile() {
     // create pipeline
     ComputePipelineDesc desc;
     desc.computeShader = ppComputeShaderSource.c_str();
+    desc.computeShaderPath = computeShaderPath.c_str();
     state_ = createComputePipelineState(templateFile_->getPath(), desc, cache_);
   }
 

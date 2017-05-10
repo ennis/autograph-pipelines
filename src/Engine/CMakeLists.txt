@@ -16,7 +16,6 @@ target_link_libraries(
 		${NAME} 
 	PRIVATE
 		##### external
-		zlibstatic
 		luajit_bin
 		stb
 		fmt 

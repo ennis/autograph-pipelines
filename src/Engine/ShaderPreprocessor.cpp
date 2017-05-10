@@ -39,6 +39,9 @@ static void preprocessGLSL(std::ostringstream &out, string_view source,
                            const IncludeFile &thisFile,
                            GLSLShaderSourceMap &sourceMap) {
   // update sourcemap
+      AG_DEBUG("PP: input:");
+      AG_DEBUG("{}", source.substr(0));
+
   int thisFileIndex = sourceMap.size();
   sourceMap.push_back({(int)sourceMap.size(), thisFile.path});
 
@@ -63,6 +66,7 @@ static void preprocessGLSL(std::ostringstream &out, string_view source,
   for (regex_iterator i = directives_begin; i != directives_end; ++i) {
     match m = *i;
     if (m[1].matched) {
+      AG_DEBUG("PP: matched include directive");
       ////////////////////////////////////////
       // matched include directive
       auto includePath = m[1].str();
@@ -88,6 +92,7 @@ static void preprocessGLSL(std::ostringstream &out, string_view source,
       shouldOutputLineDirective = true;
       curLine++;
     } else if (m[2].matched) {
+      AG_DEBUG("PP: matched version directive");
       ////////////////////////////////////////
       // matched version directive
       auto versionStr = m[2].str();
@@ -103,6 +108,7 @@ static void preprocessGLSL(std::ostringstream &out, string_view source,
     } else if (m[3].matched) {
       ////////////////////////////////////////
       // matched pragma directive
+      AG_DEBUG("PP: matched pragma directive");
       static const std::regex shaderStagePragmaRegexp{
           R""(^stages\s*\(\s*(\w+)\s*(?:\s*,\s*(\w+))*\s*\)\s*?$)""};
       std::cmatch matches;
@@ -133,6 +139,7 @@ static void preprocessGLSL(std::ostringstream &out, string_view source,
     } else if (m[4].matched) {
       ////////////////////////////////////////
       // matched line
+      AG_DEBUG("PP: matched line");
       if (shouldOutputLineDirective) {
         out << "#line " << curLine << " " << thisFileIndex << '\n';
         shouldOutputLineDirective = false;

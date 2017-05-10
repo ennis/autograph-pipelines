@@ -217,7 +217,7 @@ namespace STX_NAMESPACE_NAME {
 			return rlen;
 		}
 
-		STX_CONSTEXPR14 basic_string_view substr(size_type pos, size_type n = npos) const {
+		STX_CONSTEXPR14 basic_string_view substr(size_type pos = 0, size_type n = npos) const {
 			if (pos > size())
 				throw std::out_of_range("string_view::substr");
 			if (n == npos || pos + n > size())

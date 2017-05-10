@@ -191,6 +191,7 @@ private:
   LoadMask loadMask_;
   GPUPipelineType type_;
   std::shared_ptr<CachedGPUPipelineFile> templateFile_;
+  std::string shaderName_;
   variant<std::shared_ptr<GraphicsPipelineState>,
           std::shared_ptr<ComputePipelineState>>
       state_;
