@@ -39,8 +39,8 @@ static void preprocessGLSL(std::ostringstream &out, string_view source,
                            const IncludeFile &thisFile,
                            GLSLShaderSourceMap &sourceMap) {
   // update sourcemap
-      AG_DEBUG("PP: input:");
-      AG_DEBUG("{}", source.substr(0));
+  AG_DEBUG("PP: input:");
+  AG_DEBUG("{}", source.substr(0));
 
   int thisFileIndex = sourceMap.size();
   sourceMap.push_back({(int)sourceMap.size(), thisFile.path});
@@ -159,10 +159,12 @@ std::string preprocessShaderSource(string_view source, const char *path,
   int version = 0;
   GLSLShaderSourceMap sourceMap;
   ShaderStage enabledShaderStages = (ShaderStage)0;
-  preprocessGLSL(outBody, source, version, enabledShaderStages, thisFile, sourceMap);
+  preprocessGLSL(outBody, source, version, enabledShaderStages, thisFile,
+                 sourceMap);
+  AG_DEBUG("PP: Enabled stages: {0:#x}", (int)enabledShaderStages);
   // This source does not define a shader of the specified type
   if (!(enabledShaderStages & stage)) {
-	  return {};
+    return {};
   }
   if (!version) {
     warningMessage("No #version directive found while preprocessing: "

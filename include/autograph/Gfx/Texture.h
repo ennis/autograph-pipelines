@@ -3,20 +3,21 @@
 #include <autograph/Core/ImageFormat.h>
 #include <autograph/Core/Types.h>
 #include <autograph/Gfx/GLHandle.h>
+#include <autograph/Core/Support/Flags.h>
 
 namespace ag {
 
 struct AG_GFX_API TextureDeleter {
-	static constexpr gl::GLenum objectType = gl::TEXTURE;
-	void operator()(gl::GLuint tex_obj);
+  static constexpr gl::GLenum objectType = gl::TEXTURE;
+  void operator()(gl::GLuint tex_obj);
 };
 
 class AG_GFX_API Texture {
 public:
   Texture() = default;
 
-  Texture(Texture&& rhs) = default;
-  Texture& operator=(Texture&& rhs) = default;
+  Texture(Texture &&rhs) = default;
+  Texture &operator=(Texture &&rhs) = default;
 
   ~Texture();
 
@@ -29,6 +30,7 @@ public:
     return ivec3{desc_.width, desc_.height, desc_.depth};
   }
   auto format() const { return desc_.format; }
+  ivec3 getTileSize();
   void generateMipmaps();
   const auto &desc() const { return desc_; }
   gl::GLuint object() const { return obj_.get(); }
@@ -39,25 +41,49 @@ public:
   // Pixel transfer
   void upload(void *src, int mipLevel = 0);
   void get(void *dest, int mipLevel = 0);
-  void getRegion(void *dest, int x, int y, int width,
-	  int height, int mipLevel = 0);
+  void getRegion(void *dest, int x, int y, int width, int height,
+                 int mipLevel = 0);
   vec4 texelFetch(ivec3 coords, int mip_level = 0);
 
-  struct MipMaps { int count; };
-  struct Samples { int count; };
+  //====================================
+  // commitment for sparse textures
+  // tile pos and size must be integer multiples of the sparse tile size obtained with 
+  void commitTiledRegion(int mipLevel, ivec3 tileCoords, ivec3 regionSize);
+  void decommitTiledRegion(int mipLevel, ivec3 tileCoords, ivec3 regionSize);
+
+  struct MipMaps {
+    int count;
+  };
+  struct Samples {
+    int count;
+  };
+  enum class Options {
+	  SparseStorage = (1 << 0)
+  };
 
   //====================================
   // Constructors
-  static Texture create1D(ImageFormat fmt, int w, MipMaps mipMaps = MipMaps{ 1 });
-  static Texture create2D(ImageFormat fmt, int w, int h, MipMaps mipMaps = MipMaps{ 1 });
-  static Texture create2DMultisample(ImageFormat fmt, int w, int h, Samples ms = Samples{ 0 });
-  static Texture create3D(ImageFormat fmt, int w, int h, int d, MipMaps mipMaps = MipMaps{ 1 });
+  static Texture create1D(ImageFormat fmt, int w, MipMaps mipMaps = MipMaps{1}, Options opts = (Options)0);
+  static Texture create2D(ImageFormat fmt, int w, int h,
+                          MipMaps mipMaps = MipMaps{1},
+                          Samples ms = Samples{0}, Options opts = (Options)0);
+  static Texture create3D(ImageFormat fmt, int w, int h, int d,
+                          MipMaps mipMaps = MipMaps{1}, Options opts = (Options)0);
 
 private:
+  // prefer using the named constructors above for a more
+  // readable alternative
+  Texture(gl::GLenum target, ImageFormat fmt, int w, int h, int d,
+          int mipMapCount = 1, int sampleCount = 0, Options opts = (Options)0);
+
   GLHandle<TextureDeleter> obj_;
-  int numSamples_{0};
+  int numSamples_ = 0;
   ImageDesc desc_;
+  gl::GLenum target_ = gl::TEXTURE_2D;
+  Options opts_ = (Options)0;
 };
+
+ENUM_BIT_FLAGS_OPERATORS(Texture::Options)
 
 int getTextureMipMapCount(int width, int height);
 
@@ -70,5 +96,4 @@ struct GLFormatInfo {
 };
 
 const GLFormatInfo &getGLImageFormatInfo(ImageFormat fmt);
-}
-
+} // namespace ag

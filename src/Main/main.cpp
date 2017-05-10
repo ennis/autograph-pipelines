@@ -133,6 +133,12 @@ int main(int argc, char *argv[]) {
   scene.registerComponentManager(renderables);
   // scene.registerComponentManager(deferredSceneRenderer.getRenderData());
 
+  // Sparse texture test
+  Texture sparseTex = Texture::create2D(ImageFormat::R8G8B8A8_SRGB, 16384, 16384, Texture::MipMaps{ 1 }, Texture::Samples{ 0 }, Texture::Options::SparseStorage);
+  // get sparse texture size
+  ivec3 texTileSize = sparseTex.getTileSize();
+  AG_DEBUG("texture tile size = {}", texTileSize);
+
   ////////////////////////////////////////////////////
   // Load plugins
   loadPluginModule("DeferredSceneRenderer");

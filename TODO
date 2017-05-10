@@ -78,6 +78,8 @@ Minimal system:
  ☐ Camera: mute Gizmo when moving camera @scene_editor
  ☐ Be able to integrate a viewport into a QOpenGLWidget
  ☐ Consider using std::string_view pervasively
+ ☐ Deduplicate shader sources in Shader; do not preprocess compute shader source for graphics pipelines @shader
+ ☐ Testing interfaces (used with plugins)
 
 Build robustness:
  ☐ CMake: global variable that contains the runtime output directory @cmake

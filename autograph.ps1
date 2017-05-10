@@ -18,14 +18,15 @@ $Clang_DIR = "C:\Users\Alexandre\Developpement\llvm3.9\lib\cmake\clang";
 $PROJECT_NAME = "autograph";
 $BUILD_DIR = "build";
 $coreSourceDir = "src";
-$pluginsSourceDir = "src";
+$pluginsSourceDir = "src_plugins";
 $BOOST_DEBUG = "FALSE";
 
 #########################################################################
 # Templates
 $cmakePluginTemplate = @"
 set(SRC $name.cpp)
-autograph_add_module($name `${SRC})
+autograph_add_module(PLUGIN NAME $name SOURCES `${SRC})
+target_link_libraries($name PUBLIC autographEngine)
 "@
 
 $cmakeAppTemplate = @"
@@ -39,9 +40,9 @@ target_link_libraries(`${NAME} autograph_engine)
 "@
 
 $pluginSourceTemplate = @"
-#include "$name.Config.h"
-#include <autograph/engine/All.h>
-#include <autograph/gl/All.h>
+#include "$name/Exports.h"
+#include <autograph/Engine/All.h>
+#include <autograph/Gfx/All.h>
 
 //////////////////////////////////////////////
 class ${name} : public ag::Extension
@@ -50,7 +51,7 @@ public:
 };
 
 //////////////////////////////////////////////
-PLUGIN_ENTRY{
+${name}_PLUGIN_ENTRY{
     ag::registerClass<${name}, ag::Extension>("${name}");
 }
 "@

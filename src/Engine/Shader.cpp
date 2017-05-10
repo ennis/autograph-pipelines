@@ -655,8 +655,8 @@ void GPUPipeline::operator()(StateGroup &sg) {
 
 // Load from a pipeline file
 GPUPipeline::GPUPipeline(GPUPipelineType type, const char *pathSubpath,
-                         LoadMask stateMask, Cache *cache)
-    : type_{type}, cache_{cache}, loadMask_{stateMask} {
+                         LoadMask loadMask, Cache *cache)
+    : type_{type}, cache_{cache}, loadMask_{ loadMask } {
   auto path = ResourceManager::getFilesystemPath(pathSubpath);
   shaderName_ = ResourceManager::getSubpathPart(pathSubpath);
   if (shaderName_.empty()) {

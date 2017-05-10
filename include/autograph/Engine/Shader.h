@@ -167,7 +167,7 @@ public:
   // Cache* cache = nullptr);
   // Load a pipeline (from a file)
   GPUPipeline(GPUPipelineType type, const char *path,
-              LoadMask stateMask = LoadMask::All, Cache *cache = nullptr);
+              LoadMask loadMask = LoadMask::All, Cache *cache = nullptr);
   // Destructor
   ~GPUPipeline();
 
