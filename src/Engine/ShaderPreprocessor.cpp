@@ -45,8 +45,12 @@ static void preprocessGLSL(std::ostringstream &out, string_view source,
   int thisFileIndex = sourceMap.size();
   sourceMap.push_back({(int)sourceMap.size(), thisFile.path});
 
+  // static const std::regex directivesRegex{
+  //    R""(^\s*#include\s+"(.*)"\s*?$|^\s*#version\s+([0-9]*)\s*?$|^\s*#pragma\s+(.*)\s*?$|^(.*)$)""
+  //    };
   static const std::regex directivesRegex{
-      R""(^\s*#include\s+"(.*)"\s*?$|^\s*#version\s+([0-9]*)\s*?$|^\s*#pragma\s+(.*)\s*?$|^(.*)$)""};
+      R""((?:\s*#include\s+"(.*)"\s*?|\s*#version\s+([0-9]*)\s*?|\s*#pragma\s+(.*)\s*?|(.*))(?:\n|$))""};
+
   namespace fs = std::experimental::filesystem;
 
   fs::path thisFilePath{thisFile.path};
@@ -108,11 +112,12 @@ static void preprocessGLSL(std::ostringstream &out, string_view source,
     } else if (m[3].matched) {
       ////////////////////////////////////////
       // matched pragma directive
-      AG_DEBUG("PP: matched pragma directive");
+      AG_DEBUG("PP: matched pragma directive: '{}'", m[3].str());
       static const std::regex shaderStagePragmaRegexp{
-          R""(^stages\s*\(\s*(\w+)\s*(?:\s*,\s*(\w+))*\s*\)\s*?$)""};
+          R""(^stages\s*\(\s*(\w+)(?:\s*,\s*(\w+))*\s*\)\s*?$)""};
       std::cmatch matches;
-      if (std::regex_match(m[3].str().c_str(), matches,
+      auto match_str = m[3].str();
+      if (std::regex_match(match_str.c_str(), matches,
                            shaderStagePragmaRegexp)) {
         for (int matchIndex = 1; matchIndex < matches.size(); ++matchIndex) {
           if (matches[matchIndex] == "vertex") {
@@ -132,6 +137,7 @@ static void preprocessGLSL(std::ostringstream &out, string_view source,
                 "Unknown shader stage in #pragma stages(...) directive: {}",
                 matches[matchIndex]);
           }
+          //AG_DEBUG("PP: pragma stage debug: '{}'", matches[matchIndex].str());
         }
       } else {
         warningMessage("Ignored #pragma directive: {}", m[3].str());
