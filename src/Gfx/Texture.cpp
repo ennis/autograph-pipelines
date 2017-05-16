@@ -75,8 +75,8 @@ Texture::~Texture() {
 }
 
 void Texture::upload(void *src, int mipLevel) {
-  auto gl_fmt = getGLImageFormatInfo(desc_.format);
-  switch (desc_.dimensions) {
+  auto gl_fmt = getGLImageFormatInfo(desc_.fmt);
+  switch (desc_.dims) {
   case ImageDimensions::Image1D:
     gl::TextureSubImage1D(obj_.get(), mipLevel, 0, desc_.width,
                           gl_fmt.external_fmt, gl_fmt.type, src);
@@ -94,7 +94,7 @@ void Texture::upload(void *src, int mipLevel) {
 }
 
 void Texture::get(void *dest, int mipLevel) {
-  auto gl_fmt = getGLImageFormatInfo(desc_.format);
+  auto gl_fmt = getGLImageFormatInfo(desc_.fmt);
   gl::GetTextureImage(obj_.get(), mipLevel, gl_fmt.external_fmt, gl_fmt.type,
                       gl_fmt.size * desc_.width * desc_.height * desc_.depth,
                       dest);
@@ -104,7 +104,7 @@ void Texture::generateMipmaps() { gl::GenerateTextureMipmap(obj_.get()); }
 
 void Texture::getRegion(void *dest, int x, int y, int width, int height,
                         int mipLevel) {
-  auto gl_fmt = getGLImageFormatInfo(desc_.format);
+  auto gl_fmt = getGLImageFormatInfo(desc_.fmt);
   gl::GetTextureSubImage(obj_.get(), mipLevel, x, y, 0, width, height, 1,
                          gl_fmt.external_fmt, gl_fmt.type,
                          gl_fmt.size * width * height, dest);
@@ -117,29 +117,48 @@ glm::vec4 Texture::texelFetch(glm::ivec3 coords, int mip_level) {
   return out;
 }
 
-Texture::Texture(gl::GLenum target, ImageFormat fmt, int w, int h, int d,
-                 int mipMapCount, int sampleCount, Options opts)
-    : numSamples_{sampleCount}, target_{target}, opts_{opts} {
-  const auto &glfmt = getGLImageFormatInfo(fmt);
+Texture::Texture(const Desc &desc) : desc_{desc} {
+  gl::GLenum target;
+  switch (desc.dims) {
+  case ImageDimensions::Image1D:
+    target = gl::TEXTURE_1D;
+    break;
+  case ImageDimensions::Image2D:
+    if (desc.sampleCount > 0) {
+      target = gl::TEXTURE_2D_MULTISAMPLE;
+    } else {
+      target = gl::TEXTURE_2D;
+    }
+    break;
+  case ImageDimensions::Image3D:
+    target = gl::TEXTURE_3D;
+    break;
+  }
+
+  const auto &glfmt = getGLImageFormatInfo(desc.fmt);
   gl::GLuint tex_obj;
   gl::CreateTextures(target, 1, &tex_obj);
-  if (!!(opts & Options::SparseStorage)) {
+  if (!!(desc.opts & Options::SparseStorage)) {
     gl::TextureParameteri(tex_obj, gl::TEXTURE_SPARSE_ARB, gl::TRUE_);
   }
 
   switch (target) {
   case gl::TEXTURE_1D:
-    gl::TextureStorage1D(tex_obj, mipMapCount, glfmt.internal_fmt, w);
+    gl::TextureStorage1D(tex_obj, desc.mipMapCount, glfmt.internal_fmt,
+                         desc.width);
     break;
   case gl::TEXTURE_2D:
-    gl::TextureStorage2D(tex_obj, mipMapCount, glfmt.internal_fmt, w, h);
+    gl::TextureStorage2D(tex_obj, desc.mipMapCount, glfmt.internal_fmt,
+                         desc.width, desc.height);
     break;
   case gl::TEXTURE_2D_MULTISAMPLE:
-    gl::TextureStorage2DMultisample(tex_obj, sampleCount, glfmt.internal_fmt, w,
-                                    h, true);
+    gl::TextureStorage2DMultisample(tex_obj, desc.sampleCount,
+                                    glfmt.internal_fmt, desc.width, desc.height,
+                                    true);
     break;
   case gl::TEXTURE_3D:
-    gl::TextureStorage3D(tex_obj, 1, glfmt.internal_fmt, w, h, d);
+    gl::TextureStorage3D(tex_obj, 1, glfmt.internal_fmt, desc.width,
+                         desc.height, desc.depth);
     break;
   }
   // set sensible defaults
@@ -149,16 +168,11 @@ Texture::Texture(gl::GLenum target, ImageFormat fmt, int w, int h, int d,
   gl::TextureParameteri(tex_obj, gl::TEXTURE_MIN_FILTER, gl::NEAREST);
   gl::TextureParameteri(tex_obj, gl::TEXTURE_MAG_FILTER, gl::NEAREST);
   // fill desc
-  desc_.format = fmt;
-  desc_.width = w;
-  desc_.height = h;
-  desc_.depth = d;
-  desc_.numMipmaps = mipMapCount;
   obj_ = tex_obj;
 }
 
 ivec3 Texture::getTileSize() {
-  const auto &glfmt = getGLImageFormatInfo(desc_.format);
+  const auto &glfmt = getGLImageFormatInfo(desc_.fmt);
   ivec3 tileSize;
   // query tile size
   gl::GetInternalformativ(target_, glfmt.internal_fmt,
@@ -172,18 +186,21 @@ ivec3 Texture::getTileSize() {
 
 Texture Texture::create1D(ImageFormat fmt, int w, MipMaps mipMaps,
                           Options opts) {
-  return Texture(gl::TEXTURE_1D, fmt, w, 1, 1, mipMaps.count, 0, opts);
+  Desc desc{ImageDimensions::Image1D, fmt, w, 1, 1, 0, mipMaps.count, opts};
+  return Texture{desc};
 }
 
 Texture Texture::create2D(ImageFormat fmt, int w, int h, MipMaps mipMaps,
                           Samples ms, Options opts) {
-  return Texture(ms.count > 0 ? gl::TEXTURE_2D_MULTISAMPLE : gl::TEXTURE_2D,
-                 fmt, w, h, 1, mipMaps.count, ms.count, opts);
+  Desc desc{
+      ImageDimensions::Image2D, fmt, w, h, 1, ms.count, mipMaps.count, opts};
+  return Texture{desc};
 }
 
 Texture Texture::create3D(ImageFormat fmt, int w, int h, int d, MipMaps mipMaps,
                           Options opts) {
-  return Texture(gl::TEXTURE_3D, fmt, w, h, 1, mipMaps.count, 0, opts);
+  Desc desc{ImageDimensions::Image3D, fmt, w, h, d, 0, mipMaps.count, opts};
+  return Texture{desc};
 }
 
 void Texture::commitTiledRegion(int mipLevel, ivec3 tileCoords,

@@ -1,12 +1,13 @@
 #include <autograph/Core/Support/Debug.h>
 #include <autograph/Core/Support/FileDialog.h>
 #include <autograph/Core/Support/ProjectRoot.h>
-#include <autograph/Engine/All.h>
-#include <autograph/Gfx/All.h>
-#include <autograph/Window/WindowGLFW.h>
 #include <autograph/Editor/CameraController.h>
 #include <autograph/Editor/SceneEditor.h>
 #include <autograph/Editor/SceneRenderer.h>
+#include <autograph/Engine/All.h>
+#include <autograph/Engine/FrameGraph.h>
+#include <autograph/Gfx/All.h>
+#include <autograph/Window/WindowGLFW.h>
 #include <experimental/filesystem>
 #include <iostream>
 #include <memory>
@@ -38,28 +39,29 @@ template <typename... T> bool any_of(int a, T... as) {
 
 
 struct Subscription {
-	struct Impl {};
-	template <typename T> friend class Observable;
-	void unsubscribe() { ptr_.reset(); }
-	std::shared_ptr<Impl> ptr_ = std::make_shared<Impl>();
+        struct Impl {};
+        template <typename T> friend class Observable;
+        void unsubscribe() { ptr_.reset(); }
+        std::shared_ptr<Impl> ptr_ = std::make_shared<Impl>();
 };
 
 
 template <typename T> struct Observable {
-  
+  
 
   // associated generator coroutine
   coroutine_handle<promise_type> genCoro_;
   // list of observers
   struct Observer {
-	 std::function<void(T)> fn_;
-	 std::weak_ptr<Subscription::Impl> sub_;
+         std::function<void(T)> fn_;
+         std::weak_ptr<Subscription::Impl> sub_;
   };
   std::vector<Observer> observers_;
 
   // Default ctor
   Observable() {}
-  Observable(coroutine_handle<promise_type> genCoro) : genCoro_{ std::move(genCoro) } {}
+  Observable(coroutine_handle<promise_type> genCoro) : genCoro_{
+std::move(genCoro) } {}
 
 
 };
@@ -67,15 +69,17 @@ template <typename T> struct Observable {
 // Signal a new value
 template <typename T>
 void signal(Observable<T>, T v) {
-	// go through the list of observers and call them, knowing that, in response:
-	// - one observer may fire this signal again in its handler
-	// - one observer may add another observer to this observable
-	//		-> must not invalidate iteration state
-	// - one observer may remove an observer (incl. itself) from the list 
-	//		-> must not invalidate iteration state
-	// - the observer might be a resumed coroutine that owns the given observable
-	//	 and that, when resumed, will destroy the observable
-	//		-> the other observers should still be called
+        // go through the list of observers and call them, knowing that, in
+response:
+        // - one observer may fire this signal again in its handler
+        // - one observer may add another observer to this observable
+        //		-> must not invalidate iteration state
+        // - one observer may remove an observer (incl. itself) from the list
+        //		-> must not invalidate iteration state
+        // - the observer might be a resumed coroutine that owns the given
+observable
+        //	 and that, when resumed, will destroy the observable
+        //		-> the other observers should still be called
 }
 
 Observable<int> button(Observable<int> events) {
@@ -107,6 +111,77 @@ Observable<int> button(Observable<int> events) {
         };
 }*/
 
+FrameGraph::Resource addBlurPasses(FrameGraph &fg, FrameGraph::Resource in) {
+  struct BlurPassData {
+    FrameGraph::Resource in;
+    FrameGraph::Resource out;
+  };
+
+  // Horizontal pass
+  auto blurPassH = fg.addPass<BlurPassData>(
+      [&](FrameGraph::PassBuilder &builder, BlurPassData &data) {
+        data.in = builder.read(in);
+        data.out =
+            builder.createTexture2D(ImageFormat::R16G16B16A16_SFLOAT, 640, 480);
+        builder.setName("blurPassH");
+      },
+      [](BlurPassData &, FrameGraph::PassResources &) {
+        AG_DEBUG("blurPassH");
+      });
+
+  // Vertical pass
+  auto blurPassV = fg.addPass<BlurPassData>(
+      [&](FrameGraph::PassBuilder &builder, BlurPassData &data) {
+        data.in = builder.read(blurPassH.out);
+        data.out =
+            builder.createTexture2D(ImageFormat::R16G16B16A16_SFLOAT, 640, 480);
+        builder.setName("blurPassV");
+      },
+      [](BlurPassData &, FrameGraph::PassResources &) {
+        AG_DEBUG("blurPassV");
+      });
+
+  return blurPassV.out;
+}
+
+struct DeferredPassData {
+  FrameGraph::Resource diffuse;
+  FrameGraph::Resource normals;
+  FrameGraph::Resource motion;
+};
+
+DeferredPassData &addDeferredRenderPass(FrameGraph &fg) {
+  auto &data = fg.addPass<DeferredPassData>(
+      [&](FrameGraph::PassBuilder &builder, DeferredPassData &data) {
+        data.diffuse =
+            builder.createTexture2D(ImageFormat::R8G8B8A8_SRGB, 640, 480);
+        data.normals =
+            builder.createTexture2D(ImageFormat::R16G16_SFLOAT, 640, 480);
+        data.motion =
+            builder.createTexture2D(ImageFormat::R16G16_SFLOAT, 640, 480);
+        builder.setName("DeferredRenderPass");
+      },
+      [](DeferredPassData &, FrameGraph::PassResources &) {
+        AG_DEBUG("DeferredRenderPass");
+      });
+  return data;
+}
+
+FrameGraph::Resource addRenderHUDPass(FrameGraph &fg,
+                                      FrameGraph::Resource frame) {
+  struct PassData {
+    FrameGraph::Resource inout;
+  };
+
+  auto &data = fg.addPass<PassData>(
+      [&](FrameGraph::PassBuilder &builder, PassData &data) {
+        data.inout = builder.write(frame);
+        builder.setName("RenderHUDPass");
+      },
+      [](PassData &, FrameGraph::PassResources &) { AG_DEBUG("HUDPass"); });
+  return data.inout;
+}
+
 ///////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////
 // MAIN
@@ -134,7 +209,9 @@ int main(int argc, char *argv[]) {
   // scene.registerComponentManager(deferredSceneRenderer.getRenderData());
 
   // Sparse texture test
-  Texture sparseTex = Texture::create2D(ImageFormat::R8G8B8A8_SRGB, 16384, 16384, Texture::MipMaps{ 1 }, Texture::Samples{ 0 }, Texture::Options::SparseStorage);
+  Texture sparseTex = Texture::create2D(
+      ImageFormat::R8G8B8A8_SRGB, 16384, 16384, Texture::MipMaps{1},
+      Texture::Samples{0}, Texture::Options::SparseStorage);
   // get sparse texture size
   ivec3 texTileSize = sparseTex.getTileSize();
   AG_DEBUG("texture tile size = {}", texTileSize);
@@ -170,6 +247,14 @@ int main(int argc, char *argv[]) {
       camController->focusOnObject(scene, *rootSceneObj);
   }
   ID selectedItemID = 0;
+
+  ////////////////////////////////////////////////////
+  // Frame graph test
+  FrameGraph fg;
+  auto &gbuffers = addDeferredRenderPass(fg);
+  auto &blurredNormals = addBlurPasses(fg, gbuffers.normals);
+  auto hud = addRenderHUDPass(fg, gbuffers.diffuse);
+  fg.compile();
 
   ////////////////////////////////////////////////////
   // Main frame callback

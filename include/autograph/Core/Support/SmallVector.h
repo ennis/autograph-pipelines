@@ -14,7 +14,7 @@
 //
 //===----------------------------------------------------------------------===//
 #pragma once
-
+#include <autograph/Core/Exports.h>
 #include "iterator_range.h"
 #include <algorithm>
 #include <cassert>
@@ -54,7 +54,7 @@ protected:
 
   /// This is an implementation of the grow() method which only works
   /// on POD-like data types and is out of line to reduce code duplication.
-  void grow_pod(void *FirstEl, size_t MinSizeInBytes, size_t TSize);
+  AG_CORE_API void grow_pod(void *FirstEl, size_t MinSizeInBytes, size_t TSize);
 
 public:
   /// This returns size()*sizeof(T).

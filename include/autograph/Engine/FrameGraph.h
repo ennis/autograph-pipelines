@@ -1,8 +1,10 @@
 #pragma once
 #include <any>
+#include <autograph/Core/Support/HashCombine.h>
 #include <autograph/Core/Support/SmallVector.h>
 #include <autograph/Gfx/Texture.h>
 #include <functional>
+#include <unordered_map>
 #include <vector>
 
 namespace ag {
@@ -95,15 +97,17 @@ public:
   struct Pass {
     template <typename Data, typename ExecuteFn>
     Pass(Data &&d, ExecuteFn &&exec) : data{std::forward<Data>(d)} {
-      execute =
+      /*execute =
           [ this, exec = std::move(exec) ](PassResources & passResources) {
         exec(std::any_cast<Data &>(this->data), passResources);
-      };
+      };*/
     }
 
-    SmallVector<Resource, 4> R_reads;
-    SmallVector<Resource, 4> R_writes;
+    SmallVector<Resource, 4> reads;
+    SmallVector<Resource, 4> writes;
+    SmallVector<Resource, 4> creates;
 
+    std::string name;
     std::function<void(PassResources &)> execute;
     std::any data;
   };
@@ -116,19 +120,43 @@ public:
     Resource createTexture2D(ImageFormat fmt, int w, int h,
                              Texture::MipMaps mipMaps = Texture::MipMaps{1},
                              Texture::Samples ms = Texture::Samples{0},
-                             Texture::Options opts = (Texture::Options)0) {}
+                             Texture::Options opts = (Texture::Options)0) {
+      Texture::Desc d;
+      d.fmt = fmt;
+      d.width = w;
+      d.height = h;
+      d.depth = 1;
+      d.mipMapCount = mipMaps.count;
+      d.sampleCount = ms.count;
+      d.opts = opts;
+      ResourceDesc rd;
+      rd.res = TextureResource{d, -1};
+	  Resource r = frameGraph.addResource(rd);
+      pass.creates.push_back(r);
+	  pass.writes.push_back(r);
+      AG_DEBUG("[FrameGraph] createTexture2D {}.{}", r.handle, r.renameIndex);
+      return r;
+    }
 
     Resource read(Resource in) {
       AG_DEBUG("[FrameGraph] read {}.{}", in.handle, in.renameIndex);
+	  pass.reads.push_back(in);
+      return in;
     }
+
     Resource write(Resource out) {
       AG_DEBUG("[FrameGraph] write {}.{}", out.handle, out.renameIndex);
       // same resource, bump the rename index
-      return Resource{out.handle, out.renameIndex};
+	  pass.writes.push_back(out);
+      return Resource{out.handle, out.renameIndex + 1};
     }
-    Resource use(Resource inout) {
+
+    void setName(const char *name_) { pass.name = name_; }
+
+    /*Resource use(Resource inout) {
       AG_DEBUG("[FrameGraph] use {}.{}", inout.handle, inout.renameIndex);
-    }
+      return Resource{out.handle, out.renameIndex+1};
+    }*/
 
   private:
     FrameGraph &frameGraph;
@@ -152,9 +180,10 @@ public:
     // get pointer to user data
     auto pdata = std::any_cast<State>(&p.data);
     // create pass builder and call setup callback
-    PassBuilder pb{*this, *p};
+    PassBuilder pb{*this, p};
     setup(pb, *pdata);
     // add pass to list
+	AG_DEBUG("-> Add pass {}", p.name.c_str());
     passes.push_back(std::move(p));
     return *pdata;
   }
@@ -187,14 +216,17 @@ public:
           warningMessage(
               "[FrameGraph] read/write conflict detected on resource {}.{}",
               r.handle, r.renameIndex);
-		  hasWriteConflicts = true;
+          hasWriteConflicts = true;
         } else {
-          wren_index[r.handle] = r.renameIndex + 1;
+			AG_DEBUG("write rename index for {}: .{} -> .{}", r.handle, r.renameIndex, r.renameIndex + 1);
+			w_ren[r.handle] = r.renameIndex + 1;
         }
         auto &res = resources[r.handle];
         // update lifetime end
+        // resource is read during this pass, so it must outlive it
         if (res.lifetimeEnd < pass_index) {
           res.lifetimeEnd = pass_index;
+		  AG_DEBUG("lifetime of {}: pass {} -> {}", r.handle, res.lifetimeBegin, res.lifetimeEnd);
         }
       }
 
@@ -207,16 +239,18 @@ public:
         // Note: p.writes should not contain the same resource twice with a
         // different rename index
         if (w_ren[w.handle] > w.renameIndex) {
-			warningMessage(
-				"[FrameGraph] read/write conflict detected on resource {}.{}",
-				w.handle, w.renameIndex);
+          warningMessage(
+              "[FrameGraph] read/write conflict detected on resource {}.{}",
+              w.handle, w.renameIndex);
           hasWriteConflicts = true;
-		}
-		else {
-			// the next pass cannot use this rename for either read or write operations
-			rren_index[w.handle] = w.renameIndex + 1;
-			wren_index[w.handle] = w.renameIndex + 1;
-		}
+        } else {
+          // the next pass cannot use this rename for either read or write
+          // operations
+			AG_DEBUG("read rename index for {}: .{} -> .{}", w.handle, w.renameIndex, w.renameIndex + 1);
+			AG_DEBUG("write rename index for {}: .{} -> .{}", w.handle, w.renameIndex, w.renameIndex + 1);
+			r_ren[w.handle] = w.renameIndex + 1;
+          w_ren[w.handle] = w.renameIndex + 1;
+        }
       }
       ++pass_index;
     }
@@ -224,30 +258,41 @@ public:
     //////////////////////////////////////////////
     // transient resource allocation
     pass_index = 0;
+
     for (auto &p : passes) {
-      // maintain a cache of textures and buffers, indexed by descriptor (hash table)
-      // allocate all resources that should be created in the pass 
-	//    
-	  // go through all resources of the pass, if
+      // create resources that should be created
+      for (auto &c : p.creates) {
+        auto &r = resources[c.handle];
+        if (auto texres = ag::get_if<TextureResource>(&r.res)) {
+          // create the texture
+          texres->texId =
+              getCompatibleTextureResource(texres->desc, pass_index);
+        } else {
+          // TODO other resources
+        }
+      }
+
+      ++pass_index;
+
+      // release read-from resources that should be released on this pass
+      for (auto &read : p.reads) {
+		  auto &r = resources[read.handle];
+        if (r.lifetimeEnd >= pass_index) {
+          if (auto texres = ag::get_if<TextureResource>(&r.res)) {
+            allocatedTextures[texres->texId].used = -1;
+          } else {
+            // TODO other resources
+          }
+        }
+      }
     }
   }
 
   ////////////////////////////////////////////
 private:
-  struct TextureDesc {
-    ImageDimensions dims;
-    ImageFormat fmt;
-    int width;
-    int height;
-    int depth;
-    Texture::Samples samples;
-    Texture::MipMaps mipMaps;
-    Texture::Options opts;
-  };
-
   struct TextureResource {
-    TextureDesc desc;
-    //Texture allocated;
+    Texture::Desc desc;
+    int texId;
   };
 
   struct ResourceDesc {
@@ -257,36 +302,60 @@ private:
     ag::variant<TextureResource> res;
   };
 
-  /*ResourceBase &createTexture2D(ImageFormat fmt, int w, int h,
-                                Texture::MipMaps mipMaps = Texture::MipMaps{1},
-                                Texture::Samples ms = Texture::Samples{0},
-                                Texture::Options opts = (Texture::Options)0)
-  {
-    auto r = std::make_unique<TextureResource>();
-    r->handle = resources.size();
-    r->dims = ImageDimensions::Image2D;
-    r->fmt = fmt;
-    r->width = w;
-    r->height = h;
-    r->depth = 1;
-    r->samples = ms;
-    r->mipMaps = mipMaps;
-    r->opts = opts;
-    auto pres = r.get();
-    passes.push_back(std::move(r));
-    return *pres;
-  }*/
+  Resource addResource(const ResourceDesc &rd) {
+	  resources.push_back(rd);
+	  int handle = (int)(resources.size() - 1);
+	  AG_DEBUG("addResource {}.{}", handle, 0);
+	  return Resource{ handle,0 };
+  }
 
+  // virtual resources (can be aliased)
   std::vector<ResourceDesc> resources;
+  // list of passes
   std::vector<Pass> passes;
+
+  // allocated resources
+  struct AllocatedTexture {
+	  Texture::Desc desc;
+	  Texture tex;
+	  int used = -1;
+  };
+
+  int getCompatibleTextureResource(const Texture::Desc &desc, int passId) {
+    int index = 0;
+    for (auto &t : allocatedTextures) {
+      // check compatibility of descriptors
+      if (t.desc.dims == desc.dims && t.desc.width == desc.width &&
+          t.desc.height == desc.height && t.desc.depth == desc.depth &&
+          t.desc.fmt == desc.fmt && t.desc.sampleCount == desc.sampleCount &&
+          t.desc.mipMapCount == desc.mipMapCount) {
+        return index;
+      }
+      ++index;
+    }
+    // create a new one
+    allocatedTextures.push_back(AllocatedTexture{});
+    auto &newtex = allocatedTextures.back();
+    newtex.desc = desc;
+    newtex.used = passId;
+    newtex.tex = Texture{desc};
+    return (int)(allocatedTextures.size() - 1);
+  }
+
+  // we can keep the list from one frame to another,
+  // although I suspect that allocating memory for textures
+  // on the GPU should not be that costly
+  std::vector<AllocatedTexture> allocatedTextures;
+
+  // std::vector<Texture>
 };
 
-Texture &FrameGraph::PassResources::getTexture(Resource res) {
+/*Texture &FrameGraph::PassResources::getTexture(Resource res) {
   assert(res.handle < fg.resources.size());
-  fg.resources[res.handle].
-}
+  // fg.resources[res.handle].
+}*/
 
-FrameGraph::Resource test(FrameGraph &fg, FrameGraph::Resource inTex) {
+/*FrameGraph::Resource test(FrameGraph &fg, FrameGraph::Resource inTex) {
   struct Data {
     FrameGraph::Resource input;
     FrameGraph::Resource output;
@@ -303,6 +372,6 @@ FrameGraph::Resource test(FrameGraph &fg, FrameGraph::Resource inTex) {
         Texture &tex = passResources.getTexture(data.input);
       });
   return data.output;
-}
+}*/
 
 } // namespace ag

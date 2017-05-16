@@ -1,9 +1,10 @@
 #pragma once
 #include <autograph/Core/ImageDesc.h>
 #include <autograph/Core/ImageFormat.h>
+#include <autograph/Core/Support/Flags.h>
+#include <autograph/Core/Support/HashCombine.h>
 #include <autograph/Core/Types.h>
 #include <autograph/Gfx/GLHandle.h>
-#include <autograph/Core/Support/Flags.h>
 
 namespace ag {
 
@@ -14,8 +15,41 @@ struct AG_GFX_API TextureDeleter {
 
 class AG_GFX_API Texture {
 public:
-  Texture() = default;
+  //////////////////////////////////
+  struct MipMaps {
+    int count;
+  };
+  struct Samples {
+    int count;
+  };
+  enum class Options { SparseStorage = (1 << 0) };
 
+  struct Desc {
+    ImageDimensions dims;
+    ImageFormat fmt;
+    int width;
+    int height;
+    int depth;
+    int sampleCount;
+    int mipMapCount;
+    Options opts;
+
+    constexpr size_t hash() const {
+      size_t h = 0;
+      hashCombine(h, static_cast<std::underlying_type_t<decltype(dims)>>(dims));
+      hashCombine(h, static_cast<std::underlying_type_t<decltype(fmt)>>(fmt));
+      hashCombine(h, width);
+      hashCombine(h, height);
+      hashCombine(h, depth);
+      hashCombine(h, sampleCount);
+      hashCombine(h, mipMapCount);
+      hashCombine(h, static_cast<std::underlying_type_t<decltype(opts)>>(opts));
+      return h;
+    }
+  };
+
+  Texture() = default;
+  Texture(const Desc &desc);
   Texture(Texture &&rhs) = default;
   Texture &operator=(Texture &&rhs) = default;
 
@@ -29,7 +63,7 @@ public:
   auto size(int mip_level = 0) const {
     return ivec3{desc_.width, desc_.height, desc_.depth};
   }
-  auto format() const { return desc_.format; }
+  auto format() const { return desc_.fmt; }
   ivec3 getTileSize();
   void generateMipmaps();
   const auto &desc() const { return desc_; }
@@ -47,28 +81,21 @@ public:
 
   //====================================
   // commitment for sparse textures
-  // tile pos and size must be integer multiples of the sparse tile size obtained with 
+  // tile pos and size must be integer multiples of the sparse tile size
+  // obtained with
   void commitTiledRegion(int mipLevel, ivec3 tileCoords, ivec3 regionSize);
   void decommitTiledRegion(int mipLevel, ivec3 tileCoords, ivec3 regionSize);
 
-  struct MipMaps {
-    int count;
-  };
-  struct Samples {
-    int count;
-  };
-  enum class Options {
-	  SparseStorage = (1 << 0)
-  };
-
   //====================================
-  // Constructors
-  static Texture create1D(ImageFormat fmt, int w, MipMaps mipMaps = MipMaps{1}, Options opts = (Options)0);
+  // Named constructors
+  static Texture create1D(ImageFormat fmt, int w, MipMaps mipMaps = MipMaps{1},
+                          Options opts = (Options)0);
   static Texture create2D(ImageFormat fmt, int w, int h,
-                          MipMaps mipMaps = MipMaps{1},
-                          Samples ms = Samples{0}, Options opts = (Options)0);
+                          MipMaps mipMaps = MipMaps{1}, Samples ms = Samples{0},
+                          Options opts = (Options)0);
   static Texture create3D(ImageFormat fmt, int w, int h, int d,
-                          MipMaps mipMaps = MipMaps{1}, Options opts = (Options)0);
+                          MipMaps mipMaps = MipMaps{1},
+                          Options opts = (Options)0);
 
 private:
   // prefer using the named constructors above for a more
@@ -76,11 +103,9 @@ private:
   Texture(gl::GLenum target, ImageFormat fmt, int w, int h, int d,
           int mipMapCount = 1, int sampleCount = 0, Options opts = (Options)0);
 
+  Desc desc_;
   GLHandle<TextureDeleter> obj_;
-  int numSamples_ = 0;
-  ImageDesc desc_;
   gl::GLenum target_ = gl::TEXTURE_2D;
-  Options opts_ = (Options)0;
 };
 
 ENUM_BIT_FLAGS_OPERATORS(Texture::Options)
