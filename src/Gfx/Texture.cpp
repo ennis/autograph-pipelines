@@ -118,31 +118,30 @@ glm::vec4 Texture::texelFetch(glm::ivec3 coords, int mip_level) {
 }
 
 Texture::Texture(const Desc &desc) : desc_{desc} {
-  gl::GLenum target;
   switch (desc.dims) {
   case ImageDimensions::Image1D:
-    target = gl::TEXTURE_1D;
+    target_ = gl::TEXTURE_1D;
     break;
   case ImageDimensions::Image2D:
     if (desc.sampleCount > 0) {
-      target = gl::TEXTURE_2D_MULTISAMPLE;
+		target_ = gl::TEXTURE_2D_MULTISAMPLE;
     } else {
-      target = gl::TEXTURE_2D;
+		target_ = gl::TEXTURE_2D;
     }
     break;
   case ImageDimensions::Image3D:
-    target = gl::TEXTURE_3D;
+	  target_ = gl::TEXTURE_3D;
     break;
   }
 
   const auto &glfmt = getGLImageFormatInfo(desc.fmt);
   gl::GLuint tex_obj;
-  gl::CreateTextures(target, 1, &tex_obj);
+  gl::CreateTextures(target_, 1, &tex_obj);
   if (!!(desc.opts & Options::SparseStorage)) {
     gl::TextureParameteri(tex_obj, gl::TEXTURE_SPARSE_ARB, gl::TRUE_);
   }
 
-  switch (target) {
+  switch (target_) {
   case gl::TEXTURE_1D:
     gl::TextureStorage1D(tex_obj, desc.mipMapCount, glfmt.internal_fmt,
                          desc.width);
