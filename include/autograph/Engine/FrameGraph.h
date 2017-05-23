@@ -85,6 +85,11 @@ namespace ag {
 // FrameGraph::BufferResourceDesc
 // - size, usage
 
+//
+// Next iteration:
+// Resource should be an indirect pointer to a texture / buffer / framebuffer resource
+// FrameGraph::Texture -> ResourceHandle<TexturePrivate>
+
 class FrameGraph {
 public:
   friend class PassBuilder;
@@ -96,35 +101,21 @@ public:
     int renameIndex;
   };
 
-  struct TextureResourceDesc {
-    Texture::Desc desc;
-  };
-
-  struct BufferResourceDesc {
-    size_t size;
-    BufferUsage usage;
-  };
-
-
-  struct ResourceDesc
-  {
-    int handle = -1;
+  struct ResourceDesc {
     int lifetimeBegin = 0;
     int lifetimeEnd = 0;
 
-	struct Texture
-	{
-		ag::Texture::Desc desc;
-		ag::Texture* ptex;
-	};
-	struct Buffer
-	{
-		size_t size;
-		ag::BufferUsage usage;
-		ag::Buffer* buf;
-	};
+    struct Texture {
+      ag::Texture::Desc desc;
+      ag::Texture *ptex;
+    };
+    struct Buffer {
+      size_t size;
+      ag::BufferUsage usage;
+      ag::Buffer *buf;
+    };
 
-	ag::variant<Texture, Buffer> v;
+    ag::variant<Texture, Buffer> v;
   };
 
   ////////////////////////////////////////////
@@ -163,8 +154,8 @@ public:
       d.mipMapCount = mipMaps.count;
       d.sampleCount = ms.count;
       d.opts = opts;
-	  ResourceDesc rd;
-      rd.desc = TextureResourceDesc{d};
+      ResourceDesc rd;
+      rd.v = ResourceDesc::Texture{d, nullptr};
       Resource r = frameGraph.addResourceDesc(rd);
       pass.creates.push_back(r);
       // pass.writes.push_back(r);
@@ -188,26 +179,10 @@ public:
     Resource copy(Resource in) {
       const ResourceDesc &rd = frameGraph.getResourceDesc(in.handle);
       Resource out = frameGraph.addResourceDesc(rd);
+      AG_DEBUG("[FrameGraph] copy {}.{} -> {}.{}", in.handle, in.renameIndex,
+               out.handle, out.renameIndex);
       pass.creates.push_back(out);
       return out;
-    }
-
-    bool isTexture(Resource in) const {
-      return frameGraph.isTexture(in.handle);
-    }
-
-    Texture::Desc getTextureDesc(Resource in) const {
-      return frameGraph.getTextureDesc(in.handle);
-    }
-
-    bool isBuffer(Resource in) const { return frameGraph.isBuffer(in.handle); }
-
-    BufferResourceDesc getBufferDesc(Resource in) const {
-      return frameGraph.getBufferSize(in.handle);
-    }
-
-    ResourceDesc getResourceDesc(Resource in) const {
-      return frameGraph.getResourceDesc(in.handle);
     }
 
     void setName(const char *name_) { pass.name = name_; }
@@ -249,28 +224,47 @@ public:
 
   void compile();
 
-  ////////////////////////////////////////////
-private:
-  Resource addResourceDesc(const ResourceDesc &rd);
   const ResourceDesc &getResourceDesc(int handle) const;
+
+  bool isBuffer(int handle) const {
+    return ag::get_if<ResourceDesc::Buffer>(&getResourceDesc(handle).v) !=
+           nullptr;
+  }
+
+  bool isBuffer(Resource r) const { return isBuffer(r.handle); }
+
+  bool isTexture(int handle) const {
+    return ag::get_if<ResourceDesc::Texture>(&getResourceDesc(handle).v) !=
+           nullptr;
+  }
+
+  bool isTexture(Resource r) const { return isTexture(r.handle); }
 
   const Texture::Desc &getTextureDesc(int handle) const {
     auto &rd = getResourceDesc(handle);
-    auto ptexdesc = ag::get_if<TextureResourceDesc>(&rd.desc);
+    auto ptexdesc = ag::get_if<ResourceDesc::Texture>(&rd.v);
     if (!ptexdesc)
       ag::failWith("Not a texture");
     return ptexdesc->desc;
   }
 
-  const BufferResourceDesc &getBufferDesc(int handle) const {
-    auto &rd = getResourceDesc(handle);
-    auto bufdesc = ag::get_if<BufferResourceDesc>(&rd.desc);
-    if (!bufdesc)
-      ag::failWith("Not a buffer");
-    return *bufdesc;
+  const Texture::Desc &getTextureDesc(Resource r) const {
+    return getTextureDesc(r.handle);
   }
 
-  int FrameGraph::assignCompatibleResource(ResourceDesc &desc, int passId);
+  size_t getBufferSize(int handle) const {
+    auto &rd = getResourceDesc(handle);
+    auto bufdesc = ag::get_if<ResourceDesc::Buffer>(&rd.v);
+    if (!bufdesc)
+      ag::failWith("Not a buffer");
+    return bufdesc->size;
+  }
+
+  size_t getBufferSize(Resource r) const { return getBufferSize(r.handle); }
+
+  ////////////////////////////////////////////
+private:
+  Resource addResourceDesc(const ResourceDesc &rd);
 
   // virtual resources (can be aliased)
   std::vector<std::unique_ptr<ResourceDesc>> resources;

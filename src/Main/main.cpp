@@ -118,13 +118,18 @@ FrameGraph::Resource addBlurPasses(FrameGraph &fg, FrameGraph::Resource in) {
     FrameGraph::Resource in;
     FrameGraph::Resource out;
   };
+  auto& inDesc = fg.getTextureDesc(in);
+
+  // TODO filter out unsupported texture formats
+  // TODO make a framebuffer
 
   // Horizontal pass
   auto blurPassH = fg.addPass<BlurPassData>(
-      [&](FrameGraph::PassBuilder &builder, BlurPassData &data) {
+      [&](FrameGraph::PassBuilder &builder, BlurPassData &data) 
+  {
         data.in = builder.read(in);
-        data.out =
-            builder.createTexture2D(ImageFormat::R16G16B16A16_SFLOAT, 640, 480);
+		data.out = builder.copy(in);
+		AG_DEBUG("blurPassH: {}x{}, {}", inDesc.width, inDesc.height, getImageFormatInfo(inDesc.fmt).name);
         builder.setName("blurPassH");
       },
       [](BlurPassData &, FrameGraph::PassResources &) {
@@ -135,8 +140,8 @@ FrameGraph::Resource addBlurPasses(FrameGraph &fg, FrameGraph::Resource in) {
   auto blurPassV = fg.addPass<BlurPassData>(
       [&](FrameGraph::PassBuilder &builder, BlurPassData &data) {
         data.in = builder.read(blurPassH.out);
-        data.out =
-            builder.createTexture2D(ImageFormat::R16G16B16A16_SFLOAT, 640, 480);
+		data.out = builder.copy(in);
+		AG_DEBUG("blurPassH: {}x{}, {}", inDesc.width, inDesc.height, getImageFormatInfo(inDesc.fmt).name);
         builder.setName("blurPassV");
       },
       [](BlurPassData &, FrameGraph::PassResources &) {
@@ -152,15 +157,15 @@ struct DeferredPassData {
   FrameGraph::Resource motion;
 };
 
-DeferredPassData &addDeferredRenderPass(FrameGraph &fg) {
+DeferredPassData &addDeferredRenderPass(FrameGraph &fg, int width, int height) {
   auto &data = fg.addPass<DeferredPassData>(
       [&](FrameGraph::PassBuilder &builder, DeferredPassData &data) {
         data.diffuse =
-            builder.createTexture2D(ImageFormat::R8G8B8A8_SRGB, 640, 480);
+            builder.createTexture2D(ImageFormat::R8G8B8A8_SRGB, width, height);
         data.normals =
-            builder.createTexture2D(ImageFormat::R16G16_SFLOAT, 640, 480);
+            builder.createTexture2D(ImageFormat::R16G16_SFLOAT, width, height);
         data.motion =
-            builder.createTexture2D(ImageFormat::R16G16_SFLOAT, 640, 480);
+            builder.createTexture2D(ImageFormat::R16G16_SFLOAT, width, height);
         builder.setName("DeferredRenderPass");
       },
       [](DeferredPassData &, FrameGraph::PassResources &) {

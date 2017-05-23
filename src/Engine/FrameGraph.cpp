@@ -1,4 +1,5 @@
 #include <autograph/Engine/FrameGraph.h>
+#include <set>
 
 namespace ag {
 using ag::get_if;
@@ -12,43 +13,6 @@ FrameGraph::Resource FrameGraph::addResourceDesc(const ResourceDesc &rd) {
 
 const FrameGraph::ResourceDesc &FrameGraph::getResourceDesc(int handle) const {
   return *resources[handle];
-}
-
-int FrameGraph::assignCompatibleResource(FrameGraph::ResourceDesc &desc,
-                                         int passId) {
-  int index = 0;
-  if (auto ptexdesc = get_if<ResourceDesc::Texture>(&desc.v)) {
-    for (int i = 0; i < textures.size(); ++i) {
-      if (isTextureInUse(i))
-        continue;
-      auto ptex = textures[i].get();
-      if (ptex->desc() == ptexdesc->desc) {
-        ptexdesc->ptex = ptex;
-        setTextureInUse(i);
-        return;
-      }
-    }
-    auto tex = std::make_unique<Texture>(ptexdesc->desc);
-    auto ptex = tex.get();
-    textures.push_back(std::move(tex));
-    ptexdesc->ptex = ptex;
-  } else if (auto pbufdesc = get_if<ResourceDesc::Buffer>(&desc.v)) {
-    /*for (int i = 0; i < buffers.size(); ++i)
-    {
-            if (isBufferInUse(i)) continue;
-            auto ptex = textures[i].get();
-            if (ptex->desc() == ptexdesc->desc) {
-                    ptexdesc->ptex = ptex;
-                    setTextureInUse(i);
-                    return;
-            }
-    }*/
-    // always create another buffer, for now
-    auto buf = std::make_unique<Buffer>(pbufdesc->size, pbufdesc->usage);
-    auto pbuf = buf.get();
-    buffers.push_back(std::move(buf));
-    pbufdesc->buf = pbuf;
-  }
 }
 
 void FrameGraph::compile() {
@@ -88,17 +52,17 @@ void FrameGraph::compile() {
       auto &res = resources[r.handle];
       // update lifetime end
       // resource is read during this pass, so it must outlive it
-      if (res.lifetimeEnd < pass_index) {
-        res.lifetimeEnd = pass_index;
-        AG_DEBUG("lifetime of {}: pass {} -> {}", r.handle, res.lifetimeBegin,
-                 res.lifetimeEnd);
+      if (res->lifetimeEnd < pass_index) {
+        res->lifetimeEnd = pass_index;
+        AG_DEBUG("lifetime of {}: pass {} -> {}", r.handle, res->lifetimeBegin,
+                 res->lifetimeEnd);
       }
     }
 
     for (auto &w : p.writes) {
       auto &res = resources[w.handle];
-      if (res.lifetimeBegin == -1) {
-        res.lifetimeBegin = pass_index;
+      if (res->lifetimeBegin == -1) {
+        res->lifetimeBegin = pass_index;
       }
 
       // Note: p.writes should not contain the same resource twice with a
@@ -125,32 +89,65 @@ void FrameGraph::compile() {
   //////////////////////////////////////////////
   // transient resource allocation
   pass_index = 0;
+  std::set<Texture *> texturesInUse;
+  auto assignTexture = [&](ResourceDesc::Texture &texdesc) {
+    for (auto &tex : textures) {
+      if (texturesInUse.count(tex.get()))
+        continue;
+      auto ptex = tex.get();
+      if (ptex->desc() == texdesc.desc) {
+        texdesc.ptex = ptex;
+        texturesInUse.insert(ptex);
+        return;
+      }
+    }
+    auto tex = std::make_unique<Texture>(texdesc.desc);
+    auto ptex = tex.get();
+    textures.push_back(std::move(tex));
+    texdesc.ptex = ptex;
+  };
+
+  auto assignBuffer = [&](ResourceDesc::Buffer &bufdesc) {
+    auto buf = std::make_unique<Buffer>(bufdesc.size, bufdesc.usage);
+    auto pbuf = buf.get();
+    buffers.push_back(std::move(buf));
+    bufdesc.buf = pbuf;
+  };
+
+  auto assignCompatibleResource = [&](ResourceDesc &rd) {
+    if (auto ptexdesc = get_if<ResourceDesc::Texture>(&rd.v)) {
+      assignTexture(*ptexdesc);
+    } else if (auto pbufdesc = get_if<ResourceDesc::Buffer>(&rd.v)) {
+      assignBuffer(*pbufdesc);
+      // always create another buffer, for now
+    }
+  };
+
+  auto releaseResource = [&](ResourceDesc &rd) {
+    if (auto ptexdesc = get_if<ResourceDesc::Texture>(&rd.v)) {
+      assignTexture(*ptexdesc);
+    } else if (auto pbufdesc = get_if<ResourceDesc::Buffer>(&rd.v)) {
+      // Nothing to do for buffers
+      // assignBuffer(*pbufdesc);
+    }
+  };
 
   for (auto &p : passes) {
     // create resources that should be created
     for (auto &c : p.creates) {
       auto &r = resources[c.handle];
-      if (auto texres = ag::get_if<TextureResource>(&r.res)) {
-        // create the texture
-        texres->texId = getCompatibleTextureResource(texres->desc, pass_index);
-      } else {
-        // TODO other resources
+      assignCompatibleResource(*r);
+    }
+
+    // release read-from resources that should be released on this pass
+    for (auto &read : p.reads) {
+      auto &res = resources[read.handle];
+      if (res->lifetimeEnd <= pass_index) {
+        releaseResource(*res);
       }
     }
 
     ++pass_index;
-
-    // release read-from resources that should be released on this pass
-    for (auto &read : p.reads) {
-      auto &r = resources[read.handle];
-      if (r.lifetimeEnd >= pass_index) {
-        if (auto texres = ag::get_if<TextureResource>(&r.res)) {
-          allocatedTextures[texres->texId].used = -1;
-        } else {
-          // TODO other resources
-        }
-      }
-    }
   }
 }
 } // namespace ag
