@@ -1,5 +1,6 @@
 #include "ShaderPreprocessor.h"
 #include <autograph/Core/Support/Debug.h>
+#include <autograph/Core/Support/md5.h>
 #include <autograph/Engine/ResourceManager.h>
 #include <autograph/Engine/Shader.h>
 #include <autograph/Gfx/GfxContext.h>
@@ -656,7 +657,7 @@ void GPUPipeline::operator()(StateGroup &sg) {
 // Load from a pipeline file
 GPUPipeline::GPUPipeline(GPUPipelineType type, const char *pathSubpath,
                          LoadMask loadMask, Cache *cache)
-    : type_{type}, cache_{cache}, loadMask_{ loadMask } {
+    : type_{type}, cache_{cache}, loadMask_{loadMask} {
   auto path = ResourceManager::getFilesystemPath(pathSubpath);
   shaderName_ = ResourceManager::getSubpathPart(pathSubpath);
   if (shaderName_.empty()) {
@@ -741,6 +742,23 @@ createGraphicsPipelineState(const char *name, const GraphicsPipelineDesc &desc,
                  desc.fragmentShaderPath, desc.fragmentShader);
     return nullptr;
   } else {
+    // add to cache
+    MD5Hasher hasher;
+    if (desc.vertexShader)
+      hasher.update(desc.vertexShader, std::strlen(desc.vertexShader));
+    if (desc.fragmentShader)
+      hasher.update(desc.fragmentShader, std::strlen(desc.fragmentShader));
+    if (desc.tessControlShader)
+      hasher.update(desc.tessControlShader,
+                    std::strlen(desc.tessControlShader));
+    if (desc.tessEvalShader)
+      hasher.update(desc.tessEvalShader, std::strlen(desc.tessEvalShader));
+    if (desc.geometryShader)
+      hasher.update(desc.geometryShader, std::strlen(desc.geometryShader));
+    MD5Hasher::Hash h;
+    hasher.finalize(h);
+    auto hashstr = MD5Hasher::hashToString(h);
+    AG_DEBUG("Adding program $gfx${} to cache", hashstr);
     return state;
   }
 }

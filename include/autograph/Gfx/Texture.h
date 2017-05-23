@@ -46,6 +46,13 @@ public:
       hashCombine(h, static_cast<std::underlying_type_t<decltype(opts)>>(opts));
       return h;
     }
+
+    constexpr bool operator==(const Desc &rhs) const {
+      return dims == rhs.dims && fmt == rhs.fmt && width == rhs.width &&
+             height == rhs.height && depth == rhs.depth &&
+             sampleCount == rhs.sampleCount && mipMapCount == rhs.mipMapCount &&
+             opts == rhs.opts;
+    }
   };
 
   Texture() = default;

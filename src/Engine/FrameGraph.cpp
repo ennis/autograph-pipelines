@@ -33,8 +33,10 @@ void FrameGraph::compile() {
   r_ren.resize(resources.size(), 0);
   w_ren.resize(resources.size(), 0);
 
+  AG_DEBUG("** BEGIN CONCURRENT RESOURCE USAGE DETECTION");
   int pass_index = 0;
   for (auto &p : passes) {
+    AG_DEBUG("** PASS {}", p.name);
     for (auto &r : p.reads) {
       // ensure we can read this resource
       if (r_ren[r.handle] > r.renameIndex) {
@@ -88,6 +90,7 @@ void FrameGraph::compile() {
 
   //////////////////////////////////////////////
   // transient resource allocation
+  AG_DEBUG("** BEGIN RESOURCE ALLOCATION");
   pass_index = 0;
   std::set<Texture *> texturesInUse;
   auto assignTexture = [&](ResourceDesc::Texture &texdesc) {
@@ -96,6 +99,9 @@ void FrameGraph::compile() {
         continue;
       auto ptex = tex.get();
       if (ptex->desc() == texdesc.desc) {
+        AG_DEBUG("[REUSING TEXTURE @{} {}x{}x{} {}]", (const void *)ptex,
+                 texdesc.desc.width, texdesc.desc.height, texdesc.desc.depth,
+                 getImageFormatInfo(texdesc.desc.fmt).name);
         texdesc.ptex = ptex;
         texturesInUse.insert(ptex);
         return;
@@ -104,6 +110,10 @@ void FrameGraph::compile() {
     auto tex = std::make_unique<Texture>(texdesc.desc);
     auto ptex = tex.get();
     textures.push_back(std::move(tex));
+    texturesInUse.insert(ptex);
+    AG_DEBUG("[creating new texture @{} {}x{}x{} {}]", (const void *)ptex, texdesc.desc.width,
+             texdesc.desc.height, texdesc.desc.depth,
+             getImageFormatInfo(texdesc.desc.fmt).name);
     texdesc.ptex = ptex;
   };
 
@@ -111,6 +121,7 @@ void FrameGraph::compile() {
     auto buf = std::make_unique<Buffer>(bufdesc.size, bufdesc.usage);
     auto pbuf = buf.get();
     buffers.push_back(std::move(buf));
+    AG_DEBUG("[creating new buffer @{} of size {}]", (const void *)pbuf, bufdesc.size);
     bufdesc.buf = pbuf;
   };
 
@@ -125,7 +136,8 @@ void FrameGraph::compile() {
 
   auto releaseResource = [&](ResourceDesc &rd) {
     if (auto ptexdesc = get_if<ResourceDesc::Texture>(&rd.v)) {
-      assignTexture(*ptexdesc);
+      AG_DEBUG("[RELEASE TEXTURE @{}]", (const void *)ptexdesc->ptex);
+      texturesInUse.erase(ptexdesc->ptex);
     } else if (auto pbufdesc = get_if<ResourceDesc::Buffer>(&rd.v)) {
       // Nothing to do for buffers
       // assignBuffer(*pbufdesc);
@@ -133,6 +145,7 @@ void FrameGraph::compile() {
   };
 
   for (auto &p : passes) {
+    AG_DEBUG("** PASS {}", p.name);
     // create resources that should be created
     for (auto &c : p.creates) {
       auto &r = resources[c.handle];

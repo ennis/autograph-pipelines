@@ -51,6 +51,7 @@ template <typename T> struct Observable {
 
 
 
+
   // associated generator coroutine
   coroutine_handle<promise_type> genCoro_;
   // list of observers
@@ -118,18 +119,18 @@ FrameGraph::Resource addBlurPasses(FrameGraph &fg, FrameGraph::Resource in) {
     FrameGraph::Resource in;
     FrameGraph::Resource out;
   };
-  auto& inDesc = fg.getTextureDesc(in);
+  auto &inDesc = fg.getTextureDesc(in);
 
   // TODO filter out unsupported texture formats
   // TODO make a framebuffer
 
   // Horizontal pass
-  auto blurPassH = fg.addPass<BlurPassData>(
-      [&](FrameGraph::PassBuilder &builder, BlurPassData &data) 
-  {
+  auto &blurPassH = fg.addPass<BlurPassData>(
+      [&](FrameGraph::PassBuilder &builder, BlurPassData &data) {
         data.in = builder.read(in);
-		data.out = builder.copy(in);
-		AG_DEBUG("blurPassH: {}x{}, {}", inDesc.width, inDesc.height, getImageFormatInfo(inDesc.fmt).name);
+        data.out = builder.copy(in);
+        AG_DEBUG("blurPassH: {}x{}, {}", inDesc.width, inDesc.height,
+                 getImageFormatInfo(inDesc.fmt).name);
         builder.setName("blurPassH");
       },
       [](BlurPassData &, FrameGraph::PassResources &) {
@@ -137,11 +138,12 @@ FrameGraph::Resource addBlurPasses(FrameGraph &fg, FrameGraph::Resource in) {
       });
 
   // Vertical pass
-  auto blurPassV = fg.addPass<BlurPassData>(
+  auto &blurPassV = fg.addPass<BlurPassData>(
       [&](FrameGraph::PassBuilder &builder, BlurPassData &data) {
         data.in = builder.read(blurPassH.out);
-		data.out = builder.copy(in);
-		AG_DEBUG("blurPassH: {}x{}, {}", inDesc.width, inDesc.height, getImageFormatInfo(inDesc.fmt).name);
+        data.out = builder.copy(in);
+        AG_DEBUG("blurPassV: {}x{}, {}", inDesc.width, inDesc.height,
+                 getImageFormatInfo(inDesc.fmt).name);
         builder.setName("blurPassV");
       },
       [](BlurPassData &, FrameGraph::PassResources &) {
@@ -258,7 +260,7 @@ int main(int argc, char *argv[]) {
   ////////////////////////////////////////////////////
   // Frame graph test
   FrameGraph fg;
-  auto &gbuffers = addDeferredRenderPass(fg);
+  auto &gbuffers = addDeferredRenderPass(fg, 640, 480);
   auto &blurredNormals = addBlurPasses(fg, gbuffers.normals);
   auto hud = addRenderHUDPass(fg, gbuffers.diffuse);
   fg.compile();

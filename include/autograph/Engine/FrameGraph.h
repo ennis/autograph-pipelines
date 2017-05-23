@@ -1,5 +1,6 @@
 #pragma once
 #include <any>
+#include <autograph/Engine/Exports.h>
 #include <autograph/Core/Support/Debug.h>
 #include <autograph/Core/Support/HashCombine.h>
 #include <autograph/Core/Support/SmallVector.h>
@@ -90,10 +91,16 @@ namespace ag {
 // Resource should be an indirect pointer to a texture / buffer / framebuffer resource
 // FrameGraph::Texture -> ResourceHandle<TexturePrivate>
 
-class FrameGraph {
+class AG_ENGINE_API FrameGraph {
 public:
   friend class PassBuilder;
   friend class PassResources;
+
+  FrameGraph() = default;
+  FrameGraph(const FrameGraph&) = delete;
+  FrameGraph& operator=(const FrameGraph&) = delete;
+  FrameGraph(FrameGraph&&) = default;
+  FrameGraph& operator=(FrameGraph&&) = default;
 
   ////////////////////////////////////////////
   struct Resource {
@@ -159,18 +166,18 @@ public:
       Resource r = frameGraph.addResourceDesc(rd);
       pass.creates.push_back(r);
       // pass.writes.push_back(r);
-      AG_DEBUG("[FrameGraph] createTexture2D {}.{}", r.handle, r.renameIndex);
+      AG_DEBUG("createTexture2D {}.{}", r.handle, r.renameIndex);
       return r;
     }
 
     Resource read(Resource in) {
-      AG_DEBUG("[FrameGraph] read {}.{}", in.handle, in.renameIndex);
+      AG_DEBUG("read {}.{}", in.handle, in.renameIndex);
       pass.reads.push_back(in);
       return in;
     }
 
     Resource write(Resource out) {
-      AG_DEBUG("[FrameGraph] write {}.{}", out.handle, out.renameIndex);
+      AG_DEBUG("write {}.{}", out.handle, out.renameIndex);
       // same resource, bump the rename index
       pass.writes.push_back(out);
       return Resource{out.handle, out.renameIndex + 1};
@@ -179,7 +186,7 @@ public:
     Resource copy(Resource in) {
       const ResourceDesc &rd = frameGraph.getResourceDesc(in.handle);
       Resource out = frameGraph.addResourceDesc(rd);
-      AG_DEBUG("[FrameGraph] copy {}.{} -> {}.{}", in.handle, in.renameIndex,
+      AG_DEBUG("copy {}.{} -> {}.{}", in.handle, in.renameIndex,
                out.handle, out.renameIndex);
       pass.creates.push_back(out);
       return out;

@@ -39,8 +39,8 @@ static void preprocessGLSL(std::ostringstream &out, string_view source,
                            const IncludeFile &thisFile,
                            GLSLShaderSourceMap &sourceMap) {
   // update sourcemap
-  AG_DEBUG("PP: input:");
-  AG_DEBUG("{}", source.substr(0));
+  //AG_DEBUG("PP: input:");
+  //AG_DEBUG("{}", source.substr(0));
 
   int thisFileIndex = sourceMap.size();
   sourceMap.push_back({(int)sourceMap.size(), thisFile.path});
@@ -145,7 +145,7 @@ static void preprocessGLSL(std::ostringstream &out, string_view source,
     } else if (m[4].matched) {
       ////////////////////////////////////////
       // matched line
-      AG_DEBUG("PP: matched line");
+      //AG_DEBUG("PP: matched line");
       if (shouldOutputLineDirective) {
         out << "#line " << curLine << " " << thisFileIndex << '\n';
         shouldOutputLineDirective = false;
