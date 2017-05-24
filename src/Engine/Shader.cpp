@@ -580,6 +580,13 @@ static void loadGPUPipelineFile(const char *path, const char *tableName,
   }
 }
 
+struct CachedProgramObject : CacheObject {
+  CachedProgramObject(const char *hashstr, ProgramObject &&prog_)
+      : CacheObject{hashstr}, prog{std::move(prog_)} {}
+
+  ProgramObject prog;
+};
+
 // 'Compiled' pipeline state
 // Should be in Gfx
 struct GraphicsPipelineState : CacheObject {
@@ -588,7 +595,7 @@ struct GraphicsPipelineState : CacheObject {
   // Bind to state group
   void operator()(StateGroup &sg) {
     sg.vertexArray = vao.object();
-    sg.program = prog.object();
+    sg.program = cachedProgram->prog.object();
     sg.depthStencilState = depthStencilState;
     sg.rasterizerState = rasterizerState;
     sg.blendStates = blendStates;
@@ -598,7 +605,7 @@ struct GraphicsPipelineState : CacheObject {
   RasterizerState rasterizerState;
   std::array<BlendState, 8> blendStates;
   VertexArray vao;
-  ProgramObject prog;
+  std::shared_ptr<CachedProgramObject> cachedProgram;
 };
 
 // Complete description of a compute pipeline
@@ -606,9 +613,9 @@ struct GraphicsPipelineState : CacheObject {
 struct ComputePipelineState : CacheObject {
   ComputePipelineState(const char *hash) : CacheObject{hash} {}
 
-  void operator()(StateGroup &sg) { sg.program = prog.object(); }
+  void operator()(StateGroup &sg) { sg.program = cachedProgram->prog.object(); }
 
-  ProgramObject prog;
+  std::shared_ptr<CachedProgramObject> cachedProgram;
   gl::GLbitfield memoryBarrierBits = 0;
   int computeGroupSizeX = 0;
   int computeGroupSizeY = 0;
@@ -721,61 +728,103 @@ GPUPipeline::GPUPipeline(GPUPipelineType type, const char *pathSubpath,
     cache->addObject(templateFile_);
 }
 
+static std::shared_ptr<CachedProgramObject>
+getCachedProgramObject(Cache *cache, const char *hashstr) {
+  if (cache) {
+    if (auto cachedProg =
+            cache->getObjectOfType<CachedProgramObject>(hashstr)) {
+      return cachedProg;
+    }
+  }
+  return nullptr;
+}
+
 static std::shared_ptr<GraphicsPipelineState>
 createGraphicsPipelineState(const char *name, const GraphicsPipelineDesc &desc,
                             Cache *cache = nullptr) {
+  // compute hash
+  MD5Hasher hasher;
+  if (desc.vertexShader)
+    hasher.update(desc.vertexShader, std::strlen(desc.vertexShader));
+  if (desc.fragmentShader)
+    hasher.update(desc.fragmentShader, std::strlen(desc.fragmentShader));
+  if (desc.tessControlShader)
+    hasher.update(desc.tessControlShader, std::strlen(desc.tessControlShader));
+  if (desc.tessEvalShader)
+    hasher.update(desc.tessEvalShader, std::strlen(desc.tessEvalShader));
+  if (desc.geometryShader)
+    hasher.update(desc.geometryShader, std::strlen(desc.geometryShader));
+  MD5Hasher::Hash h;
+  hasher.finalize(h);
+  auto hashstr = "$graphics" + MD5Hasher::hashToString(h);
+
   auto state = std::make_shared<GraphicsPipelineState>(name);
   state->rasterizerState = desc.rasterizerState;
   state->blendStates = desc.blendStates;
   state->depthStencilState = desc.depthStencilState;
   // init VAO
   state->vao.initialize(desc.inputLayout);
-  // create program
-  state->prog = ProgramObject::create(
-      desc.vertexShader, desc.fragmentShader, desc.geometryShader,
-      desc.tessControlShader, desc.tessEvalShader);
-  if (!state->prog.getLinkStatus()) {
-    errorMessage("Failed to create program");
-    debugMessage("====== Vertex shader ({}): ======\n {}",
-                 desc.vertexShaderPath, desc.vertexShader);
-    debugMessage("====== Fragment shader ({}): ======\n {}",
-                 desc.fragmentShaderPath, desc.fragmentShader);
-    return nullptr;
-  } else {
-    // add to cache
-    MD5Hasher hasher;
-    if (desc.vertexShader)
-      hasher.update(desc.vertexShader, std::strlen(desc.vertexShader));
-    if (desc.fragmentShader)
-      hasher.update(desc.fragmentShader, std::strlen(desc.fragmentShader));
-    if (desc.tessControlShader)
-      hasher.update(desc.tessControlShader,
-                    std::strlen(desc.tessControlShader));
-    if (desc.tessEvalShader)
-      hasher.update(desc.tessEvalShader, std::strlen(desc.tessEvalShader));
-    if (desc.geometryShader)
-      hasher.update(desc.geometryShader, std::strlen(desc.geometryShader));
-    MD5Hasher::Hash h;
-    hasher.finalize(h);
-    auto hashstr = MD5Hasher::hashToString(h);
-    AG_DEBUG("Adding program $gfx${} to cache", hashstr);
-    return state;
+
+  // try to find a matching shader in the cache
+  state->cachedProgram = getCachedProgramObject(cache, hashstr.c_str());
+
+  if (!state->cachedProgram) {
+    // create program
+    auto prog = ProgramObject::create(
+        desc.vertexShader, desc.fragmentShader, desc.geometryShader,
+        desc.tessControlShader, desc.tessEvalShader);
+
+    if (!prog.getLinkStatus()) {
+      errorMessage("Failed to create program");
+      debugMessage("====== Vertex shader ({}): ======\n {}",
+                   desc.vertexShaderPath, desc.vertexShader);
+      debugMessage("====== Fragment shader ({}): ======\n {}",
+                   desc.fragmentShaderPath, desc.fragmentShader);
+      return nullptr;
+    } else {
+      state->cachedProgram = std::make_shared<CachedProgramObject>(
+          hashstr.c_str(), std::move(prog));
+      if (cache) {
+        AG_DEBUG("Adding program {} to cache", hashstr);
+        cache->addObject(state->cachedProgram);
+      }
+    }
   }
+
+  return state;
 }
 
 static std::shared_ptr<ComputePipelineState>
 createComputePipelineState(const char *name, const ComputePipelineDesc &desc,
                            Cache *cache = nullptr) {
+  // compute hash
+  MD5Hasher hasher;
+  if (desc.computeShader)
+    hasher.update(desc.computeShader, std::strlen(desc.computeShader));
+  MD5Hasher::Hash h;
+  hasher.finalize(h);
+  auto hashstr = "$compute_" + MD5Hasher::hashToString(h);
   auto state = std::make_shared<ComputePipelineState>(name);
-  state->prog = ProgramObject::createCompute(desc.computeShader);
-  if (!state->prog.getLinkStatus()) {
-    errorMessage("Failed to create program");
-    debugMessage("====== Compute shader ({}): ======\n {}",
-                 desc.computeShaderPath, desc.computeShader);
-    return nullptr;
-  } else {
-    return state;
+
+  state->cachedProgram = getCachedProgramObject(cache, hashstr.c_str());
+
+  if (!state->cachedProgram) {
+    auto prog = ProgramObject::createCompute(desc.computeShader);
+    if (!prog.getLinkStatus()) {
+      errorMessage("Failed to create program");
+      debugMessage("====== Compute shader ({}): ======\n {}",
+                   desc.computeShaderPath, desc.computeShader);
+      return nullptr;
+    } else {
+      state->cachedProgram = std::make_shared<CachedProgramObject>(
+          hashstr.c_str(), std::move(prog));
+      if (cache) {
+        AG_DEBUG("Adding program {} to cache", hashstr);
+        cache->addObject(state->cachedProgram);
+      }
+    }
   }
+  return state;
 }
 
 void GPUPipeline::compile() {
