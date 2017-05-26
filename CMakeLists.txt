@@ -90,6 +90,7 @@ add_subdirectory(ext EXCLUDE_FROM_ALL)
 
 #---------------------------------------
 # Core modules
+set(ALL_PLUGINS "" CACHE INTERNAL "ALL_PLUGINS")
 function(autograph_add_module)
 	cmake_parse_arguments("MOD" "STATIC;SHARED;PLUGIN" "NAME;SHORTNAME;INCDIR" "SOURCES" ${ARGN})
   # 
@@ -137,6 +138,7 @@ function(autograph_add_module)
 		message("Added shared module: ${MOD_NAME}")
 	elseif(MOD_PLUGIN)
 		message("Added plugin: ${MOD_NAME}")
+		set(ALL_PLUGINS "${ALL_PLUGINS};${MOD_NAME}" CACHE INTERNAL "ALL_PLUGINS")
 	endif()
 endfunction()
 
@@ -187,3 +189,12 @@ subdirlist(PLUGINS_SUBDIRS ${PROJECT_SOURCE_DIR}/src_plugins)
 foreach(pluginSubdirectory ${PLUGINS_SUBDIRS})
   add_subdirectory(src_plugins/${pluginSubdirectory})
 endforeach()
+
+
+#---------------------------------------------
+# All plugins target
+add_custom_target(autographAllPlugins)
+message(STATUS "ALL_PLUGINS=${ALL_PLUGINS}")
+if(ALL_PLUGINS)
+add_dependencies(autographAllPlugins ${ALL_PLUGINS})
+endif()

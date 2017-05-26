@@ -790,6 +790,9 @@ createGraphicsPipelineState(const char *name, const GraphicsPipelineDesc &desc,
       }
     }
   }
+  else {
+	  AG_DEBUG("Reusing cached program {}", hashstr);
+  }
 
   return state;
 }
@@ -823,6 +826,9 @@ createComputePipelineState(const char *name, const ComputePipelineDesc &desc,
         cache->addObject(state->cachedProgram);
       }
     }
+  }
+  else {
+	  AG_DEBUG("Reusing cached program {}", hashstr);
   }
   return state;
 }

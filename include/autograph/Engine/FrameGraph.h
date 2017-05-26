@@ -179,8 +179,10 @@ public:
     Resource write(Resource out) {
       AG_DEBUG("write {}.{}", out.handle, out.renameIndex);
       // same resource, bump the rename index
-      pass.writes.push_back(out);
-      return Resource{out.handle, out.renameIndex + 1};
+	  pass.reads.push_back(out);
+	  Resource ret{ out.handle, out.renameIndex + 1 };
+      pass.writes.push_back(ret);
+	  return ret;
     }
 
     Resource copy(Resource in) {
@@ -192,7 +194,7 @@ public:
       return out;
     }
 
-    void setName(const char *name_) { pass.name = name_; }
+	void setName(const char *name_) { pass.name = name_; }
 
     /*Resource use(Resource inout) {
       AG_DEBUG("[FrameGraph] use {}.{}", inout.handle, inout.renameIndex);
@@ -217,19 +219,21 @@ public:
   template <typename State, typename SetupFn, typename ExecuteFn>
   State &addPass(SetupFn &setup, ExecuteFn &&exec) {
     // create user data and pass, copy exec callback
-    auto p = Pass{State{}, std::forward<ExecuteFn>(exec)};
+    auto p = std::make_unique<Pass>(State{}, std::forward<ExecuteFn>(exec));
     // get pointer to user data
-    auto pdata = std::any_cast<State>(&p.data);
+    auto pdata = std::any_cast<State>(&p->data);
     // create pass builder and call setup callback
-    PassBuilder pb{*this, p};
+    PassBuilder pb{*this, *p};
     setup(pb, *pdata);
     // add pass to list
-    AG_DEBUG("-> Add pass {}", p.name.c_str());
+    AG_DEBUG("-> Add pass {}", p->name.c_str());
     passes.push_back(std::move(p));
     return *pdata;
   }
 
   void compile();
+
+  void dumpGraph(const char* path);
 
   const ResourceDesc &getResourceDesc(int handle) const;
 
@@ -281,7 +285,7 @@ private:
   std::vector<std::unique_ptr<Texture>> textures;
   std::vector<std::unique_ptr<Buffer>> buffers;
   // list of passes
-  std::vector<Pass> passes;
+  std::vector<std::unique_ptr<Pass>> passes;
 };
 
 // Resource allocation:

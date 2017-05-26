@@ -1,4 +1,5 @@
 #include <autograph/Engine/FrameGraph.h>
+#include <fstream>
 #include <set>
 
 namespace ag {
@@ -36,8 +37,8 @@ void FrameGraph::compile() {
   AG_DEBUG("** BEGIN CONCURRENT RESOURCE USAGE DETECTION");
   int pass_index = 0;
   for (auto &p : passes) {
-    AG_DEBUG("** PASS {}", p.name);
-    for (auto &r : p.reads) {
+    AG_DEBUG("** PASS {}", p->name);
+    for (auto &r : p->reads) {
       // ensure we can read this resource
       if (r_ren[r.handle] > r.renameIndex) {
         // we already bumped the rename index for this resource: it was
@@ -61,7 +62,7 @@ void FrameGraph::compile() {
       }
     }
 
-    for (auto &w : p.writes) {
+    for (auto &w : p->writes) {
       auto &res = resources[w.handle];
       if (res->lifetimeBegin == -1) {
         res->lifetimeBegin = pass_index;
@@ -111,8 +112,8 @@ void FrameGraph::compile() {
     auto ptex = tex.get();
     textures.push_back(std::move(tex));
     texturesInUse.insert(ptex);
-    AG_DEBUG("[creating new texture @{} {}x{}x{} {}]", (const void *)ptex, texdesc.desc.width,
-             texdesc.desc.height, texdesc.desc.depth,
+    AG_DEBUG("[creating new texture @{} {}x{}x{} {}]", (const void *)ptex,
+             texdesc.desc.width, texdesc.desc.height, texdesc.desc.depth,
              getImageFormatInfo(texdesc.desc.fmt).name);
     texdesc.ptex = ptex;
   };
@@ -121,7 +122,8 @@ void FrameGraph::compile() {
     auto buf = std::make_unique<Buffer>(bufdesc.size, bufdesc.usage);
     auto pbuf = buf.get();
     buffers.push_back(std::move(buf));
-    AG_DEBUG("[creating new buffer @{} of size {}]", (const void *)pbuf, bufdesc.size);
+    AG_DEBUG("[creating new buffer @{} of size {}]", (const void *)pbuf,
+             bufdesc.size);
     bufdesc.buf = pbuf;
   };
 
@@ -144,16 +146,16 @@ void FrameGraph::compile() {
     }
   };
 
-  for (auto &p : passes) {
-    AG_DEBUG("** PASS {}", p.name);
+  for (auto &&p : passes) {
+    AG_DEBUG("** PASS {}", p->name);
     // create resources that should be created
-    for (auto &c : p.creates) {
+    for (auto &c : p->creates) {
       auto &r = resources[c.handle];
       assignCompatibleResource(*r);
     }
 
     // release read-from resources that should be released on this pass
-    for (auto &read : p.reads) {
+    for (auto &&read : p->reads) {
       auto &res = resources[read.handle];
       if (res->lifetimeEnd <= pass_index) {
         releaseResource(*res);
@@ -163,4 +165,26 @@ void FrameGraph::compile() {
     ++pass_index;
   }
 }
+
+void FrameGraph::dumpGraph(const char *path) {
+  std::ofstream fileOut{path};
+
+  fmt::print(fileOut, "digraph G {{\n");
+
+  for (auto &&p : passes) {
+    for (auto &&r : p->reads) {
+      fmt::print(fileOut, "R{}_{} -> {};\n", r.handle, r.renameIndex, p->name);
+    }
+
+    for (auto &&w : p->writes) {
+      fmt::print(fileOut, "{} -> R{}_{};\n", p->name, w.handle, w.renameIndex);
+    }
+    for (auto &&c : p->creates) {
+      fmt::print(fileOut, "{} -> R{}_{};\n", p->name, c.handle, c.renameIndex);
+    }
+  }
+
+  fmt::print(fileOut, "}}");
+}
+
 } // namespace ag

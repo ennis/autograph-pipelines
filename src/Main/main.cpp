@@ -264,6 +264,7 @@ int main(int argc, char *argv[]) {
   auto &blurredNormals = addBlurPasses(fg, gbuffers.normals);
   auto hud = addRenderHUDPass(fg, gbuffers.diffuse);
   fg.compile();
+  fg.dumpGraph("framegraph.dot");
 
   ////////////////////////////////////////////////////
   // Main frame callback
