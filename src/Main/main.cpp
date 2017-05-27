@@ -1,3 +1,5 @@
+#include <OpenImageIO/imagecache.h>
+#include <OpenImageIO/imageio.h>
 #include <autograph/Core/Support/Debug.h>
 #include <autograph/Core/Support/FileDialog.h>
 #include <autograph/Core/Support/ProjectRoot.h>
@@ -15,181 +17,11 @@
 #include <unordered_map>
 
 #include "Canvas.h"
+#include "Renderer.h"
 #include "Scene2D.h"
 
 using namespace ag;
 using namespace std::experimental;
-
-/*enum ButtonEvents {
-  EV_CLOSE,
-  EV_RENDER,
-  EV_CLICKED,
-  EV_CURSOR,
-  EV_DOUBLE_CLICKED,
-  EV_HOVER_ENTER,
-  EV_HOVER_EXIT
-};
-
-template <typename... T> bool any_of(int a, T... as) {
-  auto test = [a](bool &r, int b) { r |= a == b };
-  bool r = false;
-  auto dummy = {0, (args(r, as), 0)...};
-  return r;
-}
-
-
-struct Subscription {
-        struct Impl {};
-        template <typename T> friend class Observable;
-        void unsubscribe() { ptr_.reset(); }
-        std::shared_ptr<Impl> ptr_ = std::make_shared<Impl>();
-};
-
-
-template <typename T> struct Observable {
-  
-
-
-
-
-  // associated generator coroutine
-  coroutine_handle<promise_type> genCoro_;
-  // list of observers
-  struct Observer {
-         std::function<void(T)> fn_;
-         std::weak_ptr<Subscription::Impl> sub_;
-  };
-  std::vector<Observer> observers_;
-
-  // Default ctor
-  Observable() {}
-  Observable(coroutine_handle<promise_type> genCoro) : genCoro_{
-std::move(genCoro) } {}
-
-
-};
-
-// Signal a new value
-template <typename T>
-void signal(Observable<T>, T v) {
-        // go through the list of observers and call them, knowing that, in
-response:
-        // - one observer may fire this signal again in its handler
-        // - one observer may add another observer to this observable
-        //		-> must not invalidate iteration state
-        // - one observer may remove an observer (incl. itself) from the list
-        //		-> must not invalidate iteration state
-        // - the observer might be a resumed coroutine that owns the given
-observable
-        //	 and that, when resumed, will destroy the observable
-        //		-> the other observers should still be called
-}
-
-Observable<int> button(Observable<int> events) {
-  // pull from event stream
-        for
-          co_await(auto e : events) {
-            switch (e) {
-            case EV_RENDER:
-              AG_DEBUG("EV_RENDER");
-              break;
-            case EV_CURSOR:
-              AG_DEBUG("EV_CURSOR");
-              co_yield EV_CURSOR;
-              break;
-            }
-          }
-
-        auto render = [&]() -> Observable<int> {
-          while (true) {
-            do {
-              next_event = co_await events.next();
-            } while (next_event != render);
-            co_yield 0;
-          }
-        };
-
-        auto hitTest = [&]() -> Observable<int> {
-
-        };
-}*/
-
-FrameGraph::Resource addBlurPasses(FrameGraph &fg, FrameGraph::Resource in) {
-  struct BlurPassData {
-    FrameGraph::Resource in;
-    FrameGraph::Resource out;
-  };
-  auto &inDesc = fg.getTextureDesc(in);
-
-  // TODO filter out unsupported texture formats
-  // TODO make a framebuffer
-
-  // Horizontal pass
-  auto &blurPassH = fg.addPass<BlurPassData>(
-      [&](FrameGraph::PassBuilder &builder, BlurPassData &data) {
-        data.in = builder.read(in);
-        data.out = builder.copy(in);
-        AG_DEBUG("blurPassH: {}x{}, {}", inDesc.width, inDesc.height,
-                 getImageFormatInfo(inDesc.fmt).name);
-        builder.setName("blurPassH");
-      },
-      [](BlurPassData &, FrameGraph::PassResources &) {
-        AG_DEBUG("blurPassH");
-      });
-
-  // Vertical pass
-  auto &blurPassV = fg.addPass<BlurPassData>(
-      [&](FrameGraph::PassBuilder &builder, BlurPassData &data) {
-        data.in = builder.read(blurPassH.out);
-        data.out = builder.copy(in);
-        AG_DEBUG("blurPassV: {}x{}, {}", inDesc.width, inDesc.height,
-                 getImageFormatInfo(inDesc.fmt).name);
-        builder.setName("blurPassV");
-      },
-      [](BlurPassData &, FrameGraph::PassResources &) {
-        AG_DEBUG("blurPassV");
-      });
-
-  return blurPassV.out;
-}
-
-struct DeferredPassData {
-  FrameGraph::Resource diffuse;
-  FrameGraph::Resource normals;
-  FrameGraph::Resource motion;
-};
-
-DeferredPassData &addDeferredRenderPass(FrameGraph &fg, int width, int height) {
-  auto &data = fg.addPass<DeferredPassData>(
-      [&](FrameGraph::PassBuilder &builder, DeferredPassData &data) {
-        data.diffuse =
-            builder.createTexture2D(ImageFormat::R8G8B8A8_SRGB, width, height);
-        data.normals =
-            builder.createTexture2D(ImageFormat::R16G16_SFLOAT, width, height);
-        data.motion =
-            builder.createTexture2D(ImageFormat::R16G16_SFLOAT, width, height);
-        builder.setName("DeferredRenderPass");
-      },
-      [](DeferredPassData &, FrameGraph::PassResources &) {
-        AG_DEBUG("DeferredRenderPass");
-      });
-  return data;
-}
-
-FrameGraph::Resource addRenderHUDPass(FrameGraph &fg,
-                                      FrameGraph::Resource frame) {
-  struct PassData {
-    FrameGraph::Resource inout;
-  };
-
-  auto &data = fg.addPass<PassData>(
-      [&](FrameGraph::PassBuilder &builder, PassData &data) {
-        data.inout = builder.write(frame);
-        builder.setName("RenderHUDPass");
-      },
-      [](PassData &, FrameGraph::PassResources &) { AG_DEBUG("HUDPass"); });
-  return data.inout;
-}
 
 ///////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////
@@ -210,12 +42,14 @@ int main(int argc, char *argv[]) {
   SceneObjectComponents sceneObjects;
   LightComponents lights;
   RenderableComponents renderables;
-  ResourcePool pool;
   Scene scene{entityManager};
+  Cache &cache = Cache::getDefault();
   scene.registerComponentManager(sceneObjects);
   scene.registerComponentManager(lights);
   scene.registerComponentManager(renderables);
   // scene.registerComponentManager(deferredSceneRenderer.getRenderData());
+  GeometryPass geometryPass;
+  TemporalAntiAliasingPass TAAPass;
 
   // Sparse texture test
   Texture sparseTex = Texture::create2D(
@@ -227,10 +61,6 @@ int main(int argc, char *argv[]) {
 
   ////////////////////////////////////////////////////
   // Load plugins
-  loadPluginModule("DeferredSceneRenderer");
-  auto sceneRenderer =
-      createClassInstance<SceneRenderer>("DeferredSceneRenderer");
-  assert(sceneRenderer);
   loadPluginModule("SceneEditor");
   auto sceneEditor = createClassInstance<SceneEditor>("SceneEditor");
   assert(sceneEditor);
@@ -246,7 +76,7 @@ int main(int argc, char *argv[]) {
   if (sceneLoader)
     sceneLoader->loadScene(
         "mesh/blender_chan/Sketchfab_2017_02_12_14_36_10.fbx", scene,
-        rootEntity, pool);
+        rootEntity, Cache::getDefault());
   SceneObject *rootSceneObj = sceneObjects.get(rootEntity);
   if (rootSceneObj) {
     rootSceneObj->localTransform.scaling = vec3{1.0f};
@@ -256,15 +86,9 @@ int main(int argc, char *argv[]) {
       camController->focusOnObject(scene, *rootSceneObj);
   }
   ID selectedItemID = 0;
-
-  ////////////////////////////////////////////////////
-  // Frame graph test
-  FrameGraph fg;
-  auto &gbuffers = addDeferredRenderPass(fg, 640, 480);
-  auto &blurredNormals = addBlurPasses(fg, gbuffers.normals);
-  auto hud = addRenderHUDPass(fg, gbuffers.diffuse);
-  fg.compile();
-  fg.dumpGraph("framegraph.dot");
+  int deferredDebugMode = 0;
+  Camera prevCam;
+  int AACurSample = 0;
 
   ////////////////////////////////////////////////////
   // Main frame callback
@@ -279,6 +103,27 @@ int main(int argc, char *argv[]) {
       camController->onCameraGUI(cursorPos.x, cursorPos.y, screenSizeI.x,
                                  screenSizeI.y, cam, scene, selectedItemID);
     }
+	if (AACurSample == 0)
+		prevCam = cam;
+
+    //---------------------------
+    // Setup the rendering pipeline
+    auto camdata = makeCameraFrameData(cam, prevCam, screenSizeI.x, screenSizeI.y, 0);
+    FrameGraph fg;
+    // init gbuffers
+    auto gbuffers = initializeGeometryBuffers(fg, screenSizeI.x, screenSizeI.y);
+    // render scene with geometry pass
+    gbuffers = geometryPass.addPass(fg, gbuffers, sceneObjects, renderables,
+                                    lights, cam, camdata);
+    // evaluate deferred shading
+    auto result_deferred = addDeferredEvalPass(
+        fg, screenSizeI.x, screenSizeI.y, camdata, gbuffers, deferredDebugMode);
+    // Temporal AA pass
+    auto result_taa = TAAPass.addPass(fg, result_deferred, gbuffers.velocity,
+                                      gbuffers.depth, camdata);
+    // compile the pipeline
+    fg.compile();
+	fg.dumpGraph("machin.dot");
 
     //---------------------------
     // Setup & clear framebuffer
@@ -303,7 +148,7 @@ int main(int argc, char *argv[]) {
     {
       AG_PROFILE_SCOPE("Scene editor")
       if (sceneEditor)
-        sceneEditor->onSceneEditorGUI(scene, selectedItemID, cam, pool);
+        sceneEditor->onSceneEditorGUI(scene, selectedItemID, cam, cache);
 
       if (sceneLoader) {
         ImGui::Begin("Assimp scene loader");
@@ -312,7 +157,7 @@ int main(int argc, char *argv[]) {
           if (res) {
             ID rootObj;
             bool result =
-                sceneLoader->loadScene(res->c_str(), scene, rootObj, pool);
+                sceneLoader->loadScene(res->c_str(), scene, rootObj, cache);
             if (!result)
               ag::errorMessage("Could not load scene: {}", res->c_str());
           }
@@ -326,14 +171,7 @@ int main(int argc, char *argv[]) {
       sceneObjects.update();
     }
 
-    {
-      AG_GPU_PROFILE_SCOPE("Rendering/Canvas")
-      canvasRenderer.renderCanvas(sceneObjects, canvas);
-    }
-
-    {
-      AG_GPU_PROFILE_SCOPE("Rendering/Deferred")
-      static std::pair<const char *, int> names[] = {
+    /*  static std::pair<const char *, int> names[] = {
           {"None", (int)SceneRenderer::DebugRenderMode::None},
           {"Normals", (int)SceneRenderer::DebugRenderMode::Normals},
           {"ObjectID", (int)SceneRenderer::DebugRenderMode::ObjectID},
@@ -341,23 +179,20 @@ int main(int argc, char *argv[]) {
           {"Positions", (int)SceneRenderer::DebugRenderMode::Positions},
           {"Albedo", (int)SceneRenderer::DebugRenderMode::Albedo},
           {"Velocity", (int)SceneRenderer::DebugRenderMode::Velocity},
-      };
-      static SceneRenderer::DebugRenderMode mode =
-          SceneRenderer::DebugRenderMode::None;
-      gui::enumComboBoxT<SceneRenderer::DebugRenderMode>("debug deferred",
-                                                         &mode, names);
-      if (sceneRenderer)
-        sceneRenderer->renderScene(fbo, sceneObjects, renderables, lights, cam,
-                                   mode);
-    }
+      };*/
+
+    ImGui::SliderInt("Deferred debug", &deferredDebugMode, 0, 6);
+
+	prevCam = cam;
+
   };
 
   ////////////////////////////////////////////////////
   // window events
   auto eventCallback = [&](const ag::Event &ev, ag::Window *win) {
     if (ev.type == EventType::WindowResize) {
-      if (sceneRenderer)
-        sceneRenderer->resize(ev.resize.width, ev.resize.height);
+      // if (sceneRenderer)
+      // sceneRenderer->resize(ev.resize.width, ev.resize.height);
     }
   };
 

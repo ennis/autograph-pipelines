@@ -5,7 +5,7 @@
 #include <autograph/Core/Support/Span.h>
 #include <autograph/Core/Support/Variant.h>
 #include <autograph/Engine/Application.h>
-#include <autograph/Engine/ResourcePool.h>
+#include <autograph/Core/Cache.h>
 #include <autograph/Engine/ScriptContext.h>
 #include <autograph/Gfx/Bind.h>
 #include <autograph/Gfx/Buffer.h>

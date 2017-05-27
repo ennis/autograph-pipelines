@@ -2645,3 +2645,35 @@ Issue: abstract API differences?
 
 Bother: must translate input layout to what the API expects
 	- To solve: put pipeline file loading code into Gfx
+
+
+Material pipeline:
+- Automatically detect material during scene import 
+- Or assign manually
+
+
+- Rendering:
+	- Fetch texture data according to load queue 
+		(5 textures: diffuse,metallic,height,roughness,normals)
+		Load queue = list of textures to load
+	- For each object
+
+	- 
+
+
+GeometryPass
+TerrainGeometryPass
+DeferredEvaluationPass
+
+
+
+Texture cache system: in GFX
+
+class TextureCache
+- max memory usage (CPU)
+- cache entry: (file, mip level, tile, format, data, last used)
+- Use OIIO to load tiled files
+
+class StreamedTextureFile(TextureCache*, path)
+- read(region)
+- swapOut(region)

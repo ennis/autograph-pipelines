@@ -17,7 +17,6 @@
 #include "RenderUtils.h"
 #include "Renderable.h"
 #include "ResourceManager.h"
-#include "ResourcePool.h"
 #include "SceneObject.h"
 #include "SceneLoader.h"
 #include "ScriptContext.h"

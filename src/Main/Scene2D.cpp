@@ -1,12 +1,15 @@
+
 #include "Scene2D.h"
+#include <autograph/Core/Support/Debug.h>
 #include <autograph/Engine/ImageUtils.h>
 #include <autograph/Engine/ScriptContext.h>
 #include <autograph/Gfx/Draw.h>
-#include <autograph/Core/Support/Debug.h>
 
 namespace ag {
-Scene2D::Scene2D() {
-  tileMapShader_ = GPUPipeline{GPUPipelineType::Graphics, "shaders/tileMap.lua$tileMap"};
+
+Scene2D::Scene2D(Cache &cache) : cache_{cache} {
+  tileMapShader_ =
+      GPUPipeline{GPUPipelineType::Graphics, "shaders/tileMap.lua$tileMap"};
   SamplerDesc desc;
   desc.minFilter = gl::NEAREST;
   desc.magFilter = gl::NEAREST;
@@ -28,7 +31,8 @@ void Scene2D::loadTilemap(const char *id) {
     std::string img = tileset["image"];
     AG_DEBUG("Loading tileset {}", img);
     Tileset ts;
-    ts.tex = resourcePool_.get<Texture>(img.c_str());
+    ts.tex = getCachedResource<Texture>(cache_, img.c_str()).get();
+
     ts.tileWidth = tileset["tilewidth"];
     ts.tileHeight = tileset["tileheight"];
     if (tileWidth_ == 0)
@@ -64,8 +68,8 @@ void Scene2D::loadTilemap(const char *id) {
       texcoords.push_back(t);
     }
     // create texture
-    map.tileMapTex = Texture::create2D(ImageFormat::R32G32_SFLOAT,
-                                           map.width, map.height);
+    map.tileMapTex =
+        Texture::create2D(ImageFormat::R32G32_SFLOAT, map.width, map.height);
     map.tileMapTex.upload(texcoords.data());
     tilemaps_.push_back(std::move(map));
   }
@@ -156,11 +160,11 @@ void Scene2D::render(Framebuffer &screen, const Viewport &viewport) {
   p.gridSizeTileW = gridWidthTiles_;
   p.gridSizeTileH = gridHeightTiles_;
 
-  draw(screen, tileGrid_, tileMapShader_, 
+  draw(screen, tileGrid_, tileMapShader_,
        bind::texture(0, *tileset.tex, sampler_),
        bind::texture(1, tilemap.tileMapTex, sampler_),
        bind::uniformBuffer(0, uploadFrameData(&p, sizeof(p))));
 
   // draw(screen, tileGrid, tileMapPass);
 }
-}
+} // namespace ag

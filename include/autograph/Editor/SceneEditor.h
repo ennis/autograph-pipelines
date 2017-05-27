@@ -6,11 +6,11 @@
 namespace ag {
 	class Scene;
 	struct Camera;
-	class ResourcePool;
+	class Cache;
 
 	class SceneEditor : public Extension
 	{
 	public:
-		virtual void onSceneEditorGUI(Scene& s, ID& lastSelected, const Camera& camera, ResourcePool& resourcePool) = 0;
+		virtual void onSceneEditorGUI(Scene& s, ID& lastSelected, const Camera& camera, Cache &cache) = 0;
 	};
 }

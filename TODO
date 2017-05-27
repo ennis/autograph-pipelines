@@ -80,6 +80,12 @@ Minimal system:
  ☐ Consider using std::string_view pervasively
  ☐ Deduplicate shader sources in Shader; do not preprocess compute shader source for graphics pipelines @shader
  ☐ Testing interfaces (used with plugins)
+ ✔ Default global cache @done (17-05-26 21:48)
+
+
+Frame graph:
+ ☐ Specify clear value for texture at declaration time
+ ☐ More resource types
 
 Build robustness:
  ☐ CMake: global variable that contains the runtime output directory @cmake
@@ -141,7 +147,7 @@ Autograph/Gfx:
  ☐ Compute helpers
    gl::dispatchComputeOnImage()
  ✔ State group @done (16-12-18 20:52)
- ☐ Geometry shader
+ ✔ Geometry shader @done (17-05-26 21:48)
  ✔ Scissor state @easy @high @done (17-02-07 22:30)
  ☐ Correctly handle scissor for MRTs
  ☐ Viewport: set all viewports at once
@@ -149,6 +155,7 @@ Autograph/Gfx:
    autograph/gl/All.h
  ☐ The Lua shader system is 'good' => include it in autograph, then release autograph
  ☐ Optimize state changes and GL calls
+ ☐ Materialize samplers from thin air; cache sampler objects
 
 Autograph extensions:
  ✔ Shader cache @low @done (17-03-02 21:22)
@@ -327,6 +334,8 @@ Error, first noticed where (intellisense, compile-time, runtime crash, runtime s
  ☐ [runtime silent] uploadFrameData: pointer to pointer to data instead of pointer to data
      Probably a copy-paste error
  ☐ [runtime silent] Incorrect screen to NDC transformation in C++
+ ☐ [runtime silent, general] Copying objects instead of binding to a reference
+     Disable copy constructors 
  ✔ [runtime silent] Wrong matrix multiplication order when computing model matrix from Transform (fixed) @done (17-02-17 19:00)
 
 Ideas:

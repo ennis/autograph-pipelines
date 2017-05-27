@@ -1,6 +1,6 @@
 #pragma once
+#include <autograph/Core/Cache.h>
 #include <autograph/Engine/Mesh.h>
-#include <autograph/Engine/ResourcePool.h>
 #include <autograph/Engine/Shader.h>
 #include <autograph/Gfx/Buffer.h>
 #include <autograph/Gfx/Framebuffer.h>
@@ -31,7 +31,7 @@ public:
     float height;
   };
 
-  Scene2D();
+  Scene2D(Cache& cache);
 
   void loadTilemap(const char *id);
   void render(Framebuffer &screen, float viewX, float viewY,
@@ -39,7 +39,7 @@ public:
   void render(Framebuffer &screen, const Viewport &viewport);
 
 private:
-  ResourcePool resourcePool_;
+  Cache cache_;
   std::vector<Tileset> tilesets_;
   std::vector<Tilemap> tilemaps_;
   int tileWidth_{0};

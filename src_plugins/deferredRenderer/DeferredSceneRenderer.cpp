@@ -48,10 +48,10 @@ public:
     normals = {};
     objectIDs = {};
     velocity = {};
-    depth = Texture::create2D(ImageFormat::D32_SFLOAT, width, height);
-    diffuse = Texture::create2D(ImageFormat::R8G8B8A8_UNORM, width, height);
-    normals = Texture::create2D(ImageFormat::R16G16_SFLOAT, width, height);
-    objectIDs = Texture::create2D(ImageFormat::R16G16_SINT, width, height);
+	depth = Texture::create2D(ImageFormat::D32_SFLOAT, width, height);
+	diffuse = Texture::create2D(ImageFormat::R8G8B8A8_UNORM, width, height);
+	normals = Texture::create2D(ImageFormat::R16G16_SFLOAT, width, height);
+	objectIDs = Texture::create2D(ImageFormat::R16G16_SINT, width, height);
     velocity = Texture::create2D(ImageFormat::R32G32_SFLOAT, width, height);
     fbo.setAttachement(gl::COLOR_ATTACHMENT0 + 0, diffuse);
     fbo.setAttachement(gl::COLOR_ATTACHMENT0 + 1, normals);
@@ -210,7 +210,7 @@ public:
   }
 
   auto &getRenderData() { return objectsRenderData; }
-
+  
 private:
   Texture depth;   // D32_SFLOAT
   Texture normals; // R16G16_SFLOAT

@@ -3,6 +3,7 @@
 #include <autograph/Engine/All.h>
 #include <autograph/Gfx/All.h>
 #include <autograph/Core/Transform.h>
+#include <autograph/Core/Cache.h>
 #include <autograph/Core/Support/FileDialog.h>
 #include <autograph/Core/Support/ProjectRoot.h>
 #include <cmath>
@@ -631,7 +632,7 @@ public:
   }
 
   virtual void onSceneEditorGUI(Scene &s, ID &selectedID, const Camera &camera,
-                                ResourcePool &resourcePool) override {
+                                Cache &cache) override {
     EntityManager &entityManager = s.getEntityManager();
     SceneObjectComponents *sceneObjects =
         s.getComponentManager<SceneObjectComponents>();

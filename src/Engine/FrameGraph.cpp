@@ -5,6 +5,94 @@
 namespace ag {
 using ag::get_if;
 
+FrameGraph::PassBuilder::PassBuilder(FrameGraph &fg, Pass &p)
+    : frameGraph{fg}, pass{p} {}
+
+FrameGraph::Resource FrameGraph::PassBuilder::createTexture2D(
+    ImageFormat fmt, int w, int h, const char *name, Texture::MipMaps mipMaps,
+    Texture::Samples ms, Texture::Options opts) {
+  Texture::Desc d;
+  d.fmt = fmt;
+  d.width = w;
+  d.height = h;
+  d.depth = 1;
+  d.mipMapCount = mipMaps.count;
+  d.sampleCount = ms.count;
+  d.opts = opts;
+  ResourceDesc rd;
+  rd.name = name;
+  rd.v = ResourceDesc::Texture{d, nullptr};
+  Resource r = frameGraph.addResourceDesc(rd);
+  pass.creates.push_back(r);
+  // pass.writes.push_back(r);
+  AG_DEBUG("createTexture2D {}.{}", r.handle, r.renameIndex);
+  return r;
+}
+
+FrameGraph::Resource FrameGraph::PassBuilder::read(Resource in) {
+  AG_DEBUG("read {}.{}", in.handle, in.renameIndex);
+  pass.reads.push_back(in);
+  return in;
+}
+
+FrameGraph::Resource FrameGraph::PassBuilder::write(Resource out) {
+  AG_DEBUG("write {}.{}", out.handle, out.renameIndex);
+  // same resource, bump the rename index
+  pass.reads.push_back(out);
+  Resource ret{out.handle, out.renameIndex + 1};
+  pass.writes.push_back(ret);
+  return ret;
+}
+
+FrameGraph::Resource FrameGraph::PassBuilder::copy(Resource in) {
+  const ResourceDesc &rd = frameGraph.getResourceDesc(in.handle);
+  Resource out = frameGraph.addResourceDesc(rd);
+  AG_DEBUG("copy {}.{} -> {}.{}", in.handle, in.renameIndex, out.handle,
+           out.renameIndex);
+  pass.creates.push_back(out);
+  return out;
+}
+
+void FrameGraph::PassBuilder::setName(const char *name_) { pass.name = name_; }
+
+bool FrameGraph::isBuffer(int handle) const {
+  return ag::get_if<ResourceDesc::Buffer>(&getResourceDesc(handle).v) !=
+         nullptr;
+}
+
+bool FrameGraph::isBuffer(Resource r) const { return isBuffer(r.handle); }
+
+bool FrameGraph::isTexture(int handle) const {
+  return ag::get_if<ResourceDesc::Texture>(&getResourceDesc(handle).v) !=
+         nullptr;
+}
+
+bool FrameGraph::isTexture(Resource r) const { return isTexture(r.handle); }
+
+const Texture::Desc &FrameGraph::getTextureDesc(int handle) const {
+  auto &rd = getResourceDesc(handle);
+  auto ptexdesc = ag::get_if<ResourceDesc::Texture>(&rd.v);
+  if (!ptexdesc)
+    ag::failWith("Not a texture");
+  return ptexdesc->desc;
+}
+
+const Texture::Desc &FrameGraph::getTextureDesc(Resource r) const {
+  return getTextureDesc(r.handle);
+}
+
+size_t FrameGraph::getBufferSize(int handle) const {
+  auto &rd = getResourceDesc(handle);
+  auto bufdesc = ag::get_if<ResourceDesc::Buffer>(&rd.v);
+  if (!bufdesc)
+    ag::failWith("Not a buffer");
+  return bufdesc->size;
+}
+
+size_t FrameGraph::getBufferSize(Resource r) const {
+  return getBufferSize(r.handle);
+}
+
 FrameGraph::Resource FrameGraph::addResourceDesc(const ResourceDesc &rd) {
   resources.push_back(std::make_unique<ResourceDesc>(rd));
   int handle = (int)(resources.size() - 1);
@@ -14,6 +102,18 @@ FrameGraph::Resource FrameGraph::addResourceDesc(const ResourceDesc &rd) {
 
 const FrameGraph::ResourceDesc &FrameGraph::getResourceDesc(int handle) const {
   return *resources[handle];
+}
+
+Buffer &FrameGraph::PassResources::getBuffer(Resource res) const {
+  return *ag::get<FrameGraph::ResourceDesc::Buffer>(
+              fg_.getResourceDesc(res.handle).v)
+              .buf;
+}
+
+Texture &FrameGraph::PassResources::getTexture(Resource res) const {
+  return *ag::get<FrameGraph::ResourceDesc::Texture>(
+              fg_.getResourceDesc(res.handle).v)
+              .ptex;
 }
 
 void FrameGraph::compile() {
@@ -76,14 +176,11 @@ void FrameGraph::compile() {
             w.handle, w.renameIndex);
         hasWriteConflicts = true;
       } else {
-        // the next pass cannot use this rename for either read or write
-        // operations
-        AG_DEBUG("read rename index for {}: .{} -> .{}", w.handle,
-                 w.renameIndex, w.renameIndex + 1);
+        // the next pass cannot use this rename for write operations
         AG_DEBUG("write rename index for {}: .{} -> .{}", w.handle,
                  w.renameIndex, w.renameIndex + 1);
-        r_ren[w.handle] = w.renameIndex + 1;
         w_ren[w.handle] = w.renameIndex + 1;
+        r_ren[w.handle] = w.renameIndex;
       }
     }
     ++pass_index;
@@ -171,20 +268,76 @@ void FrameGraph::dumpGraph(const char *path) {
 
   fmt::print(fileOut, "digraph G {{\n");
 
-  for (auto &&p : passes) {
-    for (auto &&r : p->reads) {
-      fmt::print(fileOut, "R{}_{} -> {};\n", r.handle, r.renameIndex, p->name);
-    }
+  auto writeLine = [&](auto &&... params) {
+    fmt::print(fileOut, std::forward<decltype(params)>(params)...);
+    fmt::print(fileOut, "\n");
+  };
 
+  auto printResourceNode = [&](const char *passName, Resource r, bool input) {
+    auto &desc = getResourceDesc(r.handle);
+    std::string name;
+    if (!desc.name.empty())
+      name = fmt::format("{}{}_{}", desc.name, r.handle, r.renameIndex);
+    else
+      name = fmt::format("anon{}_{}", r.handle, r.renameIndex);
+    writeLine("{} [shape=record,label=\"{}|{{B: {}|E: {}}}\"];", name, name,
+              desc.lifetimeBegin, desc.lifetimeEnd);
+    if (input) {
+      writeLine("{} -> {};", name, passName);
+    } else {
+      writeLine("{} -> {};", passName, name);
+      // node to allocated resource
+      std::string rname;
+      if (auto tex = ag::get_if<ResourceDesc::Texture>(&desc.v)) {
+        rname = fmt::format("tex_{}", (const void *)tex->ptex);
+      } else if (auto buf = ag::get_if<ResourceDesc::Buffer>(&desc.v)) {
+        rname = fmt::format("buf_{}", (const void *)buf->buf);
+      }
+      writeLine("{} -> {}  [style=dashed];", name, rname);
+    }
+  };
+
+  writeLine("subgraph cluster0 {{");
+  std::string prev;
+  for (auto &&tex : textures) {
+    auto thisNode = fmt::format("tex_{}", (const void *)tex.get());
+    writeLine("{} [shape=box];", thisNode);
+    if (!prev.empty()) 
+      writeLine("{} -> {} [style=invis];", prev, thisNode);
+	prev = std::move(thisNode);
+  }
+  for (auto &&buf : buffers) {
+    auto thisNode = fmt::format("buf_{}", (const void *)buf.get());
+    writeLine("{} [shape=box];", thisNode);
+    if (!prev.empty()) 
+      writeLine("{} -> {} [style=invis];", prev, thisNode);
+	prev = std::move(thisNode);
+  }
+  writeLine("label=\"Resources\"");
+  writeLine("}}");
+
+  writeLine("subgraph cluster1 {{");
+  int passIndex = 0;
+  for (auto &&p : passes) {
+    auto passName = p->name;
+    if (passName.empty())
+      passName = "pass_" + std::to_string(passIndex);
+    writeLine("{} [shape=record,label=\"{}|{}\"]", passName, passIndex,
+              passName);
+    for (auto &&r : p->reads) {
+      printResourceNode(passName.c_str(), r, true);
+    }
     for (auto &&w : p->writes) {
-      fmt::print(fileOut, "{} -> R{}_{};\n", p->name, w.handle, w.renameIndex);
+      printResourceNode(passName.c_str(), w, false);
     }
     for (auto &&c : p->creates) {
-      fmt::print(fileOut, "{} -> R{}_{};\n", p->name, c.handle, c.renameIndex);
+      printResourceNode(passName.c_str(), c, false);
     }
+    ++passIndex;
   }
+  writeLine("}}");
 
-  fmt::print(fileOut, "}}");
+  writeLine("}}");
 }
 
 } // namespace ag

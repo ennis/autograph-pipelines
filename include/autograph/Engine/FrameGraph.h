@@ -1,10 +1,10 @@
 #pragma once
 #include <any>
-#include <autograph/Engine/Exports.h>
 #include <autograph/Core/Support/Debug.h>
 #include <autograph/Core/Support/HashCombine.h>
 #include <autograph/Core/Support/SmallVector.h>
 #include <autograph/Core/Support/Variant.h>
+#include <autograph/Engine/Exports.h>
 #include <autograph/Gfx/Buffer.h>
 #include <autograph/Gfx/Texture.h>
 #include <functional>
@@ -88,8 +88,8 @@ namespace ag {
 
 //
 // Next iteration:
-// Resource should be an indirect pointer to a texture / buffer / framebuffer resource
-// FrameGraph::Texture -> ResourceHandle<TexturePrivate>
+// Resource should be an indirect pointer to a texture / buffer / framebuffer
+// resource FrameGraph::Texture -> ResourceHandle<TexturePrivate>
 
 class AG_ENGINE_API FrameGraph {
 public:
@@ -97,10 +97,10 @@ public:
   friend class PassResources;
 
   FrameGraph() = default;
-  FrameGraph(const FrameGraph&) = delete;
-  FrameGraph& operator=(const FrameGraph&) = delete;
-  FrameGraph(FrameGraph&&) = default;
-  FrameGraph& operator=(FrameGraph&&) = default;
+  FrameGraph(const FrameGraph &) = delete;
+  FrameGraph &operator=(const FrameGraph &) = delete;
+  FrameGraph(FrameGraph &&) = default;
+  FrameGraph &operator=(FrameGraph &&) = default;
 
   ////////////////////////////////////////////
   struct Resource {
@@ -111,6 +111,7 @@ public:
   struct ResourceDesc {
     int lifetimeBegin = 0;
     int lifetimeEnd = 0;
+    std::string name;
 
     struct Texture {
       ag::Texture::Desc desc;
@@ -126,13 +127,26 @@ public:
   };
 
   ////////////////////////////////////////////
+  class AG_ENGINE_API PassResources {
+  public:
+    PassResources(FrameGraph &fg) : fg_{fg} {}
+
+    Texture &getTexture(Resource res) const;
+    Buffer &getBuffer(Resource res) const;
+
+  private:
+    FrameGraph &fg_;
+    int pass;
+  };
+
+  ////////////////////////////////////////////
   struct Pass {
     template <typename Data, typename ExecuteFn>
     Pass(Data &&d, ExecuteFn &&exec) : data{std::forward<Data>(d)} {
-      /*execute =
+      execute =
           [ this, exec = std::move(exec) ](PassResources & passResources) {
         exec(std::any_cast<Data &>(this->data), passResources);
-      };*/
+      };
     }
 
     SmallVector<Resource, 4> reads;
@@ -145,75 +159,22 @@ public:
   };
 
   ////////////////////////////////////////////
-  class PassBuilder {
+  class AG_ENGINE_API PassBuilder {
   public:
-    PassBuilder(FrameGraph &fg, Pass &p) : frameGraph{fg}, pass{p} {}
-
+    PassBuilder(FrameGraph &fg, Pass &p);
     Resource createTexture2D(ImageFormat fmt, int w, int h,
+                             const char *name = nullptr,
                              Texture::MipMaps mipMaps = Texture::MipMaps{1},
                              Texture::Samples ms = Texture::Samples{0},
-                             Texture::Options opts = (Texture::Options)0) {
-      Texture::Desc d;
-      d.fmt = fmt;
-      d.width = w;
-      d.height = h;
-      d.depth = 1;
-      d.mipMapCount = mipMaps.count;
-      d.sampleCount = ms.count;
-      d.opts = opts;
-      ResourceDesc rd;
-      rd.v = ResourceDesc::Texture{d, nullptr};
-      Resource r = frameGraph.addResourceDesc(rd);
-      pass.creates.push_back(r);
-      // pass.writes.push_back(r);
-      AG_DEBUG("createTexture2D {}.{}", r.handle, r.renameIndex);
-      return r;
-    }
-
-    Resource read(Resource in) {
-      AG_DEBUG("read {}.{}", in.handle, in.renameIndex);
-      pass.reads.push_back(in);
-      return in;
-    }
-
-    Resource write(Resource out) {
-      AG_DEBUG("write {}.{}", out.handle, out.renameIndex);
-      // same resource, bump the rename index
-	  pass.reads.push_back(out);
-	  Resource ret{ out.handle, out.renameIndex + 1 };
-      pass.writes.push_back(ret);
-	  return ret;
-    }
-
-    Resource copy(Resource in) {
-      const ResourceDesc &rd = frameGraph.getResourceDesc(in.handle);
-      Resource out = frameGraph.addResourceDesc(rd);
-      AG_DEBUG("copy {}.{} -> {}.{}", in.handle, in.renameIndex,
-               out.handle, out.renameIndex);
-      pass.creates.push_back(out);
-      return out;
-    }
-
-	void setName(const char *name_) { pass.name = name_; }
-
-    /*Resource use(Resource inout) {
-      AG_DEBUG("[FrameGraph] use {}.{}", inout.handle, inout.renameIndex);
-      return Resource{out.handle, out.renameIndex+1};
-    }*/
+                             Texture::Options opts = (Texture::Options)0);
+    Resource read(Resource in);
+    Resource write(Resource out);
+    Resource copy(Resource in);
+    void setName(const char *name_);
 
   private:
     FrameGraph &frameGraph;
     Pass &pass;
-  };
-
-  ////////////////////////////////////////////
-  class PassResources {
-  public:
-    Texture &getTexture(Resource res);
-
-  private:
-    FrameGraph &fg;
-    int pass;
   };
 
   template <typename State, typename SetupFn, typename ExecuteFn>
@@ -233,45 +194,17 @@ public:
 
   void compile();
 
-  void dumpGraph(const char* path);
+  void dumpGraph(const char *path);
 
   const ResourceDesc &getResourceDesc(int handle) const;
-
-  bool isBuffer(int handle) const {
-    return ag::get_if<ResourceDesc::Buffer>(&getResourceDesc(handle).v) !=
-           nullptr;
-  }
-
-  bool isBuffer(Resource r) const { return isBuffer(r.handle); }
-
-  bool isTexture(int handle) const {
-    return ag::get_if<ResourceDesc::Texture>(&getResourceDesc(handle).v) !=
-           nullptr;
-  }
-
-  bool isTexture(Resource r) const { return isTexture(r.handle); }
-
-  const Texture::Desc &getTextureDesc(int handle) const {
-    auto &rd = getResourceDesc(handle);
-    auto ptexdesc = ag::get_if<ResourceDesc::Texture>(&rd.v);
-    if (!ptexdesc)
-      ag::failWith("Not a texture");
-    return ptexdesc->desc;
-  }
-
-  const Texture::Desc &getTextureDesc(Resource r) const {
-    return getTextureDesc(r.handle);
-  }
-
-  size_t getBufferSize(int handle) const {
-    auto &rd = getResourceDesc(handle);
-    auto bufdesc = ag::get_if<ResourceDesc::Buffer>(&rd.v);
-    if (!bufdesc)
-      ag::failWith("Not a buffer");
-    return bufdesc->size;
-  }
-
-  size_t getBufferSize(Resource r) const { return getBufferSize(r.handle); }
+  bool isBuffer(int handle) const;
+  bool isBuffer(Resource r) const;
+  bool isTexture(int handle) const;
+  bool isTexture(Resource r) const;
+  const Texture::Desc &getTextureDesc(int handle) const;
+  const Texture::Desc &getTextureDesc(Resource r) const;
+  size_t getBufferSize(int handle) const;
+  size_t getBufferSize(Resource r) const;
 
   ////////////////////////////////////////////
 private:
@@ -287,33 +220,5 @@ private:
   // list of passes
   std::vector<std::unique_ptr<Pass>> passes;
 };
-
-// Resource allocation:
-// getCompatibleResource(ResourceDesc)
-// createResource(ResourceDesc)
-
-/*Texture &FrameGraph::PassResources::getTexture(Resource res) {
-  assert(res.handle < fg.resources.size());
-  // fg.resources[res.handle].
-}*/
-
-/*FrameGraph::Resource test(FrameGraph &fg, FrameGraph::Resource inTex) {
-  struct Data {
-    FrameGraph::Resource input;
-    FrameGraph::Resource output;
-  };
-  auto &data = fg.addPass<Data>(
-      // setup
-      [&](Data &data, FrameGraph::PassBuilder &builder) {
-        data.input = builder.read(inTex);
-        data.output = builder.copyOf(inTex);
-      },
-      // execute
-      [=](Data &data, FrameGraph::PassResources &passResources) {
-        // TODO
-        Texture &tex = passResources.getTexture(data.input);
-      });
-  return data.output;
-}*/
 
 } // namespace ag

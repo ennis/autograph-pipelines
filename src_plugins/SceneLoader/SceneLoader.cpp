@@ -3,22 +3,31 @@
 #include <assimp/ProgressHandler.hpp>
 #include <assimp/postprocess.h>
 #include <assimp/scene.h>
-#include <autograph/Engine/All.h>
-#include <autograph/Gfx/All.h>
+#include <autograph/Core/Cache.h>
 #include <autograph/Core/Support/FileDialog.h>
 #include <autograph/Core/Support/ProjectRoot.h>
+#include <autograph/Engine/All.h>
+#include <autograph/Gfx/All.h>
 #include <experimental/filesystem>
 
 using namespace ag;
+
+struct CachedMesh : CacheObject {
+  Mesh3D mesh;
+};
+
+struct CachedTexture : CacheObject {
+  Texture tex;
+};
 
 //////////////////////////////////////////////////
 class AssimpSceneImporter {
 public:
   AssimpSceneImporter(EntityManager &entities, SceneObjectComponents &scene,
                       RenderableComponents &renderableScene,
-                      LightComponents &lights, ResourcePool &resourcePool)
-      : entities_{entities}, scene_{scene}, renderableScene_{renderableScene},
-        lights_{lights}, resourcePool_{resourcePool} {}
+                      LightComponents &lights, Cache &cache)
+      : entities_{entities}, scene_{scene},
+        renderableScene_{renderableScene}, lights_{lights}, cache_{cache} {}
 
   //////////////////////////////////////////////////
   Mesh3D *importAssimpMesh(const aiScene *aiscene, int index,
@@ -28,7 +37,8 @@ public:
     importMaterial(aiscene,
                    aiscene->mMaterials[aiscene->mMeshes[index]->mMaterialIndex],
                    outMaterial);
-    return resourcePool_.get_fn<Mesh3D>(sceneMeshId.c_str(), [&](auto) {
+    auto cachedMesh = getCachedResource<Mesh3D>(cache_, sceneMeshId.c_str());
+    if (!cachedMesh) {
       auto mesh = aiscene->mMeshes[index];
       std::vector<Vertex3D> vertices;
       std::vector<unsigned int> indices;
@@ -55,10 +65,10 @@ public:
         indices[i * 3 + 1] = mesh->mFaces[i].mIndices[1];
         indices[i * 3 + 2] = mesh->mFaces[i].mIndices[2];
       }
-      // import ref material
-      return std::make_unique<ResourceWrapper<Mesh3D>>(
-          Mesh3D{vertices, indices});
-    });
+      cachedMesh = addCachedResource(cache_, sceneMeshId.c_str(),
+                                     Mesh3D{vertices, indices});
+    }
+    return cachedMesh.get();
   }
 
   void importMaterial(const aiScene *aiscene, const aiMaterial *material,
@@ -93,15 +103,21 @@ public:
                         .generic_string();
         if (ResourceManager::getFilesystemPath(path).empty())
           continue; // path not found in filesystem, continue
-        auto tex = resourcePool_.get<Texture>(path.c_str());
+
+        auto tex = getCachedResource<Texture>(cache_, path.c_str());
+
+        if (!tex)
+          tex = addCachedResource(cache_, path.c_str(),
+                                  loadTexture(path.c_str()));
+
         switch (i) {
         case aiTextureType_NONE:
           break;
         case aiTextureType_DIFFUSE:
-          outMaterial->albedo = tex;
+          outMaterial->albedo = tex.get();
           break;
         case aiTextureType_SPECULAR:
-          outMaterial->metallic = tex;
+          outMaterial->metallic = tex.get();
           break;
         case aiTextureType_AMBIENT:
           break;
@@ -110,10 +126,10 @@ public:
         case aiTextureType_HEIGHT:
           break;
         case aiTextureType_NORMALS:
-          outMaterial->normals = tex;
+          outMaterial->normals = tex.get();
           break;
         case aiTextureType_SHININESS:
-          outMaterial->roughness = tex;
+          outMaterial->roughness = tex.get();
           break;
         case aiTextureType_OPACITY:
           // outMaterial->albedo = tex;
@@ -233,20 +249,21 @@ private:
   SceneObjectComponents &scene_;
   RenderableComponents &renderableScene_;
   LightComponents &lights_;
-  ResourcePool &resourcePool_;
+  Cache &cache_;
 };
 
 //////////////////////////////////////////////
 class AssimpSceneLoader : public ag::SceneLoader {
 public:
   virtual bool loadScene(const char *path, Scene &scene, ID &rootObject,
-                         ResourcePool &pool,
+                         Cache &cache,
                          SceneObject *parentObject = nullptr) override {
     auto &entities = scene.getEntityManager();
     auto sceneObjects = scene.getComponentManager<SceneObjectComponents>();
     auto renderableScene = scene.getComponentManager<RenderableComponents>();
     auto lights = scene.getComponentManager<LightComponents>();
-    AssimpSceneImporter asi{entities, *sceneObjects, *renderableScene, *lights, pool };
+    AssimpSceneImporter asi{entities, *sceneObjects, *renderableScene, *lights,
+                            cache};
     auto loadedRoot = asi.load(path, parentObject);
     if (!loadedRoot)
       return false;
@@ -258,4 +275,6 @@ private:
 };
 
 //////////////////////////////////////////////
-SceneLoader_PLUGIN_ENTRY { ag::registerClass<AssimpSceneLoader, ag::SceneLoader>("AssimpSceneLoader"); }
+SceneLoader_PLUGIN_ENTRY {
+  ag::registerClass<AssimpSceneLoader, ag::SceneLoader>("AssimpSceneLoader");
+}
