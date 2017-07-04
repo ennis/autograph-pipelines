@@ -1,6 +1,24 @@
+#include <autograph/Core/Support/Utils.h> // insertLazy
 #include <autograph/Gfx/Sampler.h>
+#include <type_traits>
 
 namespace ag {
+
+std::unordered_map<Sampler::Desc, std::unique_ptr<Sampler>, Sampler::Desc::Hash>
+    Sampler::samplerCache;
+
+const Sampler &Sampler::linearRepeat() {
+  return get(Sampler::LinearRepeatDesc);
+}
+
+const Sampler &Sampler::nearestRepeat() {
+  return get(Sampler::NearestRepeatDesc);
+}
+
+const Sampler &Sampler::get(const Desc &desc) {
+  return *insertLazy(samplerCache, desc,
+                     [&] { return std::make_unique<Sampler>(desc); });
+}
 
 void Sampler::init() {
   gl::GLuint sampler_obj;
@@ -10,10 +28,11 @@ void Sampler::init() {
   gl::SamplerParameteri(sampler_obj, gl::TEXTURE_WRAP_R, desc_.addrU);
   gl::SamplerParameteri(sampler_obj, gl::TEXTURE_WRAP_S, desc_.addrV);
   gl::SamplerParameteri(sampler_obj, gl::TEXTURE_WRAP_T, desc_.addrW);
+  gl::SamplerParameterfv(sampler_obj, gl::TEXTURE_BORDER_COLOR, &desc_.borderColor[0]);
   obj_ = sampler_obj;
 }
 
-void Sampler::setWrapModeU(gl::GLenum mode) {
+/*void Sampler::setWrapModeU(gl::GLenum mode) {
   gl::SamplerParameteri(object(), gl::TEXTURE_WRAP_R, mode);
 }
 
@@ -39,5 +58,6 @@ void Sampler::setBorderColor(float r, float g, float b, float a) {
 
 void Sampler::setBorderColor(const vec4 &rgba) {
   gl::SamplerParameterfv(object(), gl::TEXTURE_BORDER_COLOR, &rgba[0]);
-}
+}*/
+
 } // namespace ag

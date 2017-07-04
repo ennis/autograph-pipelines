@@ -8,7 +8,7 @@
 namespace ag {
 
 //////////////////////////////////////////////////
-enum class AG_GFX_API StateGroupMask {
+enum class StateGroupMask {
   Viewports = (1 << 0),   // DONE
   Framebuffer = (1 << 1), // DONE
   ScissorRect = (1 << 2),
@@ -133,7 +133,7 @@ struct Uniforms {
   std::array<gl::GLuint, kMaxVertexBufferSlots> vertexBuffers{{0}};
   std::array<gl::GLintptr, kMaxVertexBufferSlots> vertexBufferOffsets{{0}};
   std::array<gl::GLsizei, kMaxVertexBufferSlots> vertexBufferStrides{{0}};
-  BufferSlice indexBuffer{0};
+  Buffer::Slice indexBuffer{0};
   gl::GLenum indexBufferType{0};
 };
 

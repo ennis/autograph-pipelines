@@ -3,10 +3,10 @@
 
 namespace ag {
 void *Buffer::map(size_t offset, size_t size) {
-	gl::GLbitfield flags = gl::MAP_UNSYNCHRONIZED_BIT;
-  if (usage_ == BufferUsage::Readback) {
+  gl::GLbitfield flags = gl::MAP_UNSYNCHRONIZED_BIT;
+  if (usage_ == Usage::Readback) {
     flags |= gl::MAP_READ_BIT | gl::MAP_PERSISTENT_BIT | gl::MAP_COHERENT_BIT;
-  } else if (usage_ == BufferUsage::Upload) {
+  } else if (usage_ == Usage::Upload) {
     flags |= gl::MAP_WRITE_BIT | gl::MAP_PERSISTENT_BIT | gl::MAP_COHERENT_BIT;
   } else {
     // cannot map a DEFAULT buffer
@@ -16,13 +16,13 @@ void *Buffer::map(size_t offset, size_t size) {
   return gl::MapNamedBufferRange(object(), offset, size, flags);
 }
 
-Buffer::Buffer(std::size_t byteSize, BufferUsage usage,
+Buffer::Buffer(std::size_t byteSize, Buffer::Usage usage,
                const void *initial_data)
     : usage_{usage}, byte_size_{byteSize} {
-	gl::GLbitfield flags = 0;
-  if (usage == BufferUsage::Readback) {
+  gl::GLbitfield flags = 0;
+  if (usage == Usage::Readback) {
     flags |= gl::MAP_READ_BIT | gl::MAP_PERSISTENT_BIT | gl::MAP_COHERENT_BIT;
-  } else if (usage == BufferUsage::Upload) {
+  } else if (usage == Usage::Upload) {
     flags |= gl::MAP_WRITE_BIT | gl::MAP_PERSISTENT_BIT | gl::MAP_COHERENT_BIT;
   } else {
     flags = 0;

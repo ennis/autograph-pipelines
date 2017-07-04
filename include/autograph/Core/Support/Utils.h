@@ -36,3 +36,20 @@ template <> struct overload_choice<10> {};
 // "for clarity"
 struct select_overload : overload_choice<0> {};
 }
+
+// insertion into map
+template <typename KTy, typename MapTy, typename Func >
+auto& insertLazy(MapTy& map, const KTy& key, Func&& lambda)
+{
+	static_assert(std::is_convertible_v<KTy, typename MapTy::key_type>, "Incompatible key type");
+	static_assert(std::is_assignable_v<typename MapTy::mapped_type, decltype(lambda())>, "Incompatible value type");
+	auto it = map.find(key);
+	if (it != map.end()) {
+		return it->second;
+	}
+	else {
+		auto result = map.emplace(key, lambda());
+		return result.first->second;
+	}
+}
+

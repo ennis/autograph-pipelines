@@ -17,6 +17,7 @@
 namespace ag {
 
 static const char *imageFileFilters = "png,jpg,jpeg,bmp,tga,psd,gif";
+static constexpr Sampler::Desc nearestClampToEdge = Sampler::Desc{gl::NEAREST, gl::NEAREST, gl::CLAMP_TO_EDGE, gl::CLAMP_TO_EDGE, gl::CLAMP_TO_EDGE };
 
 struct DebugOverlayGlobals {
   GPUPipeline textureViewShader = GPUPipeline{GPUPipelineType::Graphics, "shaders/default.lua:textureView"};
@@ -27,11 +28,7 @@ static DebugOverlayGlobals &getDebugGlobals() {
   static DebugOverlayGlobals g;
   static bool initialized = false;
   if (!initialized) {
-    g.textureViewSampler.setTextureMinFilter(gl::NEAREST);
-    g.textureViewSampler.setTextureMagFilter(gl::NEAREST);
-    g.textureViewSampler.setWrapModeU(gl::CLAMP_TO_EDGE);
-    g.textureViewSampler.setWrapModeV(gl::CLAMP_TO_EDGE);
-    g.textureViewSampler.setWrapModeW(gl::CLAMP_TO_EDGE);
+	g.textureViewSampler = Sampler{ nearestClampToEdge };
     initialized = true;
   }
   return g;

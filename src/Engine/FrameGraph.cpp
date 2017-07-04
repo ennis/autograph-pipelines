@@ -1,4 +1,5 @@
 #include <autograph/Engine/FrameGraph.h>
+#include <autograph/Core/Support/Debug.h>
 #include <fstream>
 #include <set>
 
@@ -25,18 +26,18 @@ FrameGraph::Resource FrameGraph::PassBuilder::createTexture2D(
   Resource r = frameGraph.addResourceDesc(rd);
   pass.creates.push_back(r);
   // pass.writes.push_back(r);
-  AG_DEBUG("createTexture2D {}.{}", r.handle, r.renameIndex);
+  //AG_DEBUG("createTexture2D {}.{}", r.handle, r.renameIndex);
   return r;
 }
 
 FrameGraph::Resource FrameGraph::PassBuilder::read(Resource in) {
-  AG_DEBUG("read {}.{}", in.handle, in.renameIndex);
+  //AG_DEBUG("read {}.{}", in.handle, in.renameIndex);
   pass.reads.push_back(in);
   return in;
 }
 
 FrameGraph::Resource FrameGraph::PassBuilder::write(Resource out) {
-  AG_DEBUG("write {}.{}", out.handle, out.renameIndex);
+  //AG_DEBUG("write {}.{}", out.handle, out.renameIndex);
   // same resource, bump the rename index
   pass.reads.push_back(out);
   Resource ret{out.handle, out.renameIndex + 1};
@@ -47,8 +48,8 @@ FrameGraph::Resource FrameGraph::PassBuilder::write(Resource out) {
 FrameGraph::Resource FrameGraph::PassBuilder::copy(Resource in) {
   const ResourceDesc &rd = frameGraph.getResourceDesc(in.handle);
   Resource out = frameGraph.addResourceDesc(rd);
-  AG_DEBUG("copy {}.{} -> {}.{}", in.handle, in.renameIndex, out.handle,
-           out.renameIndex);
+ // AG_DEBUG("copy {}.{} -> {}.{}", in.handle, in.renameIndex, out.handle,
+  //         out.renameIndex);
   pass.creates.push_back(out);
   return out;
 }
@@ -96,7 +97,7 @@ size_t FrameGraph::getBufferSize(Resource r) const {
 FrameGraph::Resource FrameGraph::addResourceDesc(const ResourceDesc &rd) {
   resources.push_back(std::make_unique<ResourceDesc>(rd));
   int handle = (int)(resources.size() - 1);
-  AG_DEBUG("addResource {}.{}", handle, 0);
+  //AG_DEBUG("addResource {}.{}", handle, 0);
   return Resource{handle, 0};
 }
 
@@ -114,6 +115,13 @@ Texture &FrameGraph::PassResources::getTexture(Resource res) const {
   return *ag::get<FrameGraph::ResourceDesc::Texture>(
               fg_.getResourceDesc(res.handle).v)
               .ptex;
+}
+
+void FrameGraph::execute() {
+  for (auto&& p : passes) {
+    PassResources pass{*this};
+    p->execute(pass);
+  }
 }
 
 void FrameGraph::compile() {
@@ -134,11 +142,11 @@ void FrameGraph::compile() {
   r_ren.resize(resources.size(), 0);
   w_ren.resize(resources.size(), 0);
 
-  AG_DEBUG("** BEGIN CONCURRENT RESOURCE USAGE DETECTION");
+  //AG_DEBUG("** BEGIN CONCURRENT RESOURCE USAGE DETECTION");
   int pass_index = 0;
-  for (auto &p : passes) {
-    AG_DEBUG("** PASS {}", p->name);
-    for (auto &r : p->reads) {
+  for (auto &&p : passes) {
+    //AG_DEBUG("** PASS {}", p->name);
+    for (auto &&r : p->reads) {
       // ensure we can read this resource
       if (r_ren[r.handle] > r.renameIndex) {
         // we already bumped the rename index for this resource: it was
@@ -148,22 +156,22 @@ void FrameGraph::compile() {
             r.handle, r.renameIndex);
         hasWriteConflicts = true;
       } else {
-        AG_DEBUG("write rename index for {}: .{} -> .{}", r.handle,
-                 r.renameIndex, r.renameIndex + 1);
+        //AG_DEBUG("write rename index for {}: .{} -> .{}", r.handle,
+        //         r.renameIndex, r.renameIndex + 1);
         w_ren[r.handle] = r.renameIndex + 1;
       }
-      auto &res = resources[r.handle];
+      auto &&res = resources[r.handle];
       // update lifetime end
       // resource is read during this pass, so it must outlive it
       if (res->lifetimeEnd < pass_index) {
         res->lifetimeEnd = pass_index;
-        AG_DEBUG("lifetime of {}: pass {} -> {}", r.handle, res->lifetimeBegin,
-                 res->lifetimeEnd);
+        //AG_DEBUG("lifetime of {}: pass {} -> {}", r.handle, res->lifetimeBegin,
+        //         res->lifetimeEnd);
       }
     }
 
-    for (auto &w : p->writes) {
-      auto &res = resources[w.handle];
+    for (auto &&w : p->writes) {
+      auto &&res = resources[w.handle];
       if (res->lifetimeBegin == -1) {
         res->lifetimeBegin = pass_index;
       }
@@ -177,8 +185,8 @@ void FrameGraph::compile() {
         hasWriteConflicts = true;
       } else {
         // the next pass cannot use this rename for write operations
-        AG_DEBUG("write rename index for {}: .{} -> .{}", w.handle,
-                 w.renameIndex, w.renameIndex + 1);
+        //AG_DEBUG("write rename index for {}: .{} -> .{}", w.handle,
+        //         w.renameIndex, w.renameIndex + 1);
         w_ren[w.handle] = w.renameIndex + 1;
         r_ren[w.handle] = w.renameIndex;
       }
@@ -188,18 +196,18 @@ void FrameGraph::compile() {
 
   //////////////////////////////////////////////
   // transient resource allocation
-  AG_DEBUG("** BEGIN RESOURCE ALLOCATION");
+  //AG_DEBUG("** BEGIN RESOURCE ALLOCATION");
   pass_index = 0;
   std::set<Texture *> texturesInUse;
   auto assignTexture = [&](ResourceDesc::Texture &texdesc) {
-    for (auto &tex : textures) {
+    for (auto &&tex : textures) {
       if (texturesInUse.count(tex.get()))
         continue;
       auto ptex = tex.get();
       if (ptex->desc() == texdesc.desc) {
-        AG_DEBUG("[REUSING TEXTURE @{} {}x{}x{} {}]", (const void *)ptex,
-                 texdesc.desc.width, texdesc.desc.height, texdesc.desc.depth,
-                 getImageFormatInfo(texdesc.desc.fmt).name);
+        //AG_DEBUG("[REUSING TEXTURE @{} {}x{}x{} {}]", (const void *)ptex,
+        //         texdesc.desc.width, texdesc.desc.height, texdesc.desc.depth,
+        //         getImageFormatInfo(texdesc.desc.fmt).name);
         texdesc.ptex = ptex;
         texturesInUse.insert(ptex);
         return;
@@ -209,9 +217,9 @@ void FrameGraph::compile() {
     auto ptex = tex.get();
     textures.push_back(std::move(tex));
     texturesInUse.insert(ptex);
-    AG_DEBUG("[creating new texture @{} {}x{}x{} {}]", (const void *)ptex,
-             texdesc.desc.width, texdesc.desc.height, texdesc.desc.depth,
-             getImageFormatInfo(texdesc.desc.fmt).name);
+    //AG_DEBUG("[creating new texture @{} {}x{}x{} {}]", (const void *)ptex,
+    //         texdesc.desc.width, texdesc.desc.height, texdesc.desc.depth,
+    //         getImageFormatInfo(texdesc.desc.fmt).name);
     texdesc.ptex = ptex;
   };
 
@@ -219,8 +227,8 @@ void FrameGraph::compile() {
     auto buf = std::make_unique<Buffer>(bufdesc.size, bufdesc.usage);
     auto pbuf = buf.get();
     buffers.push_back(std::move(buf));
-    AG_DEBUG("[creating new buffer @{} of size {}]", (const void *)pbuf,
-             bufdesc.size);
+    //AG_DEBUG("[creating new buffer @{} of size {}]", (const void *)pbuf,
+    //         bufdesc.size);
     bufdesc.buf = pbuf;
   };
 
@@ -235,7 +243,7 @@ void FrameGraph::compile() {
 
   auto releaseResource = [&](ResourceDesc &rd) {
     if (auto ptexdesc = get_if<ResourceDesc::Texture>(&rd.v)) {
-      AG_DEBUG("[RELEASE TEXTURE @{}]", (const void *)ptexdesc->ptex);
+     // AG_DEBUG("[RELEASE TEXTURE @{}]", (const void *)ptexdesc->ptex);
       texturesInUse.erase(ptexdesc->ptex);
     } else if (auto pbufdesc = get_if<ResourceDesc::Buffer>(&rd.v)) {
       // Nothing to do for buffers
@@ -244,7 +252,7 @@ void FrameGraph::compile() {
   };
 
   for (auto &&p : passes) {
-    AG_DEBUG("** PASS {}", p->name);
+    //AG_DEBUG("** PASS {}", p->name);
     // create resources that should be created
     for (auto &c : p->creates) {
       auto &r = resources[c.handle];

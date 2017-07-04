@@ -1,9 +1,10 @@
 #include <autograph/Core/Camera.h>
-#include <autograph/Core/Support/Debug.h>
-#include <autograph/Core/Support/ProjectRoot.h>
-#include <autograph/Engine/All.h>
 #include <autograph/Engine/FrameGraph.h>
 #include <autograph/Engine/imgui.h>
+#include <autograph/Engine/EntityManager.h>
+#include <autograph/Engine/SceneObject.h>
+#include <autograph/Engine/Renderable.h>
+#include <autograph/Engine/Light.h>
 #include <autograph/Gfx/All.h>
 #include <glm/gtc/matrix_transform.hpp>
 
@@ -21,7 +22,7 @@ struct CameraMatrices {
 
 struct CameraFrameData {
   CameraMatrices matrices;
-  BufferSlice cameraUBO;
+  Buffer::Slice cameraUBO;
   vec2 TAAOffset;
 };
 

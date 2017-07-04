@@ -8,13 +8,13 @@ namespace ag {
 
 // A ring buffer, used in the implementation of upload buffers
 UploadBuffer::UploadBuffer(size_t size)
-    : buffer_{size, BufferUsage::Upload}, write_ptr(0),
+    : buffer_{size, Buffer::Usage::Upload}, write_ptr(0),
       begin_ptr(0), used(0) {
   mapped_region = buffer_.map(0, size);
 }
 
 bool UploadBuffer::upload(const void *data, size_t size, size_t alignment,
-                          uint64_t expirationDate, BufferSlice &slice) {
+                          uint64_t expirationDate, Buffer::Slice &slice) {
   if (!allocate(expirationDate, size, alignment, slice))
     return false;
   // copy data
@@ -23,7 +23,7 @@ bool UploadBuffer::upload(const void *data, size_t size, size_t alignment,
 }
 
 bool UploadBuffer::allocate(uint64_t expirationDate, size_t size, size_t align,
-                            BufferSlice &slice) {
+                            Buffer::Slice &slice) {
   size_t offset = 0;
   if (!tryAllocateContiguousFreeSpace(expirationDate, size, align, offset))
     return false;
@@ -95,7 +95,7 @@ static UploadBuffer& getDefaultUploadBuffer()
   return defaultUploadBuffer;
 }
 
-BufferSlice uploadFrameData(const void *data, size_t size, size_t alignment) 
+Buffer::Slice uploadFrameData(const void *data, size_t size, size_t alignment) 
 {
   AG_FRAME_TRACE("data={}, size={}, alignment={}", data, size, alignment);
   // First, reclaim data from frame N-<max-frames-in-flight> (guaranteed to be done)
@@ -103,7 +103,7 @@ BufferSlice uploadFrameData(const void *data, size_t size, size_t alignment)
   auto& ctx = getGfxContext();
   buf.reclaim(ctx.getCurrentFrameIndex() - ctx.getConfig().maxFramesInFlight + 1);
 
-  BufferSlice out_slice;
+  Buffer::Slice out_slice;
   if (alignment == -1) {
     alignment = ctx.getGLImplementationLimits().uniform_buffer_alignment;
   }

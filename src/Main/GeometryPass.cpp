@@ -1,9 +1,13 @@
 #include "Renderer.h"
+#include <autograph/Engine/Shader.h>
+#include <autograph/Engine/RenderUtils.h>
 
-namespace ag {
+namespace ag
+{
 
 GeometryBuffers initializeGeometryBuffers(FrameGraph &frameGraph, int width,
-                                          int height) {
+                                          int height)
+{
 
   return frameGraph.addPass<GeometryBuffers>(
       //////////////////////////////////////////////////////
@@ -30,7 +34,7 @@ GeometryBuffers initializeGeometryBuffers(FrameGraph &frameGraph, int width,
         clearTexture(pass.getTexture(data.normals),
                      vec4{0.5f, 0.5f, 0.0f, 1.0f});
         clearTexture(pass.getTexture(data.objectIDs), ivec4{0, 0, 0, 0});
-        clearTexture(pass.getTexture(data.depth), vec4{0.0f, 0.0f, 0.0f, 1.0f});
+        clearDepthTexture(pass.getTexture(data.depth), 0.0f);
         clearTexture(pass.getTexture(data.velocity),
                      vec4{0.0f, 0.0f, 0.0f, 1.0f});
       });
@@ -46,11 +50,12 @@ runRenderScenePass(Texture &diffuse, Texture &normals, Texture &objectIDs,
                    SceneObjectComponents &sceneObjects,
                    RenderableComponents &renderables, LightComponents &lights,
                    GeometryRenderComponents &renderComponents,
-                   const Camera &cam, const CameraFrameData &camData) {
-  auto &sm_nearest = RenderUtils::getNearestSampler();
-  auto &sm_linear = RenderUtils::getLinearSampler();
+                   const Camera &cam, const CameraFrameData &camData)
+{
+  auto &sm_nearest = Sampler::nearestRepeat();
+  auto &sm_linear = Sampler::linearRepeat();
   // Find shader in cache
-  GPUPipeline geometryPassShader =
+  static GPUPipeline geometryPassShader =
       GPUPipeline{GPUPipelineType::Graphics, "shaders/default.lua$geometryPass",
                   GPUPipeline::LoadMask::All, &Cache::getDefault()};
   // Create the framebuffer
@@ -64,7 +69,8 @@ runRenderScenePass(Texture &diffuse, Texture &normals, Texture &objectIDs,
   auto &objects = sceneObjects.getObjects();
   int objectID = 0;
 
-  for (auto &&kv : objects) {
+  for (auto &&kv : objects)
+  {
     auto id = kv.first;
     auto &sceneObj = kv.second;
     // Nothing to render if this scene object has no associated
@@ -75,7 +81,8 @@ runRenderScenePass(Texture &diffuse, Texture &normals, Texture &objectIDs,
     auto material = renderables.get(id);
     // get or create per-object render data
     auto renderData = renderComponents.get(id);
-    if (!renderData) {
+    if (!renderData)
+    {
       renderData = renderComponents.add(id);
       // init prev transform
       renderData->prevModelMat = sceneObj.worldTransform;
@@ -105,7 +112,8 @@ GeometryBuffers GeometryPass::addPass(FrameGraph &frameGraph,
                                       RenderableComponents &renderables,
                                       LightComponents &lights,
                                       const Camera &cam,
-                                      const CameraFrameData &camData) {
+                                      const CameraFrameData &camData)
+{
   return frameGraph.addPass<GeometryBuffers>(
       //////////////////////////////////////////////////////
       // SETUP

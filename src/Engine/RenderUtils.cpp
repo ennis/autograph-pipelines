@@ -11,16 +11,6 @@ namespace RenderUtils {
 struct RenderUtilsState {
   RenderUtilsState() {
     reloadShaders();
-    SamplerDesc desc;
-    desc.addrU = gl::REPEAT;
-    desc.addrV = gl::REPEAT;
-    desc.addrW = gl::REPEAT;
-    desc.minFilter = gl::NEAREST;
-    desc.magFilter = gl::NEAREST;
-    samplerNearest = Sampler{desc};
-    desc.minFilter = gl::LINEAR;
-    desc.magFilter = gl::LINEAR;
-    samplerLinear = Sampler{desc};
   }
 
   void reloadShaders() {
@@ -31,8 +21,6 @@ struct RenderUtilsState {
     drawWireMesh2DColorShader = GPUPipeline{ GPUPipelineType::Graphics, "shaders/default.lua$drawWireMesh2DColor"};
   }
 
-  Sampler samplerNearest;
-  Sampler samplerLinear;
   GPUPipeline drawSpriteShader;
   GPUPipeline drawMeshShader;
   GPUPipeline drawWireMeshShader;
@@ -191,7 +179,7 @@ void drawSprite(Framebuffer &target, float targetX0, float targetY0,
 
   auto &state = getRenderUtilsState();
   draw(target, drawArrays(gl::TRIANGLES, 0, 6), state.drawSpriteShader,
-       bind::texture(0, tex, state.samplerNearest.object()),
+       bind::texture(0, tex, Sampler::nearestRepeat().object()),
        bind::vertexBuffer(0, vbuf, sizeof(Vertex2DTex)));
 }
 
@@ -270,8 +258,5 @@ void drawGrid2D(Framebuffer &target,
        bind::vertexBuffer(0, vbuf, sizeof(Vertex2DColor)));
 }
 
-Sampler &getLinearSampler() { return getRenderUtilsState().samplerLinear; }
-
-Sampler &getNearestSampler() { return getRenderUtilsState().samplerNearest; }
 } // namespace RenderUtils
 } // namespace ag

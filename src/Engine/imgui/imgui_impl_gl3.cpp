@@ -84,6 +84,7 @@ void ImGui_Impl_RenderDrawLists(ImDrawData *draw_data) {
   gl::Enable(gl::SCISSOR_TEST);
   gl::ActiveTexture(gl::TEXTURE0);
   gl::Disable(gl::FRAMEBUFFER_SRGB);
+  gl::PolygonMode(gl::FRONT_AND_BACK, gl::FILL);
 
   // Setup viewport, orthographic projection matrix
   gl::Viewport(0, 0, (GLsizei)fb_width, (GLsizei)fb_height);

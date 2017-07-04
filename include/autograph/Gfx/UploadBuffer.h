@@ -1,6 +1,6 @@
 #pragma once
-#include <autograph/Gfx/Exports.h>
 #include <autograph/Gfx/Buffer.h>
+#include <autograph/Gfx/Exports.h>
 #include <cassert>
 #include <mutex>
 #include <queue>
@@ -14,9 +14,9 @@ public:
   UploadBuffer(size_t size);
 
   bool upload(const void *data, size_t size, size_t alignment,
-              uint64_t expirationDate, BufferSlice &slice);
+              uint64_t expirationDate, Buffer::Slice &slice);
   bool allocate(uint64_t expirationDate, size_t size, size_t align,
-                BufferSlice &slice);
+                Buffer::Slice &slice);
   void reclaim(uint64_t date);
 
 private:
@@ -46,24 +46,24 @@ private:
 };
 
 // Upload data to the default upload buffer
-AG_GFX_API BufferSlice uploadFrameData(const void *data, size_t size,
-                              size_t alignment = -1);
+AG_GFX_API Buffer::Slice uploadFrameData(const void *data, size_t size,
+                                         size_t alignment = -1);
 
 template <typename T>
-inline BufferSlice uploadFrameArray(const T *data, size_t num_elements,
-                                    size_t alignment = -1) {
+inline Buffer::Slice uploadFrameArray(const T *data, size_t num_elements,
+                                      size_t alignment = -1) {
   return uploadFrameData(data, num_elements * sizeof(T), alignment);
 }
 
 template <typename T, size_t N>
-inline BufferSlice uploadFrameArray(const std::array<T, N> &data,
-                                    size_t alignment = -1) {
+inline Buffer::Slice uploadFrameArray(const std::array<T, N> &data,
+                                      size_t alignment = -1) {
   return uploadFrameData(data.data(), N * sizeof(T), alignment);
 }
 
 template <typename T, size_t N>
-inline BufferSlice uploadFrameArray(T (&data)[N], size_t alignment = -1) {
+inline Buffer::Slice uploadFrameArray(T (&data)[N], size_t alignment = -1) {
   return uploadFrameData(&data[0], N * sizeof(T), alignment);
 }
 
-}
+} // namespace ag

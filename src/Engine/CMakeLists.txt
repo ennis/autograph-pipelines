@@ -3,8 +3,6 @@ file(GLOB LIB_SOURCES *.cpp)
 file(GLOB LIB_HEADERS *.hpp)
 file(GLOB IMGUI_SOURCES imgui/*.cpp)
 
-find_package(Boost REQUIRED COMPONENTS wave)
-
 autograph_add_module(
 	SHARED 
 	NAME autographEngine

@@ -10,7 +10,7 @@ namespace ag {
 Scene2D::Scene2D(Cache &cache) : cache_{cache} {
   tileMapShader_ =
       GPUPipeline{GPUPipelineType::Graphics, "shaders/tileMap.lua$tileMap"};
-  SamplerDesc desc;
+  Sampler::Desc desc;
   desc.minFilter = gl::NEAREST;
   desc.magFilter = gl::NEAREST;
   sampler_ = Sampler{desc};

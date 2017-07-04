@@ -23,10 +23,36 @@
 using namespace ag;
 using namespace std::experimental;
 
+// Engine/Render/Passes
+//	- GBuffers.h
+//  - Blur.h
+//  - Utils.h
+
+void addOutputToFramebufferPass(FrameGraph &frameGraph, FrameGraph::Resource in, Framebuffer &out)
+{
+  struct PassData
+  {
+    FrameGraph::Resource in;
+  };
+
+  frameGraph.addPass<PassData>(
+      // SETUP
+      [&](FrameGraph::PassBuilder &builder, PassData &data) {
+        data.in = builder.read(in);
+        builder.setName("OutputToFramebuffer");
+      },
+      // EXECUTE
+      [&out](PassData &data, FrameGraph::PassResources &pass) {
+        auto &tex = pass.getTexture(data.in);
+        RenderUtils::drawTexturedQuad(out, tex);
+      });
+}
+
 ///////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////
 // MAIN
-int main(int argc, char *argv[]) {
+int main(int argc, char *argv[])
+{
   using namespace ag;
   ResourceManager::addResourceDirectory(getActualPath("resources/"));
 
@@ -78,7 +104,8 @@ int main(int argc, char *argv[]) {
         "mesh/blender_chan/Sketchfab_2017_02_12_14_36_10.fbx", scene,
         rootEntity, Cache::getDefault());
   SceneObject *rootSceneObj = sceneObjects.get(rootEntity);
-  if (rootSceneObj) {
+  if (rootSceneObj)
+  {
     rootSceneObj->localTransform.scaling = vec3{1.0f};
     rootSceneObj->calculateWorldTransform();
     rootSceneObj->calculateWorldBounds();
@@ -98,13 +125,14 @@ int main(int argc, char *argv[]) {
     auto screenSizeI = ivec2{fbo.width(), fbo.height()};
     auto screenSize = vec2{(float)screenSizeI.x, (float)screenSizeI.y};
     Camera cam;
-    if (camController) {
+    if (camController)
+    {
       auto cursorPos = w.getCursorPos();
       camController->onCameraGUI(cursorPos.x, cursorPos.y, screenSizeI.x,
                                  screenSizeI.y, cam, scene, selectedItemID);
     }
-	if (AACurSample == 0)
-		prevCam = cam;
+    if (AACurSample == 0)
+      prevCam = cam;
 
     //---------------------------
     // Setup the rendering pipeline
@@ -121,9 +149,14 @@ int main(int argc, char *argv[]) {
     // Temporal AA pass
     auto result_taa = TAAPass.addPass(fg, result_deferred, gbuffers.velocity,
                                       gbuffers.depth, camdata);
+
+    addOutputToFramebufferPass(fg, result_taa, fbo);
+
     // compile the pipeline
     fg.compile();
-	fg.dumpGraph("machin.dot");
+    fg.execute();
+    fg.dumpGraph("machin.dot");
+    //
 
     //---------------------------
     // Setup & clear framebuffer
@@ -150,11 +183,14 @@ int main(int argc, char *argv[]) {
       if (sceneEditor)
         sceneEditor->onSceneEditorGUI(scene, selectedItemID, cam, cache);
 
-      if (sceneLoader) {
+      if (sceneLoader)
+      {
         ImGui::Begin("Assimp scene loader");
-        if (ImGui::Button("Load scene")) {
+        if (ImGui::Button("Load scene"))
+        {
           auto res = ag::openFileDialog("", getProjectRootDirectory().c_str());
-          if (res) {
+          if (res)
+          {
             ID rootObj;
             bool result =
                 sceneLoader->loadScene(res->c_str(), scene, rootObj, cache);
@@ -171,26 +207,17 @@ int main(int argc, char *argv[]) {
       sceneObjects.update();
     }
 
-    /*  static std::pair<const char *, int> names[] = {
-          {"None", (int)SceneRenderer::DebugRenderMode::None},
-          {"Normals", (int)SceneRenderer::DebugRenderMode::Normals},
-          {"ObjectID", (int)SceneRenderer::DebugRenderMode::ObjectID},
-          {"Depth", (int)SceneRenderer::DebugRenderMode::Depth},
-          {"Positions", (int)SceneRenderer::DebugRenderMode::Positions},
-          {"Albedo", (int)SceneRenderer::DebugRenderMode::Albedo},
-          {"Velocity", (int)SceneRenderer::DebugRenderMode::Velocity},
-      };*/
-
     ImGui::SliderInt("Deferred debug", &deferredDebugMode, 0, 6);
 
-	prevCam = cam;
+    prevCam = cam;
 
   };
 
   ////////////////////////////////////////////////////
   // window events
   auto eventCallback = [&](const ag::Event &ev, ag::Window *win) {
-    if (ev.type == EventType::WindowResize) {
+    if (ev.type == EventType::WindowResize)
+    {
       // if (sceneRenderer)
       // sceneRenderer->resize(ev.resize.width, ev.resize.height);
     }
@@ -199,7 +226,8 @@ int main(int argc, char *argv[]) {
   ////////////////////////////////////////////////////
   // GLFW main loop
   engine.setEventCallback(eventCallback);
-  while (!glfwWindowShouldClose(w.getGLFWwindow())) {
+  while (!glfwWindowShouldClose(w.getGLFWwindow()))
+  {
     // Prepare for frame rendering
     engine.renderFrame(frameCallback);
     glfwPollEvents();

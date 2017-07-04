@@ -2672,8 +2672,132 @@ Texture cache system: in GFX
 class TextureCache
 - max memory usage (CPU)
 - cache entry: (file, mip level, tile, format, data, last used)
-- Use OIIO to load tiled files
+- Use OIIO to load tiled files, something else to load DDS data
 
 class StreamedTextureFile(TextureCache*, path)
 - read(region)
 - swapOut(region)
+
+
+
+Consider an implementation in another language (with a controllable garbage collector):
+
+C++ pointer/value classes:
+
+ - T
+ - T *
+ - T &
+ - const T&
+ - T &&
+ - unique_ptr<T> 
+ - unique_ptr<T>&
+ - unique_ptr<T>&&
+ - shared_ptr<T>
+ - shared_ptr<T>&&
+
+With GC:
+ - T [value type]
+ - T [reference type]
+ - out T, inout T
+
+
+Benefits:
+- A much easier time coding book-keeping tasks (cache stuff, etc.)
+		No need to bother about ownership, std::vector and std::unordered_maps of std::unique_ptrs, std::move, forward, etc.
+		Removes lots of noise
+- A better module system
+- A better reflection system
+- No preprocessor
+- Faster compilation times
+	- Perfect for hot-loading
+- A package manager (DUB), seems OK
+- Unit testing
+
+Drawbacks:
+- Reimplementation time
+- C++ patterns may not translate directly to D
+- Existing libraries
+	- IMGUI
+	- Qt?
+	- OpenImageIO
+	- OpenEXR
+	- Lua bindings
+	- Recast/detour navigation
+	etc.
+	Need a C wrapper around these libs
+ - No intellisense (but close)
+ - Move-only types? Should be doable (disable postblit?)
+ - Lose customized GLFW3
+ 	-> not necessarily, just add our own struct to the wrapper
+
+Implementation strategy:
+ - maybe use ref types for Gfx wrappers (instead of move-only types)
+ 	 Cheap to allocate, cheap to move, cheap to return, garbage collected (but can be explicitly released)
+	 Simplifies lots of things
+ - Same for framegraph nodes
+ - For large object pools (component tables)
+ 	-> DO NOT MAKE THE GC SCAN THOSE AREAS!
+ 	-> Use malloc'd strings and stuff: Unique!string 
+ 	-> Can keep refs to GC'd objects (e.g. gfx objects), but keep in mind that they are **unsafe** weak references to GC objects
+
+Rewrite in this order:
+ - Core utils: GC-free unique/refcounted
+ - Core utils: debug 
+ 	AG_DEBUG macro
+ - Core utils: cache
+ - GFX: OpenGL API
+ - Window management
+ 	Window, mainLoop
+ - Debug GUI (Imgui?) 
+ - Dynamic modules
+ - GFX base types
+ - GFX draw/compute calls
+ - Image utilities
+ - Lua script loading
+ - Shader preprocessor
+ - Shader 
+ - Mesh type
+ - Scene base (component maps)
+ - Assimp scene loader
+ 	Materials, Meshes, Lights
+ - Camera controller
+ - Render utils
+ 	Draw grid, etc
+ - Frame graph
+
+_______________________________________________
+
+Ideas for a programming language (2):
+
+- Syntax inspired from Rust
+- Memory safety easy to achieve, but not enforced
+	(opt-in memory safety through attributes)
+- No difference between classes & structs
+	Only value types
+- OO system: inheritance?
+- Metaprogramming: like in D, plus:
+	- Inspect and transform the AST of a function at compile-time / output new code
+	- In source code: add compiler hooks / plugins
+	- "Compiler as a library" (see Jonathan Blow's Jai?)
+		- compiler.compileFunction(func, outputFile)
+
+
+_______________________________________________
+
+See C_D_Rust.md for Dlang post-mortem
+
+_______________________________________________
+
+Why did we split autograph into 4 libs anyway?
+-> Reunite the library
+
+_______________________________________________
+
+Engine rendering passes:
+
+Engine/Render/Pass.h
+Engine/Render/CameraFrameData.h
+Engine/Render/Pass/GBuffersSetup.h
+Engine/Render/Pass/RenderGBuffers.h
+Engine/Render/Pass/Utils.h
+Engine/Render/Pass/Blur.h

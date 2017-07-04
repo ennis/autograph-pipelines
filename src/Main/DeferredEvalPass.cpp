@@ -1,13 +1,18 @@
 #include "Renderer.h"
+#include <autograph/Engine/Shader.h>
+#include <autograph/Engine/RenderUtils.h>
 
-namespace ag {
+namespace ag
+{
 /////////////////////////////////////////////////////
 // DEFERRED EVALUATION PASS
 FrameGraph::Resource addDeferredEvalPass(FrameGraph &frameGraph, int width,
-                                     int height, const CameraFrameData &camData,
-                                     const GeometryBuffers &gbuffers,
-									 int debugMode) {
-  struct DeferredPassData {
+                                         int height, const CameraFrameData &camData,
+                                         const GeometryBuffers &gbuffers,
+                                         int debugMode)
+{
+  struct DeferredPassData
+  {
     FrameGraph::Resource depth;
     FrameGraph::Resource normals;
     FrameGraph::Resource diffuse;
@@ -15,6 +20,10 @@ FrameGraph::Resource addDeferredEvalPass(FrameGraph &frameGraph, int width,
     FrameGraph::Resource velocity;
     FrameGraph::Resource output;
   };
+
+  static GPUPipeline deferredPassShader = GPUPipeline{
+      GPUPipelineType::Graphics, "shaders/default.lua$deferredPass",
+      GPUPipeline::LoadMask::All, &Cache::getDefault()};
 
   auto &evalPass = frameGraph.addPass<DeferredPassData>(
       //////////////////////////////////////////////////////
@@ -27,16 +36,12 @@ FrameGraph::Resource addDeferredEvalPass(FrameGraph &frameGraph, int width,
         data.velocity = builder.read(gbuffers.velocity);
         data.output = builder.createTexture2D(ImageFormat::R16G16B16A16_SFLOAT,
                                               width, height, "output");
-		builder.setName("DeferredEvalPass");
+        builder.setName("DeferredEvalPass");
       },
       //////////////////////////////////////////////////////
       // EXECUTE
       [=](DeferredPassData &data, FrameGraph::PassResources &pass) {
-        auto &sm_nearest = RenderUtils::getNearestSampler();
-        // Find shader in cache
-        GPUPipeline deferredPassShader = GPUPipeline{
-            GPUPipelineType::Graphics, "shaders/default.lua$deferredPass",
-            GPUPipeline::LoadMask::All, &Cache::getDefault()};
+        auto &sm_nearest = Sampler::nearestRepeat();
         // make FBO
         Framebuffer fbo;
         fbo.setAttachement(gl::COLOR_ATTACHMENT0 + 0,

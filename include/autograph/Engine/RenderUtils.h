@@ -59,8 +59,5 @@ AG_ENGINE_API void drawGrid2D(Framebuffer &target,
                        vec4 primaryLinesColor = vec4{0.85f, 0.85f, 0.85f, 1.0f},
                        vec4 secondaryLinesColor = vec4{0.2f, 0.2f, 0.2f, 1.0f});
 
-// TODO make this more generic
-AG_ENGINE_API Sampler& getLinearSampler();
-AG_ENGINE_API Sampler& getNearestSampler();
 }
 }

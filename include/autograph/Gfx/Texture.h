@@ -38,23 +38,23 @@ public:
 
   /// Option flags for texture creation
   enum class Options {
-    SparseStorage = (1 << 0) //< Do not allocate physical storage for the
-    //< texture on creation (see documentation for OpenGL
-    //< sparse textures, and commit/decommitTiledRegion)
+    SparseStorage = (1 << 0) ///< Do not allocate physical storage for the
+    ///< texture on creation (see documentation for OpenGL
+    ///< sparse textures, and commit/decommitTiledRegion)
   };
 
   /// Description of a texture used during creation
   struct Desc {
-    ImageDimensions dims; //< Dimensions (1D,2D,3D,Array,Cube map...)
-    ImageFormat fmt;      //< Format, one of the ImageFormats
-    int width;            //< width
-    int height;           //< height, should be 1 for 1D textures
-    int depth;            //< depth, should be 1 for 1D or 2D textures
-    int sampleCount; //< Number of samples. Setting sampleCount >= 1 will create
-                     //< a multisampled texture
-    int mipMapCount; //< Number of mip maps
-    Options opts;    //< Texture creation flags. See Texture::Options for more
-                     //< information.
+    ImageDimensions dims; ///< Dimensions (1D,2D,3D,Array,Cube map...)
+    ImageFormat fmt;      ///< Format, one of the ImageFormats
+    int width;            ///< width
+    int height;           ///< height, should be 1 for 1D textures
+    int depth;            ///< depth, should be 1 for 1D or 2D textures
+    int sampleCount;      ///< Number of samples. Setting sampleCount >= 1 will
+                          ///< create a multisampled texture
+    int mipMapCount;      ///< Number of mip maps
+    Options opts; ///< Texture creation flags. See Texture::Options for more
+                  ///< information.
 
     /// Returns the hash of the texture description
     constexpr size_t hash() const {
@@ -70,6 +70,7 @@ public:
       return h;
     }
 
+	/// Comparison operator for Texture.Desc
     constexpr bool operator==(const Desc &rhs) const {
       return dims == rhs.dims && fmt == rhs.fmt && width == rhs.width &&
              height == rhs.height && depth == rhs.depth &&
@@ -83,10 +84,13 @@ public:
   Texture() = default;
   /// Create a texture from the specified description
   Texture(const Desc &desc);
-  /// Move-only type
+  /// Default move constructors (this disables copy constructors)
   Texture(Texture &&rhs) = default;
   Texture &operator=(Texture &&rhs) = default;
 
+  /// Destructor
+  /// if a texture has been allocated for this object, then it is deleted
+  /// by calling the corresponding glDeleteXXX function
   ~Texture();
 
   //====================================
@@ -155,7 +159,7 @@ public:
   /// size
   /// obtained with getTileSize()
   /// See also glTexPageCommitmentARB
-  /// Needs ARG_sparse_texture extension
+  /// Needs ARB_sparse_texture extension
   void commitTiledRegion(int mipLevel, ivec3 tileCoords, ivec3 regionSize);
 
   /// Decommit physical memory pages for the texture at the specified region on
@@ -164,7 +168,7 @@ public:
   /// size
   /// obtained with getTileSize()
   /// See also glTexPageCommitmentARB
-  /// Needs ARG_sparse_texture extension
+  /// Needs ARB_sparse_texture extension
   void decommitTiledRegion(int mipLevel, ivec3 tileCoords, ivec3 regionSize);
 
   //====================================

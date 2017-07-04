@@ -1,6 +1,4 @@
 #pragma once
-#include <any>
-#include <autograph/Core/Support/Debug.h>
 #include <autograph/Core/Support/HashCombine.h>
 #include <autograph/Core/Support/SmallVector.h>
 #include <autograph/Core/Support/Variant.h>
@@ -8,89 +6,20 @@
 #include <autograph/Gfx/Buffer.h>
 #include <autograph/Gfx/Texture.h>
 #include <functional>
-#include <unordered_map>
 #include <vector>
+
+//#if __has_include(<any>)
+#include <any>
+//#else
+//# include <experimental/any>
+//#endif
 
 namespace ag {
 
-// frame graph resources: textures, buffers, render targets (collection of
-// textures bound to a framebuffer) bikeshedding: FGResource FGTextureResource,
-// FGRenderTargetResource + mutable versions? FGMutableTexture,
-// FGMutableRenderTarget? FrameGraph::TextureResource,
-// FrameGraph::RenderTargetResource Template type?
-//
-// Pointer-like types? .get() method to get the allocated resource during
-// execution Wrappers around IDs: must query the framegraph for the allocated
-// resource using fg.get(<resource-id>)
-//
-// Can a resource be viewed as different types?
-//
-// Bikeshedding / FrameGraph API for requesting transient resources (setup
-// object) builder.read(<resource-id>) => registers an input dependency
-// modifications:
-// builder.<modify>(<resource-id>)
-//
-// use cases for rendertarget resources: don't want to re-create a framebuffer
-// each time don't want to specify too many inputs?
-//
-// input: builder.read(<...>)
-// mutable resources: builder.useXXX(<...>)
-// output: builder.writeXXX()
-//
-// read: builder.read(XXX, usage flags)
-// modify: builder.use(XXX, usage flags)
-// write: builder.write(XXX, usage flags)
-// create: builder.createXXX(usage flags)
-//	  all these functions return a resource handle for the pass in question
-//(handles have usage metadata)
-//
-// Query metadata for resources:
-// texture: width, height, depth, format, etc.
-// buffer: size, etc.
-// Q: access part of a resource?
-//		e.g. one mip level, one face, part of a render target?
-//		for now, just textures
-//
-// Should resource handles be typed?
-// - by mutability? by resource type (many types)?
-// - one resource can be seen as different concrete types? (maybe)
-//		texture as buffer, texture as render target, buffer as UBO,
-// buffer  as SSBO/UAV, buffer as transform feedback buffer
-// - one pass can take several types of input:
-//		texture, individual mip level, part of render target
-// Two great categories: texture (i.e. full tex, mip levels, faces), and buffers
-//
-// DECISIONS:
-// Resources: Textures and buffers, wrappers around untyped handles
-// Accessing part of a resource done during execution
-// Do not bother too much about resource usage
-// Render target: wrapper around a set of textures?
-// At first, no way of querying metadata outside execute
-
-// FrameGraph
-// - addPass
-// - getTexture(id)
-// - getBuffer(id)
-// - [private] addTextureResource(...)
-// - [private] addBufferResource(...)
-// FrameGraph::Pass
-// - reads: vector<int>
-// - writes: vector<int>
-// FrameGraph::PassBuilder
-// FrameGraph::AllocatedResource (index)
-// - pointer to resource
-// FrameGraph::ResourceDesc (index)
-// - clone()
-// FrameGraph::TextureResourceDesc
-// - w, h, fmt, mips, samples
-// FrameGraph::BufferResourceDesc
-// - size, usage
-
-//
-// Next iteration:
-// Resource should be an indirect pointer to a texture / buffer / framebuffer
-// resource FrameGraph::Texture -> ResourceHandle<TexturePrivate>
-
+/// TODO Description
+/// (Represents the graph of rendering passes in a frame, specify passes, dependencies and transient resources,
+/// and the frame graph allocates memory for the transient resources in 
+/// TODO explain what is a transient resource: resource that only lives for a frame, discarded afterwards
 class AG_ENGINE_API FrameGraph {
 public:
   friend class PassBuilder;
@@ -119,7 +48,7 @@ public:
     };
     struct Buffer {
       size_t size;
-      ag::BufferUsage usage;
+      ag::Buffer::Usage usage;
       ag::Buffer *buf;
     };
 
@@ -187,13 +116,13 @@ public:
     PassBuilder pb{*this, *p};
     setup(pb, *pdata);
     // add pass to list
-    AG_DEBUG("-> Add pass {}", p->name.c_str());
+    //AG_DEBUG("-> Add pass {}", p->name.c_str());
     passes.push_back(std::move(p));
     return *pdata;
   }
 
   void compile();
-
+  void execute();
   void dumpGraph(const char *path);
 
   const ResourceDesc &getResourceDesc(int handle) const;

@@ -367,6 +367,6 @@ Ideas:
       Need the shader cache for that (since we can't keep track of all Shader instances)
    ☐ Texture inspector: evaluate expression on pixels 
      Input: GLSL code, compile shader, run a pass, draw the result
-   ☐ Fix the resource pool mess
+   ✔ Fix the resource pool mess @done (17-07-02 19:59)
    ☐ Global tuning variables (CVars)
      ☐ CVar<float>(name, init);

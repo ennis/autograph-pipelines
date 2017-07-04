@@ -123,7 +123,7 @@ inline auto texture(int unit, gl::GLuint obj, gl::GLuint samplerObj) {
   };
 }
 
-inline auto texture(int unit, const Texture &tex, Sampler &sampler) {
+inline auto texture(int unit, const Texture &tex, const Sampler &sampler) {
   return
       [ unit, obj = tex.object(), sobj = sampler.object() ](StateGroup & sg) {
     AG_FRAME_TRACE("tex unit={}, obj={}, sam={}", unit, obj, sobj);
@@ -146,7 +146,7 @@ inline auto image(int unit, const Texture &tex) {
   };
 }
 
-inline auto uniformBuffer(int slot, BufferSlice buf) {
+inline auto uniformBuffer(int slot, Buffer::Slice buf) {
   return [=](StateGroup &sg) {
     AG_FRAME_TRACE("ubo slot={}, obj={}, offset={}, size={}", slot, buf.obj,
                    buf.offset, buf.size);
@@ -167,7 +167,7 @@ template <typename T> inline auto uniformFrameData(int slot, const T *data) {
   };
 }
 
-inline auto vertexBuffer(int slot, BufferSlice buf, int stride) {
+inline auto vertexBuffer(int slot, Buffer::Slice buf, int stride) {
   return [=](StateGroup &sg) {
     AG_FRAME_TRACE("vbo slot={}, obj={}, offset={}, stride={}", slot, buf.obj,
                    buf.offset, stride);
@@ -177,7 +177,7 @@ inline auto vertexBuffer(int slot, BufferSlice buf, int stride) {
   };
 }
 
-inline auto indexBuffer(BufferSlice buf, gl::GLenum type) {
+inline auto indexBuffer(Buffer::Slice buf, gl::GLenum type) {
   return [=](StateGroup &sg) {
     AG_FRAME_TRACE("ibo buf={}, offset={}, size={}, index type={}", buf.obj,
                    buf.offset, buf.size, type);
